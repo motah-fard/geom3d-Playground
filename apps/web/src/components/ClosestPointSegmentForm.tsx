@@ -51,7 +51,7 @@ export function ClosestPointSegmentForm() {
     setSegmentInputs,
     setSegmentResult,
     setError,
-    setResult,
+    setProjectPointResult,
     setRayPlaneResult,
   } = usePlaygroundStore();
 
@@ -80,7 +80,7 @@ export function ClosestPointSegmentForm() {
     setSegmentInputs(values);
 
     // clear other results so UI doesn't mix things
-    setResult(null);
+    setProjectPointResult(null);
     setRayPlaneResult(null);
     setError(null);
 

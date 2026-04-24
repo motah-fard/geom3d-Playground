@@ -52,7 +52,7 @@ export function IntersectRayPlaneForm() {
     planeNormal,
     setRayInputs,
     setRayPlaneResult,
-    setResult,
+    setProjectPointResult,
     setError,
     shouldAutoRun,
     setShouldAutoRun,
@@ -87,7 +87,7 @@ export function IntersectRayPlaneForm() {
   const onSubmit = async (values: FormValues) => {
     setRayInputs(values);
     setError(null);
-    setResult(null);
+    setProjectPointResult(null);
 
     try {
       const response = await intersectRayPlane({

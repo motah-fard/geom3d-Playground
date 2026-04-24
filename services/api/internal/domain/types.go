@@ -17,8 +17,8 @@ type ProjectPointToPlaneRequest struct {
 }
 
 type ProjectPointToPlaneResponse struct {
-	ProjectedPoint Vec3DTO `json:"projectedPoint"`
-	Distance       float64 `json:"distance"`
+	Point    Vec3DTO `json:"projectedPoint"`
+	Distance float64 `json:"distance"`
 }
 type RayDTO struct {
 	Origin Vec3DTO `json:"origin"`

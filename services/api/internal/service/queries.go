@@ -31,8 +31,8 @@ func (s *QueryService) ProjectPointToPlane(
 	distance := point.Distance(projected)
 
 	return domain.ProjectPointToPlaneResponse{
-		ProjectedPoint: fromVec3(projected),
-		Distance:       distance,
+		Point:    fromVec3(projected),
+		Distance: distance,
 	}, nil
 }
 

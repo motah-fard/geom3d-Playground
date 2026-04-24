@@ -20,8 +20,8 @@ func TestProjectPointToPlane(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if resp.ProjectedPoint.X != 1 || resp.ProjectedPoint.Y != 2 || resp.ProjectedPoint.Z != 0 {
-		t.Fatalf("unexpected projected point: %#v", resp.ProjectedPoint)
+	if resp.Point.X != 1 || resp.Point.Y != 2 || resp.Point.Z != 0 {
+		t.Fatalf("unexpected projected point: %#v", resp.Point)
 	}
 
 	if resp.Distance != 3 {

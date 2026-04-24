@@ -28,7 +28,8 @@ type PlaygroundState = {
   segmentA: Vec3;
   segmentB: Vec3;
 
-  result: ProjectPointToPlaneResponse | null;
+  // ✅ separated results (this fixes your bugs)
+  projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
   segmentResult: SegmentResult | null;
 
@@ -56,8 +57,15 @@ type PlaygroundState = {
     segmentB: Vec3;
   }) => void;
 
-  setResult: (result: ProjectPointToPlaneResponse | null) => void;
-  setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
+  // ✅ setters per query
+  setProjectPointResult: (
+    result: ProjectPointToPlaneResponse | null
+  ) => void;
+
+  setRayPlaneResult: (
+    result: IntersectRayPlaneResponse | null
+  ) => void;
+
   setSegmentResult: (result: SegmentResult | null) => void;
 
   setError: (error: string | null) => void;
@@ -79,7 +87,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   segmentA: { x: 0, y: 0, z: 0 },
   segmentB: { x: 3, y: 0, z: 0 },
 
-  result: null,
+  // ✅ initialized properly
+  projectPointResult: null,
   rayPlaneResult: null,
   segmentResult: null,
 
@@ -89,7 +98,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setQueryType: (queryType) =>
     set({
       queryType,
-      result: null,
+      projectPointResult: null,
       rayPlaneResult: null,
       segmentResult: null,
       error: null,
@@ -100,7 +109,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       point,
       planePoint,
       planeNormal,
-      result: null,
+      projectPointResult: null,
       error: null,
     }),
 
@@ -123,7 +132,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
-  setResult: (result) => set({ result, error: null }),
+  // ✅ correct setters
+  setProjectPointResult: (result) =>
+  set({ projectPointResult: result, error: null }),
 
   setRayPlaneResult: (rayPlaneResult) =>
     set({ rayPlaneResult, error: null }),
@@ -134,7 +145,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setError: (error) =>
     set({
       error,
-      result: null,
+      projectPointResult: null,
       rayPlaneResult: null,
       segmentResult: null,
     }),
@@ -151,7 +162,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         planeNormal: { x: 0, y: 0, z: 1 },
         shouldAutoRun: true,
         error: null,
-        result: null,
+        projectPointResult: null,
         rayPlaneResult: null,
       });
     }
@@ -165,7 +176,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         planeNormal: { x: 0, y: 0, z: 1 },
         shouldAutoRun: true,
         error: null,
-        result: null,
+        projectPointResult: null,
         rayPlaneResult: null,
       });
     }

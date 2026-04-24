@@ -3,7 +3,13 @@
 import { usePlaygroundStore } from "@/store/playground-store";
 
 export function ResultsPanel() {
-  const { queryType, result, rayPlaneResult, error } = usePlaygroundStore();
+  const {
+    queryType,
+    projectPointResult,
+    rayPlaneResult,
+    error,
+    segmentResult,
+  } = usePlaygroundStore();
 
   return (
     <div className="rounded-2xl border p-4">
@@ -17,33 +23,42 @@ export function ResultsPanel() {
       )}
 
       {/* 🟡 Empty states */}
-      {!error && queryType === "project-point-to-plane" && !result && (
-        <p className="text-sm text-neutral-500">
-          Run a projection query to see the projected point and distance.
-        </p>
-      )}
+      {!error &&
+        queryType === "project-point-to-plane" &&
+        !projectPointResult && (
+          <p className="text-sm text-neutral-500">
+            Run a projection query to see the projected point and distance.
+          </p>
+        )}
 
       {!error && queryType === "intersect-ray-plane" && !rayPlaneResult && (
         <p className="text-sm text-neutral-500">
-          Run a ray-plane intersection query to see whether the ray hits the plane.
+          Run a ray-plane intersection query to see whether the ray hits the
+          plane.
         </p>
       )}
 
       {/* 🟢 Project Point Result */}
-      {!error && queryType === "project-point-to-plane" && result && (
-        <div className="space-y-3 text-sm">
-          <div>
-            <div className="font-medium">Projected Point</div>
-            <pre className="mt-1 rounded bg-neutral-100 p-3">
-              {JSON.stringify(result.projectedPoint, null, 2)}
-            </pre>
-          </div>
+      {!error &&
+        queryType === "project-point-to-plane" &&
+        projectPointResult &&
+        projectPointResult.projectedPoint && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">Projected Point</div>
+              <pre className="mt-1 rounded bg-neutral-100 p-3">
+                {JSON.stringify(projectPointResult.projectedPoint, null, 2)}
+              </pre>
+            </div>
 
-          <div>
-            <div className="font-medium">Distance</div>
-            <p>{result.distance}</p>
+            <div>
+              <div className="font-medium">Distance</div>
+              <p>{projectPointResult.distance}</p> {/* ✅ FIXED */}
+            </div>
           </div>
-        </div>
+        )}
+      {projectPointResult && !projectPointResult.projectedPoint && (
+        <p className="text-red-500 text-sm">Invalid response shape</p>
       )}
 
       {/* 🔵 Ray-Plane Result */}
@@ -70,9 +85,25 @@ export function ResultsPanel() {
             </>
           ) : (
             <div className="text-sm text-red-600">
-              No intersection: ray is parallel to the plane or points away from it.
+              No intersection: ray is parallel to the plane or points away from
+              it.
             </div>
           )}
+        </div>
+      )}
+      {!error && queryType === "closest-point-segment" && segmentResult && (
+        <div className="space-y-3 text-sm">
+          <div>
+            <div className="font-medium">Closest Point</div>
+            <pre className="mt-1 rounded bg-neutral-100 p-3">
+              {JSON.stringify(segmentResult.point, null, 2)}
+            </pre>
+          </div>
+
+          <div>
+            <div className="font-medium">Distance</div>
+            <p>{segmentResult.distance}</p>
+          </div>
         </div>
       )}
     </div>

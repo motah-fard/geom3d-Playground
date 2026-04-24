@@ -5,7 +5,7 @@ import { ProjectPointToPlaneForm } from "@/components/ProjectPointToPlaneForm";
 import { ClosestPointSegmentForm } from "@/components/ClosestPointSegmentForm";
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
-import { SceneCanvas } from "@/components/SceneCanvas";
+import { SceneCanvas } from "@/components/scene/SceneCanvas";
 import { usePlaygroundStore } from "@/store/playground-store";
 
 export function ClientPageShell() {
