@@ -12,9 +12,13 @@ func NewRouter() http.Handler {
 	queryService := service.NewQueryService()
 	handler := NewHandler(queryService)
 
+	// Health
 	mux.HandleFunc("GET /api/v1/health", handler.Health)
+
+	// Queries
 	mux.HandleFunc("POST /api/v1/queries/project-point-to-plane", handler.ProjectPointToPlane)
 	mux.HandleFunc("POST /api/v1/queries/intersect-ray-plane", handler.IntersectRayPlane)
+	mux.HandleFunc("POST /api/v1/queries/closest-point-segment", handler.ClosestPointSegment)
 
 	return withCORS(mux)
 }

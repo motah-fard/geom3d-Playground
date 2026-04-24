@@ -95,3 +95,18 @@ func abs(x float64) float64 {
 	}
 	return x
 }
+func (s *QueryService) ClosestPointSegment(
+	point geom3d.Vec3,
+	a geom3d.Vec3,
+	b geom3d.Vec3,
+) (geom3d.Vec3, float64) {
+	seg := geom3d.Segment3{
+		A: a,
+		B: b,
+	}
+
+	closest := geom3d.ClosestPointOnSegment(point, seg)
+	dist := point.Sub(closest).Norm()
+
+	return closest, dist
+}

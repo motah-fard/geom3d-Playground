@@ -17,6 +17,9 @@ export function QuerySelector() {
       >
         <option value="project-point-to-plane">Project Point to Plane</option>
         <option value="intersect-ray-plane">Intersect Ray with Plane</option>
+        <option value="closest-point-segment">
+          Closest Point to Segment
+        </option>
       </select>
     </div>
   );

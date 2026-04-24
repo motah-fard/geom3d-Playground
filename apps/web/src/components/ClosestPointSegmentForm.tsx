@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { useForm, type UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { intersectRayPlane } from "@/lib/api";
+import { closestPointSegment } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { useEffect } from "react";
 
@@ -14,10 +14,9 @@ const vec3Schema = z.object({
 });
 
 const formSchema = z.object({
-  rayOrigin: vec3Schema,
-  rayDir: vec3Schema,
-  planePoint: vec3Schema,
-  planeNormal: vec3Schema,
+  point: vec3Schema,
+  segmentA: vec3Schema,
+  segmentB: vec3Schema,
 });
 
 type FormInput = z.input<typeof formSchema>;
@@ -29,7 +28,7 @@ function Vec3Fields({
   label,
 }: {
   register: UseFormRegister<FormInput>;
-  prefix: "rayOrigin" | "rayDir" | "planePoint" | "planeNormal";
+  prefix: "point" | "segmentA" | "segmentB";
   label: string;
 }) {
   return (
@@ -44,93 +43,101 @@ function Vec3Fields({
   );
 }
 
-export function IntersectRayPlaneForm() {
+export function ClosestPointSegmentForm() {
   const {
-    rayOrigin,
-    rayDir,
-    planePoint,
-    planeNormal,
-    setRayInputs,
-    setRayPlaneResult,
-    setResult,
+    point,
+    segmentA,
+    segmentB,
+    setSegmentInputs,
+    setSegmentResult,
     setError,
-    shouldAutoRun,
-    setShouldAutoRun,
+    setResult,
+    setRayPlaneResult,
   } = usePlaygroundStore();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { isSubmitting },
+ const {
+  register,
+  handleSubmit,
+  reset,
+  formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      rayOrigin,
-      rayDir,
-      planePoint,
-      planeNormal,
+      point,
+      segmentA,
+      segmentB,
     },
-    
   });
-
-  // 🔁 Sync form when store values change (important for examples)
   useEffect(() => {
-    reset({
-      rayOrigin,
-      rayDir,
-      planePoint,
-      planeNormal,
-    });
-  }, [rayOrigin, rayDir, planePoint, planeNormal, reset]);
+  reset({
+    point,
+    segmentA,
+    segmentB,
+  });
+}, [point, segmentA, segmentB, reset]);
 
   const onSubmit = async (values: FormValues) => {
-    setRayInputs(values);
-    setError(null);
+    setSegmentInputs(values);
+
+    // clear other results so UI doesn't mix things
     setResult(null);
+    setRayPlaneResult(null);
+    setError(null);
 
     try {
-      const response = await intersectRayPlane({
-        ray: {
-          origin: values.rayOrigin,
-          dir: values.rayDir,
-        },
-        plane: {
-          point: values.planePoint,
-          normal: values.planeNormal,
+      const response = await closestPointSegment({
+        point: values.point,
+        segment: {
+          a: values.segmentA,
+          b: values.segmentB,
         },
       });
 
-      setRayPlaneResult(response);
+      setSegmentResult(response);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong";
       setError(message);
-      setRayPlaneResult(null);
+      setSegmentResult(null);
     }
   };
+    const { shouldAutoRun, setShouldAutoRun } = usePlaygroundStore();
 
-  // ⚡ Auto-run when example is loaded
-  useEffect(() => {
-    if (!shouldAutoRun) return;
+    useEffect(() => {
+        if (!shouldAutoRun) return;
 
-    handleSubmit(onSubmit)();
-    setShouldAutoRun(false);
-  }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
+        const run = async () => {
+            try {
+            const res = await closestPointSegment({
+                point,
+                segment: {
+                a: segmentA,
+                b: segmentB,
+                },
+            });
 
+            setSegmentResult(res);
+            } catch (err: any) {
+            setError(err.message);
+            } finally {
+            setShouldAutoRun(false);
+            }
+        };
+
+  run();
+}, [shouldAutoRun]);
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Vec3Fields register={register} prefix="rayOrigin" label="Ray Origin" />
-      <Vec3Fields register={register} prefix="rayDir" label="Ray Direction" />
-      <Vec3Fields register={register} prefix="planePoint" label="Plane Point" />
-      <Vec3Fields register={register} prefix="planeNormal" label="Plane Normal" />
+      <Vec3Fields register={register} prefix="point" label="Point" />
+      <Vec3Fields register={register} prefix="segmentA" label="Segment A" />
+      <Vec3Fields register={register} prefix="segmentB" label="Segment B" />
 
       <button
         type="submit"
         disabled={isSubmitting}
         className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
       >
-        {isSubmitting ? "Running..." : "Intersect Ray with Plane"}
+        {isSubmitting ? "Running..." : "Closest Point to Segment"}
       </button>
     </form>
   );

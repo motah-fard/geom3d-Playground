@@ -1,7 +1,9 @@
 import type {
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
+  Vec3,
 } from "@/types/geometry";
+
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -53,3 +55,37 @@ export async function intersectRayPlane(
   return res.json();
 }
 
+type ClosestPointSegmentRequest = {
+  point: Vec3;
+  segment: {
+    a: Vec3;
+    b: Vec3;
+  };
+};
+
+type ClosestPointSegmentResponse = {
+  point: Vec3;
+  distance: number;
+};
+
+export async function closestPointSegment(
+  payload: ClosestPointSegmentRequest
+): Promise<ClosestPointSegmentResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/v1/queries/closest-point-segment`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!res.ok) {
+    const maybeJson = await res.json().catch(() => null);
+    throw new Error(maybeJson?.error ?? "Request failed");
+  }
+
+  return res.json();
+}
