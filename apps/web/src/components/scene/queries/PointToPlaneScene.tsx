@@ -13,7 +13,8 @@ export function PointToPlaneScene() {
     planeNormal,
     setInputs,
     setShouldAutoRun,
-    projectPointResult, // ✅ THIS is your projectPointResult
+    projectPointResult,
+    stepMode,
   } = usePlaygroundStore();
 
   // normalize normal (important or plane behaves weirdly)
@@ -37,6 +38,7 @@ export function PointToPlaneScene() {
 
   return (
     <>
+      <axesHelper args={[5]} />
       {/* 🔴 draggable point */}
       <DraggablePoint
         position={point}
@@ -76,14 +78,28 @@ export function PointToPlaneScene() {
             />
           </Sphere>
 
-          <Line
-            points={[
-              toTuple(point),
-              toTuple(projectPointResult.projectedPoint), // ✅ FIXED
-            ]}
-            color="orange"
-            lineWidth={2}
-          />
+          {stepMode && (
+            <Line
+              points={[
+                toTuple(point),
+                toTuple(projectPointResult.projectedPoint),
+              ]}
+              color="orange"
+            />
+          )}
+          {stepMode && (
+            <Line
+              points={[
+                toTuple(planePoint),
+                toTuple({
+                  x: planePoint.x + planeNormal.x,
+                  y: planePoint.y + planeNormal.y,
+                  z: planePoint.z + planeNormal.z,
+                }),
+              ]}
+              color="purple"
+            />
+          )}
         </>
       )}
     </>

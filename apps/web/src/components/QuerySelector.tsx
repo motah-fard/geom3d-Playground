@@ -6,19 +6,32 @@ export function QuerySelector() {
   const { queryType, setQueryType } = usePlaygroundStore();
 
   return (
-    <div className="mb-4 rounded-2xl border p-3">
-      <label className="mb-2 block text-sm font-medium">Query</label>
+    <div className="mb-4">
+      <label className="mb-1 block text-sm font-medium">
+        Select Query
+      </label>
+
       <select
         value={queryType}
         onChange={(e) =>
-          setQueryType(e.target.value as "project-point-to-plane" | "intersect-ray-plane")
+          setQueryType(e.target.value as any)
         }
         className="w-full rounded border px-3 py-2"
       >
-        <option value="project-point-to-plane">Project Point to Plane</option>
-        <option value="intersect-ray-plane">Intersect Ray with Plane</option>
+        <option value="project-point-to-plane">
+          Point → Plane Projection
+        </option>
+
+        <option value="intersect-ray-plane">
+          Ray → Plane Intersection
+        </option>
+
         <option value="closest-point-segment">
-          Closest Point to Segment
+          Closest Point → Segment
+        </option>
+
+        <option value="segment-segment">
+          Segment ↔ Segment Distance
         </option>
       </select>
     </div>

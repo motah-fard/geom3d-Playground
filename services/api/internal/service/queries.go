@@ -110,3 +110,13 @@ func (s *QueryService) ClosestPointSegment(
 
 	return closest, dist
 }
+func (s *QueryService) SegmentSegmentDistance(a1, a2, b1, b2 geom3d.Vec3) (geom3d.Vec3, geom3d.Vec3, float64) {
+	pA, pB := geom3d.ClosestPointsBetweenSegments(
+		geom3d.Segment3{A: a1, B: a2},
+		geom3d.Segment3{A: b1, B: b2},
+	)
+
+	dist := pA.Sub(pB).Norm()
+
+	return pA, pB, dist
+}

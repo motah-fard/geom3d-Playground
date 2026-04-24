@@ -17,6 +17,7 @@ export function ClosestPointSegmentScene() {
 
   return (
     <>
+      <axesHelper args={[5]} />
       {/* 🔴 draggable point */}
       <DraggablePoint
         position={point}

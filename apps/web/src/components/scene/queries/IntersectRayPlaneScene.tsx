@@ -47,6 +47,7 @@ export function IntersectRayPlaneScene() {
 
   return (
     <>
+      <axesHelper args={[5]} />
       {/* 🔴 draggable ray origin */}
       <DraggablePoint
         position={rayOrigin}

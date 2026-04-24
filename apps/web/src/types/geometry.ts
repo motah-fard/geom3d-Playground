@@ -68,3 +68,8 @@ export function toTuple(v?: Vec3): Vec3Tuple {
   if (!v) return [0, 0, 0]; // fallback instead of exploding
   return [v.x, v.y, v.z];
 }
+export type SegmentSegmentResponse = {
+  pointA: Vec3;
+  pointB: Vec3;
+  distance: number;
+};

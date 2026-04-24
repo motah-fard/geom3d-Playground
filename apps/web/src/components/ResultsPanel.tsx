@@ -7,9 +7,14 @@ export function ResultsPanel() {
     queryType,
     projectPointResult,
     rayPlaneResult,
-    error,
     segmentResult,
+    segmentSegmentResult,
+    error,
   } = usePlaygroundStore();
+
+  const copy = (data: any) => {
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+  };
 
   return (
     <div className="rounded-2xl border p-4">
@@ -22,7 +27,10 @@ export function ResultsPanel() {
         </div>
       )}
 
-      {/* 🟡 Empty states */}
+      {/* ======================= */}
+      {/* 🟡 EMPTY STATES */}
+      {/* ======================= */}
+
       {!error &&
         queryType === "project-point-to-plane" &&
         !projectPointResult && (
@@ -31,18 +39,37 @@ export function ResultsPanel() {
           </p>
         )}
 
-      {!error && queryType === "intersect-ray-plane" && !rayPlaneResult && (
-        <p className="text-sm text-neutral-500">
-          Run a ray-plane intersection query to see whether the ray hits the
-          plane.
-        </p>
-      )}
+      {!error &&
+        queryType === "intersect-ray-plane" &&
+        !rayPlaneResult && (
+          <p className="text-sm text-neutral-500">
+            Run a ray-plane intersection query.
+          </p>
+        )}
 
-      {/* 🟢 Project Point Result */}
+      {!error &&
+        queryType === "closest-point-segment" &&
+        !segmentResult && (
+          <p className="text-sm text-neutral-500">
+            Run a closest point query.
+          </p>
+        )}
+
+      {!error &&
+        queryType === "segment-segment" &&
+        !segmentSegmentResult && (
+          <p className="text-sm text-neutral-500">
+            Run a segment-segment distance query.
+          </p>
+        )}
+
+      {/* ======================= */}
+      {/* 🟢 PROJECT POINT */}
+      {/* ======================= */}
+
       {!error &&
         queryType === "project-point-to-plane" &&
-        projectPointResult &&
-        projectPointResult.projectedPoint && (
+        projectPointResult && (
           <div className="space-y-3 text-sm">
             <div>
               <div className="font-medium">Projected Point</div>
@@ -53,59 +80,128 @@ export function ResultsPanel() {
 
             <div>
               <div className="font-medium">Distance</div>
-              <p>{projectPointResult.distance}</p> {/* ✅ FIXED */}
+              <p>{projectPointResult.distance}</p>
             </div>
+
+            <div className="text-xs text-neutral-500">
+              distance = |(P − planePoint) · normal|
+            </div>
+
+            <button
+              onClick={() => copy(projectPointResult)}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Copy JSON
+            </button>
           </div>
         )}
-      {projectPointResult && !projectPointResult.projectedPoint && (
-        <p className="text-red-500 text-sm">Invalid response shape</p>
-      )}
 
-      {/* 🔵 Ray-Plane Result */}
-      {!error && queryType === "intersect-ray-plane" && rayPlaneResult && (
-        <div className="space-y-3 text-sm">
-          <div>
-            <div className="font-medium">Hit</div>
-            <p>{rayPlaneResult.hit ? "true" : "false"}</p>
-          </div>
+      {/* ======================= */}
+      {/* 🔵 RAY-PLANE */}
+      {/* ======================= */}
 
-          {rayPlaneResult.hit ? (
-            <>
-              <div>
-                <div className="font-medium">Intersection Point</div>
-                <pre className="mt-1 rounded bg-neutral-100 p-3">
-                  {JSON.stringify(rayPlaneResult.point, null, 2)}
-                </pre>
-              </div>
-
-              <div>
-                <div className="font-medium">t</div>
-                <p>{rayPlaneResult.t}</p>
-              </div>
-            </>
-          ) : (
-            <div className="text-sm text-red-600">
-              No intersection: ray is parallel to the plane or points away from
-              it.
+      {!error &&
+        queryType === "intersect-ray-plane" &&
+        rayPlaneResult && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">Hit</div>
+              <p>{rayPlaneResult.hit ? "true" : "false"}</p>
             </div>
-          )}
-        </div>
-      )}
-      {!error && queryType === "closest-point-segment" && segmentResult && (
-        <div className="space-y-3 text-sm">
-          <div>
-            <div className="font-medium">Closest Point</div>
-            <pre className="mt-1 rounded bg-neutral-100 p-3">
-              {JSON.stringify(segmentResult.point, null, 2)}
-            </pre>
-          </div>
 
-          <div>
-            <div className="font-medium">Distance</div>
-            <p>{segmentResult.distance}</p>
+            {rayPlaneResult.hit && (
+              <>
+                <div>
+                  <div className="font-medium">Intersection Point</div>
+                  <pre className="mt-1 rounded bg-neutral-100 p-3">
+                    {JSON.stringify(rayPlaneResult.point, null, 2)}
+                  </pre>
+                </div>
+
+                <div>
+                  <div className="font-medium">t</div>
+                  <p>{rayPlaneResult.t}</p>
+                </div>
+
+                <button
+                  onClick={() => copy(rayPlaneResult)}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Copy JSON
+                </button>
+              </>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+      {/* ======================= */}
+      {/* 🟣 POINT → SEGMENT */}
+      {/* ======================= */}
+
+      {!error &&
+        queryType === "closest-point-segment" &&
+        segmentResult && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">Closest Point</div>
+              <pre className="mt-1 rounded bg-neutral-100 p-3">
+                {JSON.stringify(segmentResult.point, null, 2)}
+              </pre>
+            </div>
+
+            <div>
+              <div className="font-medium">Distance</div>
+              <p>{segmentResult.distance}</p>
+            </div>
+
+            <button
+              onClick={() => copy(segmentResult)}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Copy JSON
+            </button>
+          </div>
+        )}
+
+      {/* ======================= */}
+      {/* 🔶 SEGMENT ↔ SEGMENT */}
+      {/* ======================= */}
+
+      {!error &&
+        queryType === "segment-segment" &&
+        segmentSegmentResult && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">Point A</div>
+              <pre className="mt-1 rounded bg-neutral-100 p-3">
+                {JSON.stringify(segmentSegmentResult.pointA, null, 2)}
+              </pre>
+            </div>
+
+            <div>
+              <div className="font-medium">Point B</div>
+              <pre className="mt-1 rounded bg-neutral-100 p-3">
+                {JSON.stringify(segmentSegmentResult.pointB, null, 2)}
+              </pre>
+            </div>
+
+            <div>
+              <div className="font-medium">Distance</div>
+              <p>{segmentSegmentResult.distance}</p>
+            </div>
+
+            <div className="text-xs text-neutral-500">
+              distance = ||P₁ - P₂|| (shortest distance between segments)
+            </div>
+
+            <button
+              onClick={() => copy(segmentSegmentResult)}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Copy JSON
+            </button>
+          </div>
+        )}
     </div>
   );
 }

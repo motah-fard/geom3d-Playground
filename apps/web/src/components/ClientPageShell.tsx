@@ -3,13 +3,16 @@
 import { IntersectRayPlaneForm } from "@/components/IntersectRayPlaneForm";
 import { ProjectPointToPlaneForm } from "@/components/ProjectPointToPlaneForm";
 import { ClosestPointSegmentForm } from "@/components/ClosestPointSegmentForm";
+import { SegmentSegmentForm } from "@/components/SegmentSegmentForm";
+
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { SceneCanvas } from "@/components/scene/SceneCanvas";
 import { usePlaygroundStore } from "@/store/playground-store";
 
 export function ClientPageShell() {
-  const { queryType, loadExample } = usePlaygroundStore();
+  const { queryType, loadExample, stepMode, setStepMode } =
+    usePlaygroundStore();
 
   return (
     <main className="min-h-screen bg-white p-6">
@@ -26,9 +29,21 @@ export function ClientPageShell() {
           
           {/* LEFT PANEL */}
           <section className="space-y-4">
+
+            {/* 🔽 Query selector */}
             <QuerySelector />
 
-            {/* Show examples ONLY for ray-plane */}
+            {/* 🔥 Step mode toggle (you forgot this existed) */}
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={stepMode}
+                onChange={(e) => setStepMode(e.target.checked)}
+              />
+              Step-by-step mode
+            </label>
+
+            {/* Examples ONLY for ray-plane */}
             {queryType === "intersect-ray-plane" && (
               <div className="flex gap-2">
                 <button
@@ -58,6 +73,10 @@ export function ClientPageShell() {
 
             {queryType === "closest-point-segment" && (
               <ClosestPointSegmentForm />
+            )}
+
+            {queryType === "segment-segment" && (
+              <SegmentSegmentForm />
             )}
           </section>
 

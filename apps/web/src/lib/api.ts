@@ -89,3 +89,24 @@ export async function closestPointSegment(
 
   return res.json();
 }
+export async function segmentSegmentDistance(payload: {
+  a1: Vec3;
+  a2: Vec3;
+  b1: Vec3;
+  b2: Vec3;
+}) {
+  const res = await fetch(
+    "http://localhost:8081/api/v1/queries/segment-segment",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("failed to compute segment-segment distance");
+  }
+
+  return res.json();
+}

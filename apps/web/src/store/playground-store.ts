@@ -3,12 +3,14 @@ import type {
   IntersectRayPlaneResponse,
   ProjectPointToPlaneResponse,
   Vec3,
+  SegmentSegmentResponse,
 } from "@/types/geometry";
 
 type QueryType =
   | "project-point-to-plane"
   | "intersect-ray-plane"
-  | "closest-point-segment";
+  | "closest-point-segment"
+  | "segment-segment";
 
 type SegmentResult = {
   point: Vec3;
@@ -18,6 +20,7 @@ type SegmentResult = {
 type PlaygroundState = {
   queryType: QueryType;
 
+  // 🔹 shared inputs
   point: Vec3;
   planePoint: Vec3;
   planeNormal: Vec3;
@@ -25,17 +28,27 @@ type PlaygroundState = {
   rayOrigin: Vec3;
   rayDir: Vec3;
 
+  // 🔹 single segment
   segmentA: Vec3;
   segmentB: Vec3;
 
-  // ✅ separated results (this fixes your bugs)
+  // 🔥 NEW: segment-segment inputs
+  segmentA1: Vec3;
+  segmentA2: Vec3;
+  segmentB1: Vec3;
+  segmentB2: Vec3;
+
+  // 🔹 results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
   segmentResult: SegmentResult | null;
+  segmentSegmentResult: SegmentSegmentResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
+  stepMode: boolean;
 
+  // 🔹 setters
   setQueryType: (queryType: QueryType) => void;
 
   setInputs: (payload: {
@@ -57,18 +70,23 @@ type PlaygroundState = {
     segmentB: Vec3;
   }) => void;
 
-  // ✅ setters per query
-  setProjectPointResult: (
-    result: ProjectPointToPlaneResponse | null
-  ) => void;
+  // 🔥 NEW
+  setSegmentSegmentInputs: (payload: {
+    a1: Vec3;
+    a2: Vec3;
+    b1: Vec3;
+    b2: Vec3;
+  }) => void;
 
-  setRayPlaneResult: (
-    result: IntersectRayPlaneResponse | null
-  ) => void;
-
+  setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
+  setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
   setSegmentResult: (result: SegmentResult | null) => void;
+  setSegmentSegmentResult: (
+    result: SegmentSegmentResponse | null
+  ) => void;
 
   setError: (error: string | null) => void;
+  setStepMode: (v: boolean) => void;
   setShouldAutoRun: (v: boolean) => void;
 
   loadExample: (type: "ray-plane-hit" | "ray-plane-miss") => void;
@@ -77,6 +95,7 @@ type PlaygroundState = {
 export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   queryType: "project-point-to-plane",
 
+  // 🔹 base inputs
   point: { x: 1, y: 2, z: 3 },
   planePoint: { x: 0, y: 0, z: 0 },
   planeNormal: { x: 0, y: 0, z: 1 },
@@ -87,13 +106,21 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   segmentA: { x: 0, y: 0, z: 0 },
   segmentB: { x: 3, y: 0, z: 0 },
 
-  // ✅ initialized properly
+  // 🔥 NEW defaults (important for scene rendering)
+  segmentA1: { x: 0, y: 0, z: 0 },
+  segmentA2: { x: 3, y: 0, z: 0 },
+  segmentB1: { x: 1, y: 2, z: 0 },
+  segmentB2: { x: 1, y: -2, z: 0 },
+
+  // 🔹 results
   projectPointResult: null,
   rayPlaneResult: null,
   segmentResult: null,
+  segmentSegmentResult: null,
 
   error: null,
   shouldAutoRun: false,
+  stepMode: false,
 
   setQueryType: (queryType) =>
     set({
@@ -101,6 +128,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       projectPointResult: null,
       rayPlaneResult: null,
       segmentResult: null,
+      segmentSegmentResult: null,
       error: null,
     }),
 
@@ -132,15 +160,28 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
-  // ✅ correct setters
+  // 🔥 CRITICAL FIX
+  setSegmentSegmentInputs: ({ a1, a2, b1, b2 }) =>
+    set({
+      segmentA1: a1,
+      segmentA2: a2,
+      segmentB1: b1,
+      segmentB2: b2,
+      segmentSegmentResult: null,
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
-  set({ projectPointResult: result, error: null }),
+    set({ projectPointResult: result, error: null }),
 
-  setRayPlaneResult: (rayPlaneResult) =>
-    set({ rayPlaneResult, error: null }),
+  setRayPlaneResult: (result) =>
+    set({ rayPlaneResult: result, error: null }),
 
-  setSegmentResult: (segmentResult) =>
-    set({ segmentResult, error: null }),
+  setSegmentResult: (result) =>
+    set({ segmentResult: result, error: null }),
+
+  setSegmentSegmentResult: (result) =>
+    set({ segmentSegmentResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -148,8 +189,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       projectPointResult: null,
       rayPlaneResult: null,
       segmentResult: null,
+      segmentSegmentResult: null,
     }),
 
+  setStepMode: (v) => set({ stepMode: v }),
   setShouldAutoRun: (v) => set({ shouldAutoRun: v }),
 
   loadExample: (type) => {
@@ -164,6 +207,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         error: null,
         projectPointResult: null,
         rayPlaneResult: null,
+        segmentSegmentResult: null,
       });
     }
 
@@ -178,6 +222,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         error: null,
         projectPointResult: null,
         rayPlaneResult: null,
+        segmentSegmentResult: null,
       });
     }
   },

@@ -111,3 +111,62 @@ func (h *Handler) IntersectRayPlane(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, resp)
 }
+func (h *Handler) SegmentSegmentDistance(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		A1 struct {
+			X float64 `json:"x"`
+			Y float64 `json:"y"`
+			Z float64 `json:"z"`
+		} `json:"a1"`
+		A2 struct {
+			X float64 `json:"x"`
+			Y float64 `json:"y"`
+			Z float64 `json:"z"`
+		} `json:"a2"`
+		B1 struct {
+			X float64 `json:"x"`
+			Y float64 `json:"y"`
+			Z float64 `json:"z"`
+		} `json:"b1"`
+		B2 struct {
+			X float64 `json:"x"`
+			Y float64 `json:"y"`
+			Z float64 `json:"z"`
+		} `json:"b2"`
+	}
+
+	var req request
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	a1 := geom3d.Vec3{X: req.A1.X, Y: req.A1.Y, Z: req.A1.Z}
+	a2 := geom3d.Vec3{X: req.A2.X, Y: req.A2.Y, Z: req.A2.Z}
+	b1 := geom3d.Vec3{X: req.B1.X, Y: req.B1.Y, Z: req.B1.Z}
+	b2 := geom3d.Vec3{X: req.B2.X, Y: req.B2.Y, Z: req.B2.Z}
+
+	pA, pB := geom3d.ClosestPointsBetweenSegments(
+		geom3d.Segment3{A: a1, B: a2},
+		geom3d.Segment3{A: b1, B: b2},
+	)
+
+	dist := pA.Sub(pB).Norm()
+
+	resp := map[string]interface{}{
+		"pointA": map[string]float64{
+			"x": pA.X,
+			"y": pA.Y,
+			"z": pA.Z,
+		},
+		"pointB": map[string]float64{
+			"x": pB.X,
+			"y": pB.Y,
+			"z": pB.Z,
+		},
+		"distance": dist,
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
