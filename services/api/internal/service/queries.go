@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"math"
 
 	"github.com/motah-fard/geom3d"
 	"github.com/motah-fard/geom3d-playground-api/internal/domain"
@@ -11,6 +12,14 @@ type QueryService struct{}
 
 func NewQueryService() *QueryService {
 	return &QueryService{}
+}
+
+func toVec3(v domain.Vec3DTO) geom3d.Vec3 {
+	return geom3d.Vec3{X: v.X, Y: v.Y, Z: v.Z}
+}
+
+func fromVec3(v geom3d.Vec3) domain.Vec3DTO {
+	return domain.Vec3DTO{X: v.X, Y: v.Y, Z: v.Z}
 }
 
 func (s *QueryService) ProjectPointToPlane(
@@ -36,13 +45,6 @@ func (s *QueryService) ProjectPointToPlane(
 	}, nil
 }
 
-func toVec3(v domain.Vec3DTO) geom3d.Vec3 {
-	return geom3d.Vec3{X: v.X, Y: v.Y, Z: v.Z}
-}
-
-func fromVec3(v geom3d.Vec3) domain.Vec3DTO {
-	return domain.Vec3DTO{X: v.X, Y: v.Y, Z: v.Z}
-}
 func (s *QueryService) IntersectRayPlane(
 	req domain.IntersectRayPlaneRequest,
 ) (domain.IntersectRayPlaneResponse, error) {
@@ -77,46 +79,116 @@ func (s *QueryService) IntersectRayPlane(
 		T:     t,
 	}, nil
 }
+
+// rayParameterAtPoint recovers t such that r.PointAt(t) == p, given p is
+// already known to lie on the ray. It divides using whichever axis of
+// r.Dir has the largest magnitude, since dividing by a small component is
+// numerically unstable even when that component is technically non-zero.
 func rayParameterAtPoint(r geom3d.Ray3, p geom3d.Vec3) float64 {
-	const eps = 1e-12
+	ax, ay, az := math.Abs(r.Dir.X), math.Abs(r.Dir.Y), math.Abs(r.Dir.Z)
 
-	if abs(r.Dir.X) > eps {
+	switch {
+	case ax >= ay && ax >= az:
 		return (p.X - r.Origin.X) / r.Dir.X
-	}
-	if abs(r.Dir.Y) > eps {
+	case ay >= az:
 		return (p.Y - r.Origin.Y) / r.Dir.Y
+	default:
+		return (p.Z - r.Origin.Z) / r.Dir.Z
 	}
-	return (p.Z - r.Origin.Z) / r.Dir.Z
 }
 
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
 func (s *QueryService) ClosestPointSegment(
-	point geom3d.Vec3,
-	a geom3d.Vec3,
-	b geom3d.Vec3,
-) (geom3d.Vec3, float64) {
+	req domain.ClosestPointSegmentRequest,
+) (domain.ClosestPointSegmentResponse, error) {
 	seg := geom3d.Segment3{
-		A: a,
-		B: b,
+		A: toVec3(req.Segment.A),
+		B: toVec3(req.Segment.B),
 	}
 
+	if seg.IsDegenerate() {
+		return domain.ClosestPointSegmentResponse{}, errors.New("segment endpoints must not coincide")
+	}
+
+	point := toVec3(req.Point)
 	closest := geom3d.ClosestPointOnSegment(point, seg)
-	dist := point.Sub(closest).Norm()
+	distance := point.Distance(closest)
 
-	return closest, dist
+	return domain.ClosestPointSegmentResponse{
+		Point:    fromVec3(closest),
+		Distance: distance,
+	}, nil
 }
-func (s *QueryService) SegmentSegmentDistance(a1, a2, b1, b2 geom3d.Vec3) (geom3d.Vec3, geom3d.Vec3, float64) {
-	pA, pB := geom3d.ClosestPointsBetweenSegments(
-		geom3d.Segment3{A: a1, B: a2},
-		geom3d.Segment3{A: b1, B: b2},
-	)
 
-	dist := pA.Sub(pB).Norm()
+func (s *QueryService) SegmentSegmentDistance(
+	req domain.SegmentSegmentRequest,
+) (domain.SegmentSegmentResponse, error) {
+	segA := geom3d.Segment3{A: toVec3(req.A1), B: toVec3(req.A2)}
+	segB := geom3d.Segment3{A: toVec3(req.B1), B: toVec3(req.B2)}
 
-	return pA, pB, dist
+	if segA.IsDegenerate() || segB.IsDegenerate() {
+		return domain.SegmentSegmentResponse{}, errors.New("segment endpoints must not coincide")
+	}
+
+	pointA, pointB := geom3d.ClosestPointsBetweenSegments(segA, segB)
+	distance := pointA.Distance(pointB)
+
+	return domain.SegmentSegmentResponse{
+		PointA:   fromVec3(pointA),
+		PointB:   fromVec3(pointB),
+		Distance: distance,
+	}, nil
+}
+
+func toAABB(v domain.AABBDTO) geom3d.AABB {
+	return geom3d.AABB{Min: toVec3(v.Min), Max: toVec3(v.Max)}
+}
+
+func (s *QueryService) IntersectRayAABB(
+	req domain.IntersectRayAABBRequest,
+) (domain.IntersectRayAABBResponse, error) {
+	ray := geom3d.Ray3{
+		Origin: toVec3(req.Ray.Origin),
+		Dir:    toVec3(req.Ray.Dir),
+	}
+	box := toAABB(req.AABB)
+
+	if !ray.IsValid() {
+		return domain.IntersectRayAABBResponse{}, errors.New("ray direction must be non-zero")
+	}
+	if !box.IsValid() {
+		return domain.IntersectRayAABBResponse{}, errors.New("aabb min must be less than or equal to max on every axis")
+	}
+
+	hit, tMin, tMax := geom3d.IntersectRayAABB(ray, box)
+
+	var point geom3d.Vec3
+	if hit {
+		point = ray.PointAt(tMin)
+	}
+
+	return domain.IntersectRayAABBResponse{
+		Hit:   hit,
+		TMin:  tMin,
+		TMax:  tMax,
+		Point: fromVec3(point),
+	}, nil
+}
+
+func (s *QueryService) ClosestPointAABB(
+	req domain.ClosestPointAABBRequest,
+) (domain.ClosestPointAABBResponse, error) {
+	box := toAABB(req.AABB)
+
+	if !box.IsValid() {
+		return domain.ClosestPointAABBResponse{}, errors.New("aabb min must be less than or equal to max on every axis")
+	}
+
+	point := toVec3(req.Point)
+	closest := geom3d.ClosestPointOnAABB(point, box)
+	distance := point.Distance(closest)
+
+	return domain.ClosestPointAABBResponse{
+		Point:    fromVec3(closest),
+		Distance: distance,
+	}, nil
 }
