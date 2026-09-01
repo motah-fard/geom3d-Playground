@@ -1,5 +1,6 @@
 "use client";
 
+import type { QueryType } from "@/types/geometry";
 import { usePlaygroundStore } from "@/store/playground-store";
 
 export function QuerySelector() {
@@ -14,7 +15,7 @@ export function QuerySelector() {
       <select
         value={queryType}
         onChange={(e) =>
-          setQueryType(e.target.value as any)
+          setQueryType(e.target.value as QueryType)
         }
         className="w-full rounded border px-3 py-2"
       >
@@ -32,6 +33,14 @@ export function QuerySelector() {
 
         <option value="segment-segment">
           Segment ↔ Segment Distance
+        </option>
+
+        <option value="intersect-ray-aabb">
+          Ray → Box Intersection
+        </option>
+
+        <option value="closest-point-aabb">
+          Closest Point → Box
         </option>
       </select>
     </div>

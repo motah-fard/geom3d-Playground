@@ -7,6 +7,8 @@ import { PointToPlaneScene } from "@/components/scene/queries/PointToPlaneScene"
 import { IntersectRayPlaneScene } from "@/components/scene/queries/IntersectRayPlaneScene";
 import { ClosestPointSegmentScene } from "@/components/scene/queries/ClosestPointSegmentScene";
 import { SegmentSegmentScene } from "@/components/scene/queries/SegmentSegmentScene";
+import { IntersectRayAABBScene } from "@/components/scene/queries/IntersectRayAABBScene";
+import { ClosestPointAABBScene } from "@/components/scene/queries/ClosestPointAABBScene";
 
 export function SceneCanvas() {
   const { queryType } = usePlaygroundStore();
@@ -26,6 +28,8 @@ export function SceneCanvas() {
         {queryType === "intersect-ray-plane" && <IntersectRayPlaneScene />}
         {queryType === "closest-point-segment" && <ClosestPointSegmentScene />}
         {queryType === "segment-segment" && <SegmentSegmentScene />}
+        {queryType === "intersect-ray-aabb" && <IntersectRayAABBScene />}
+        {queryType === "closest-point-aabb" && <ClosestPointAABBScene />}
       </Canvas>
     </div>
   );

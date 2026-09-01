@@ -9,10 +9,12 @@ export function ResultsPanel() {
     rayPlaneResult,
     segmentResult,
     segmentSegmentResult,
+    rayAABBResult,
+    closestPointAABBResult,
     error,
   } = usePlaygroundStore();
 
-  const copy = (data: any) => {
+  const copy = (data: unknown) => {
     navigator.clipboard.writeText(JSON.stringify(data, null, 2));
   };
 
@@ -60,6 +62,22 @@ export function ResultsPanel() {
         !segmentSegmentResult && (
           <p className="text-sm text-neutral-500">
             Run a segment-segment distance query.
+          </p>
+        )}
+
+      {!error &&
+        queryType === "intersect-ray-aabb" &&
+        !rayAABBResult && (
+          <p className="text-sm text-neutral-500">
+            Run a ray-box intersection query.
+          </p>
+        )}
+
+      {!error &&
+        queryType === "closest-point-aabb" &&
+        !closestPointAABBResult && (
+          <p className="text-sm text-neutral-500">
+            Run a closest-point-to-box query.
           </p>
         )}
 
@@ -196,6 +214,79 @@ export function ResultsPanel() {
 
             <button
               onClick={() => copy(segmentSegmentResult)}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Copy JSON
+            </button>
+          </div>
+        )}
+
+      {/* ======================= */}
+      {/* RAY → BOX */}
+      {/* ======================= */}
+
+      {!error &&
+        queryType === "intersect-ray-aabb" &&
+        rayAABBResult && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">Hit</div>
+              <p>{rayAABBResult.hit ? "true" : "false"}</p>
+            </div>
+
+            {rayAABBResult.hit && (
+              <>
+                <div>
+                  <div className="font-medium">Entry Point</div>
+                  <pre className="mt-1 rounded bg-neutral-100 p-3">
+                    {JSON.stringify(rayAABBResult.point, null, 2)}
+                  </pre>
+                </div>
+
+                <div>
+                  <div className="font-medium">tMin / tMax</div>
+                  <p>
+                    {rayAABBResult.tMin} / {rayAABBResult.tMax}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => copy(rayAABBResult)}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Copy JSON
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+      {/* ======================= */}
+      {/* POINT → BOX */}
+      {/* ======================= */}
+
+      {!error &&
+        queryType === "closest-point-aabb" &&
+        closestPointAABBResult && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">Closest Point</div>
+              <pre className="mt-1 rounded bg-neutral-100 p-3">
+                {JSON.stringify(closestPointAABBResult.point, null, 2)}
+              </pre>
+            </div>
+
+            <div>
+              <div className="font-medium">Distance</div>
+              <p>{closestPointAABBResult.distance}</p>
+            </div>
+
+            <div className="text-xs text-neutral-500">
+              distance is 0 if the point lies inside the box
+            </div>
+
+            <button
+              onClick={() => copy(closestPointAABBResult)}
               className="text-xs text-blue-600 hover:underline"
             >
               Copy JSON

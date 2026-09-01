@@ -86,7 +86,7 @@ export function IntersectRayPlaneScene() {
         <>
           <Sphere
             args={[0.25, 32, 32]}
-            position={rayEnd}
+            position={toTuple(rayPlaneResult.point)}
           >
             <meshStandardMaterial color="blue" depthTest depthWrite />
           </Sphere>

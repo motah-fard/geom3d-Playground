@@ -24,6 +24,16 @@ export type Ray = {
   dir: Vec3;
 };
 
+export type Segment = {
+  a: Vec3;
+  b: Vec3;
+};
+
+export type AABB = {
+  min: Vec3;
+  max: Vec3;
+};
+
 // =======================
 // Requests
 // =======================
@@ -36,6 +46,28 @@ export type ProjectPointToPlaneRequest = {
 export type IntersectRayPlaneRequest = {
   ray: Ray;
   plane: Plane;
+};
+
+export type ClosestPointSegmentRequest = {
+  point: Vec3;
+  segment: Segment;
+};
+
+export type SegmentSegmentRequest = {
+  a1: Vec3;
+  a2: Vec3;
+  b1: Vec3;
+  b2: Vec3;
+};
+
+export type IntersectRayAABBRequest = {
+  ray: Ray;
+  aabb: AABB;
+};
+
+export type ClosestPointAABBRequest = {
+  point: Vec3;
+  aabb: AABB;
 };
 
 // =======================
@@ -73,3 +105,31 @@ export type SegmentSegmentResponse = {
   pointB: Vec3;
   distance: number;
 };
+
+export type ClosestPointSegmentResponse = {
+  point: Vec3;
+  distance: number;
+};
+
+export type IntersectRayAABBResponse = {
+  hit: boolean;
+  tMin: number;
+  tMax: number;
+  point: Vec3;
+};
+
+export type ClosestPointAABBResponse = {
+  point: Vec3;
+  distance: number;
+};
+
+// The full set of query types the playground supports. Kept here (rather
+// than inline in the store) so it can be imported anywhere a properly
+// typed QueryType is needed instead of casting through `any`.
+export type QueryType =
+  | "project-point-to-plane"
+  | "intersect-ray-plane"
+  | "closest-point-segment"
+  | "segment-segment"
+  | "intersect-ray-aabb"
+  | "closest-point-aabb";

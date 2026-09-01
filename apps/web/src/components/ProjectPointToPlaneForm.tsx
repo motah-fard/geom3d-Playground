@@ -5,6 +5,7 @@ import { useForm, type UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { projectPointToPlane } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
+import { useCallback, useEffect } from "react";
 
 const vec3Schema = z.object({
   x: z.coerce.number(),
@@ -63,11 +64,14 @@ export function ProjectPointToPlaneForm() {
     setProjectPointResult,
     setRayPlaneResult,
     setError,
+    shouldAutoRun,
+    setShouldAutoRun,
   } = usePlaygroundStore();
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
@@ -78,33 +82,52 @@ export function ProjectPointToPlaneForm() {
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
-    setInputs(values);
-    setError(null);
-    setRayPlaneResult(null);
-    setProjectPointResult(null);
+  // Keep the form fields in sync when a drag in the scene updates the
+  // store directly (this was previously missing here, unlike every other
+  // query's form, so dragging the point never updated the displayed
+  // coordinates or re-ran the query).
+  useEffect(() => {
+    reset({ point, planePoint, planeNormal });
+  }, [point, planePoint, planeNormal, reset]);
 
-    try {
-      const response = await projectPointToPlane({
-        point: values.point,
-        plane: {
-          point: values.planePoint,
-          normal: values.planeNormal,
-        },
-      });
-
-      setProjectPointResult({
-        projectedPoint: response.projectedPoint, 
-        distance: response.distance,
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Something went wrong";
-
-      setError(message);
+  const onSubmit = useCallback(
+    async (values: FormValues) => {
+      setInputs(values);
+      setError(null);
+      setRayPlaneResult(null);
       setProjectPointResult(null);
-    }
-  };
+
+      try {
+        const response = await projectPointToPlane({
+          point: values.point,
+          plane: {
+            point: values.planePoint,
+            normal: values.planeNormal,
+          },
+        });
+
+        setProjectPointResult({
+          projectedPoint: response.projectedPoint,
+          distance: response.distance,
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Something went wrong";
+
+        setError(message);
+        setProjectPointResult(null);
+      }
+    },
+    [setInputs, setError, setRayPlaneResult, setProjectPointResult]
+  );
+
+  // Auto-run when a drag updates the inputs.
+  useEffect(() => {
+    if (!shouldAutoRun) return;
+
+    handleSubmit(onSubmit)();
+    setShouldAutoRun(false);
+  }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -5,7 +5,7 @@ import { useForm, type UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { closestPointSegment } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 const vec3Schema = z.object({
   x: z.coerce.number(),
@@ -53,13 +53,15 @@ export function ClosestPointSegmentForm() {
     setError,
     setProjectPointResult,
     setRayPlaneResult,
+    shouldAutoRun,
+    setShouldAutoRun,
   } = usePlaygroundStore();
 
- const {
-  register,
-  handleSubmit,
-  reset,
-  formState: { isSubmitting },
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -68,64 +70,54 @@ export function ClosestPointSegmentForm() {
       segmentB,
     },
   });
+
   useEffect(() => {
-  reset({
-    point,
-    segmentA,
-    segmentB,
-  });
-}, [point, segmentA, segmentB, reset]);
+    reset({
+      point,
+      segmentA,
+      segmentB,
+    });
+  }, [point, segmentA, segmentB, reset]);
 
-  const onSubmit = async (values: FormValues) => {
-    setSegmentInputs(values);
+  const onSubmit = useCallback(
+    async (values: FormValues) => {
+      setSegmentInputs(values);
 
-    // clear other results so UI doesn't mix things
-    setProjectPointResult(null);
-    setRayPlaneResult(null);
-    setError(null);
+      // clear other results so UI doesn't mix things
+      setProjectPointResult(null);
+      setRayPlaneResult(null);
+      setError(null);
 
-    try {
-      const response = await closestPointSegment({
-        point: values.point,
-        segment: {
-          a: values.segmentA,
-          b: values.segmentB,
-        },
-      });
+      try {
+        const response = await closestPointSegment({
+          point: values.point,
+          segment: {
+            a: values.segmentA,
+            b: values.segmentB,
+          },
+        });
 
-      setSegmentResult(response);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Something went wrong";
-      setError(message);
-      setSegmentResult(null);
-    }
-  };
-    const { shouldAutoRun, setShouldAutoRun } = usePlaygroundStore();
+        setSegmentResult(response);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Something went wrong";
+        setError(message);
+        setSegmentResult(null);
+      }
+    },
+    [setSegmentInputs, setProjectPointResult, setRayPlaneResult, setError, setSegmentResult]
+  );
 
-    useEffect(() => {
-        if (!shouldAutoRun) return;
+  // Auto-run when a drag (or an example) updates the inputs, reusing the
+  // exact same submit path as a manual form submission rather than
+  // duplicating the API call and its error handling.
+  useEffect(() => {
+    if (!shouldAutoRun) return;
 
-        const run = async () => {
-            try {
-            const res = await closestPointSegment({
-                point,
-                segment: {
-                a: segmentA,
-                b: segmentB,
-                },
-            });
+    handleSubmit(onSubmit)();
+    setShouldAutoRun(false);
+  }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
 
-            setSegmentResult(res);
-            } catch (err: any) {
-            setError(err.message);
-            } finally {
-            setShouldAutoRun(false);
-            }
-        };
-
-  run();
-}, [shouldAutoRun]);
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Vec3Fields register={register} prefix="point" label="Point" />

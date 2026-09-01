@@ -58,7 +58,6 @@ function Vec3Fields({
 export function SegmentSegmentForm() {
   const {
     segmentA,
-    segmentB,
     setSegmentSegmentResult,
     setError,
     setSegmentSegmentInputs,

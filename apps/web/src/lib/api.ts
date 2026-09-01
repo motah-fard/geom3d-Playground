@@ -1,51 +1,33 @@
 import type {
-  ProjectPointToPlaneRequest,
-  ProjectPointToPlaneResponse,
-  Vec3,
-} from "@/types/geometry";
-
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export async function projectPointToPlane(
-  input: ProjectPointToPlaneRequest
-): Promise<ProjectPointToPlaneResponse> {
-  const res = await fetch(
-    `${API_BASE_URL}/api/v1/queries/project-point-to-plane`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(input),
-    }
-  );
-
-  if (!res.ok) {
-    const maybeJson = await res.json().catch(() => null);
-    throw new Error(maybeJson?.error ?? "Request failed");
-  }
-
-  return res.json();
-}
-import type {
+  ClosestPointAABBRequest,
+  ClosestPointAABBResponse,
+  ClosestPointSegmentRequest,
+  ClosestPointSegmentResponse,
+  IntersectRayAABBRequest,
+  IntersectRayAABBResponse,
   IntersectRayPlaneRequest,
   IntersectRayPlaneResponse,
+  ProjectPointToPlaneRequest,
+  ProjectPointToPlaneResponse,
+  SegmentSegmentRequest,
+  SegmentSegmentResponse,
 } from "@/types/geometry";
 
-export async function intersectRayPlane(
-  input: IntersectRayPlaneRequest
-): Promise<IntersectRayPlaneResponse> {
-  const res = await fetch(
-    `${API_BASE_URL}/api/v1/queries/intersect-ray-plane`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(input),
-    }
-  );
+// Falls back to the local backend's default port so the app works out of
+// the box without requiring a .env.local — see .env.local.example for how
+// to point at a different backend.
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8081";
+
+async function postQuery<TRequest, TResponse>(
+  path: string,
+  payload: TRequest
+): Promise<TResponse> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
   if (!res.ok) {
     const maybeJson = await res.json().catch(() => null);
@@ -55,58 +37,44 @@ export async function intersectRayPlane(
   return res.json();
 }
 
-type ClosestPointSegmentRequest = {
-  point: Vec3;
-  segment: {
-    a: Vec3;
-    b: Vec3;
-  };
-};
-
-type ClosestPointSegmentResponse = {
-  point: Vec3;
-  distance: number;
-};
-
-export async function closestPointSegment(
-  payload: ClosestPointSegmentRequest
-): Promise<ClosestPointSegmentResponse> {
-  const res = await fetch(
-    `${API_BASE_URL}/api/v1/queries/closest-point-segment`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }
+export function projectPointToPlane(input: ProjectPointToPlaneRequest) {
+  return postQuery<ProjectPointToPlaneRequest, ProjectPointToPlaneResponse>(
+    "/api/v1/queries/project-point-to-plane",
+    input
   );
-
-  if (!res.ok) {
-    const maybeJson = await res.json().catch(() => null);
-    throw new Error(maybeJson?.error ?? "Request failed");
-  }
-
-  return res.json();
 }
-export async function segmentSegmentDistance(payload: {
-  a1: Vec3;
-  a2: Vec3;
-  b1: Vec3;
-  b2: Vec3;
-}) {
-  const res = await fetch(
-    "http://localhost:8081/api/v1/queries/segment-segment",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
+
+export function intersectRayPlane(input: IntersectRayPlaneRequest) {
+  return postQuery<IntersectRayPlaneRequest, IntersectRayPlaneResponse>(
+    "/api/v1/queries/intersect-ray-plane",
+    input
   );
+}
 
-  if (!res.ok) {
-    throw new Error("failed to compute segment-segment distance");
-  }
+export function closestPointSegment(payload: ClosestPointSegmentRequest) {
+  return postQuery<ClosestPointSegmentRequest, ClosestPointSegmentResponse>(
+    "/api/v1/queries/closest-point-segment",
+    payload
+  );
+}
 
-  return res.json();
+export function segmentSegmentDistance(payload: SegmentSegmentRequest) {
+  return postQuery<SegmentSegmentRequest, SegmentSegmentResponse>(
+    "/api/v1/queries/segment-segment",
+    payload
+  );
+}
+
+export function intersectRayAABB(payload: IntersectRayAABBRequest) {
+  return postQuery<IntersectRayAABBRequest, IntersectRayAABBResponse>(
+    "/api/v1/queries/intersect-ray-aabb",
+    payload
+  );
+}
+
+export function closestPointAABB(payload: ClosestPointAABBRequest) {
+  return postQuery<ClosestPointAABBRequest, ClosestPointAABBResponse>(
+    "/api/v1/queries/closest-point-aabb",
+    payload
+  );
 }

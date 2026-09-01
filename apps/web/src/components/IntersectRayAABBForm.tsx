@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { useForm, type UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { intersectRayPlane } from "@/lib/api";
+import { intersectRayAABB } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { useCallback, useEffect } from "react";
 
@@ -16,8 +16,8 @@ const vec3Schema = z.object({
 const formSchema = z.object({
   rayOrigin: vec3Schema,
   rayDir: vec3Schema,
-  planePoint: vec3Schema,
-  planeNormal: vec3Schema,
+  aabbMin: vec3Schema,
+  aabbMax: vec3Schema,
 });
 
 type FormInput = z.input<typeof formSchema>;
@@ -29,7 +29,7 @@ function Vec3Fields({
   label,
 }: {
   register: UseFormRegister<FormInput>;
-  prefix: "rayOrigin" | "rayDir" | "planePoint" | "planeNormal";
+  prefix: "rayOrigin" | "rayDir" | "aabbMin" | "aabbMax";
   label: string;
 }) {
   return (
@@ -44,15 +44,14 @@ function Vec3Fields({
   );
 }
 
-export function IntersectRayPlaneForm() {
+export function IntersectRayAABBForm() {
   const {
     rayOrigin,
     rayDir,
-    planePoint,
-    planeNormal,
-    setRayInputs,
-    setRayPlaneResult,
-    setProjectPointResult,
+    aabbMin,
+    aabbMax,
+    setRayAABBInputs,
+    setRayAABBResult,
     setError,
     shouldAutoRun,
     setShouldAutoRun,
@@ -68,52 +67,37 @@ export function IntersectRayPlaneForm() {
     defaultValues: {
       rayOrigin,
       rayDir,
-      planePoint,
-      planeNormal,
+      aabbMin,
+      aabbMax,
     },
-    
   });
 
-  // 🔁 Sync form when store values change (important for examples)
   useEffect(() => {
-    reset({
-      rayOrigin,
-      rayDir,
-      planePoint,
-      planeNormal,
-    });
-  }, [rayOrigin, rayDir, planePoint, planeNormal, reset]);
+    reset({ rayOrigin, rayDir, aabbMin, aabbMax });
+  }, [rayOrigin, rayDir, aabbMin, aabbMax, reset]);
 
   const onSubmit = useCallback(
     async (values: FormValues) => {
-      setRayInputs(values);
+      setRayAABBInputs(values);
       setError(null);
-      setProjectPointResult(null);
 
       try {
-        const response = await intersectRayPlane({
-          ray: {
-            origin: values.rayOrigin,
-            dir: values.rayDir,
-          },
-          plane: {
-            point: values.planePoint,
-            normal: values.planeNormal,
-          },
+        const response = await intersectRayAABB({
+          ray: { origin: values.rayOrigin, dir: values.rayDir },
+          aabb: { min: values.aabbMin, max: values.aabbMax },
         });
 
-        setRayPlaneResult(response);
+        setRayAABBResult(response);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Something went wrong";
         setError(message);
-        setRayPlaneResult(null);
+        setRayAABBResult(null);
       }
     },
-    [setRayInputs, setError, setProjectPointResult, setRayPlaneResult]
+    [setRayAABBInputs, setError, setRayAABBResult]
   );
 
-  // Auto-run when an example is loaded (or a drag updates the inputs).
   useEffect(() => {
     if (!shouldAutoRun) return;
 
@@ -125,15 +109,15 @@ export function IntersectRayPlaneForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Vec3Fields register={register} prefix="rayOrigin" label="Ray Origin" />
       <Vec3Fields register={register} prefix="rayDir" label="Ray Direction" />
-      <Vec3Fields register={register} prefix="planePoint" label="Plane Point" />
-      <Vec3Fields register={register} prefix="planeNormal" label="Plane Normal" />
+      <Vec3Fields register={register} prefix="aabbMin" label="Box Min" />
+      <Vec3Fields register={register} prefix="aabbMax" label="Box Max" />
 
       <button
         type="submit"
         disabled={isSubmitting}
         className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
       >
-        {isSubmitting ? "Running..." : "Intersect Ray with Plane"}
+        {isSubmitting ? "Running..." : "Intersect Ray with Box"}
       </button>
     </form>
   );

@@ -4,6 +4,7 @@ import { Line, Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { toTuple } from "@/types/geometry";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { segmentSegmentDistance } from "@/lib/api";
 import { useEffect } from "react";
 
 export function SegmentSegmentScene() {
@@ -15,39 +16,48 @@ export function SegmentSegmentScene() {
     segmentSegmentResult,
     setShouldAutoRun,
     setSegmentSegmentInputs,
+    setSegmentSegmentResult,
+    setError,
     shouldAutoRun,
   } = usePlaygroundStore();
+
+  // Reuses the same API client function as SegmentSegmentForm's manual
+  // submit, rather than a separate raw fetch with its own hardcoded
+  // backend URL.
   useEffect(() => {
     if (!shouldAutoRun) return;
 
     const run = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:8081/api/v1/queries/segment-segment",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              a1: segmentA1,
-              a2: segmentA2,
-              b1: segmentB1,
-              b2: segmentB2,
-            }),
-          },
-        );
+        const data = await segmentSegmentDistance({
+          a1: segmentA1,
+          a2: segmentA2,
+          b1: segmentB1,
+          b2: segmentB2,
+        });
 
-        const data = await res.json();
-
-        usePlaygroundStore.getState().setSegmentSegmentResult(data);
-      } catch (err: any) {
-        usePlaygroundStore.getState().setError(err.message);
+        setSegmentSegmentResult(data);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Something went wrong";
+        setError(message);
       } finally {
         setShouldAutoRun(false);
       }
     };
 
     run();
-  }, [shouldAutoRun, segmentA1, segmentA2, segmentB1, segmentB2]);
+  }, [
+    shouldAutoRun,
+    segmentA1,
+    segmentA2,
+    segmentB1,
+    segmentB2,
+    setSegmentSegmentResult,
+    setError,
+    setShouldAutoRun,
+  ]);
+
   return (
     <>
       {/* 🔵 Segment A */}
