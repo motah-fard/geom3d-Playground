@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { IntersectRayPlaneForm } from "@/components/IntersectRayPlaneForm";
 import { ProjectPointToPlaneForm } from "@/components/ProjectPointToPlaneForm";
 import { ClosestPointSegmentForm } from "@/components/ClosestPointSegmentForm";
@@ -36,7 +37,7 @@ export function ClientPageShell() {
       <header className="border-b border-white/5 bg-slate-950/45 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 font-mono text-sm font-black text-cyan-200">G³</div>
+            <Image src="/logo-mark.png" alt="geom3d" width={40} height={40} className="h-10 w-10 object-contain" priority />
             <div>
               <h1 className="text-base font-bold tracking-tight sm:text-lg">geom3d Playground</h1>
               <p className="hidden text-xs text-slate-500 sm:block">Interactive spatial reasoning lab</p>
