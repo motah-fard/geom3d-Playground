@@ -4,8 +4,7 @@ import { Line, Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { toTuple } from "@/types/geometry";
 import { DraggablePoint } from "../primitives/DraggablePoint";
-import { segmentSegmentDistance } from "@/lib/api";
-import { useEffect } from "react";
+import { MeasurementLine } from "../primitives/MeasurementLine";
 
 export function SegmentSegmentScene() {
   const {
@@ -16,47 +15,8 @@ export function SegmentSegmentScene() {
     segmentSegmentResult,
     setShouldAutoRun,
     setSegmentSegmentInputs,
-    setSegmentSegmentResult,
-    setError,
-    shouldAutoRun,
+    objectLabels,
   } = usePlaygroundStore();
-
-  // Reuses the same API client function as SegmentSegmentForm's manual
-  // submit, rather than a separate raw fetch with its own hardcoded
-  // backend URL.
-  useEffect(() => {
-    if (!shouldAutoRun) return;
-
-    const run = async () => {
-      try {
-        const data = await segmentSegmentDistance({
-          a1: segmentA1,
-          a2: segmentA2,
-          b1: segmentB1,
-          b2: segmentB2,
-        });
-
-        setSegmentSegmentResult(data);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Something went wrong";
-        setError(message);
-      } finally {
-        setShouldAutoRun(false);
-      }
-    };
-
-    run();
-  }, [
-    shouldAutoRun,
-    segmentA1,
-    segmentA2,
-    segmentB1,
-    segmentB2,
-    setSegmentSegmentResult,
-    setError,
-    setShouldAutoRun,
-  ]);
 
   return (
     <>
@@ -91,19 +51,14 @@ export function SegmentSegmentScene() {
             <meshStandardMaterial color="yellow" />
           </Sphere>
 
-          <Line
-            points={[
-              toTuple(segmentSegmentResult.pointA),
-              toTuple(segmentSegmentResult.pointB),
-            ]}
-            color="orange"
-            lineWidth={2}
-          />
+          <MeasurementLine start={segmentSegmentResult.pointA} end={segmentSegmentResult.pointB} />
         </>
       )}
       <DraggablePoint
         position={segmentA1}
         color="blue"
+        id="segmentA1"
+        label={objectLabels.segmentA1}
         onChange={(p) => {
           setSegmentSegmentInputs({
             a1: p,
@@ -117,6 +72,8 @@ export function SegmentSegmentScene() {
       <DraggablePoint
         position={segmentA2}
         color="blue"
+        id="segmentA2"
+        label={objectLabels.segmentA2}
         onChange={(p) => {
           setSegmentSegmentInputs({
             a1: segmentA1,
@@ -130,6 +87,8 @@ export function SegmentSegmentScene() {
       <DraggablePoint
         position={segmentB1}
         color="cyan"
+        id="segmentB1"
+        label={objectLabels.segmentB1}
         onChange={(p) => {
           setSegmentSegmentInputs({
             a1: segmentA1,
@@ -143,6 +102,8 @@ export function SegmentSegmentScene() {
       <DraggablePoint
         position={segmentB2}
         color="cyan"
+        id="segmentB2"
+        label={objectLabels.segmentB2}
         onChange={(p) => {
           setSegmentSegmentInputs({
             a1: segmentA1,

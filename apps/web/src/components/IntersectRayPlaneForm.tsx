@@ -1,16 +1,17 @@
 "use client";
 
 import { z } from "zod";
-import { useForm, type UseFormRegister } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { intersectRayPlane } from "@/lib/api";
+import { intersectRayPlane, isAbortedRequest } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { useCallback, useEffect } from "react";
+import { FormActions, GeometryFields } from "@/components/GeometryFields";
 
 const vec3Schema = z.object({
-  x: z.coerce.number(),
-  y: z.coerce.number(),
-  z: z.coerce.number(),
+  x: z.coerce.number({ error: "Enter a number" }).finite(),
+  y: z.coerce.number({ error: "Enter a number" }).finite(),
+  z: z.coerce.number({ error: "Enter a number" }).finite(),
 });
 
 const formSchema = z.object({
@@ -18,31 +19,12 @@ const formSchema = z.object({
   rayDir: vec3Schema,
   planePoint: vec3Schema,
   planeNormal: vec3Schema,
-});
+})
+  .refine(({ rayDir }) => Math.hypot(rayDir.x, rayDir.y, rayDir.z) > 0, { message: "Direction cannot be zero", path: ["rayDir", "x"] })
+  .refine(({ planeNormal }) => Math.hypot(planeNormal.x, planeNormal.y, planeNormal.z) > 0, { message: "Normal cannot be zero", path: ["planeNormal", "x"] });
 
 type FormInput = z.input<typeof formSchema>;
 type FormValues = z.output<typeof formSchema>;
-
-function Vec3Fields({
-  register,
-  prefix,
-  label,
-}: {
-  register: UseFormRegister<FormInput>;
-  prefix: "rayOrigin" | "rayDir" | "planePoint" | "planeNormal";
-  label: string;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border p-4">
-      <h3 className="font-medium">{label}</h3>
-      <div className="grid grid-cols-3 gap-2">
-        <input {...register(`${prefix}.x`)} placeholder="x" className="rounded border px-3 py-2" />
-        <input {...register(`${prefix}.y`)} placeholder="y" className="rounded border px-3 py-2" />
-        <input {...register(`${prefix}.z`)} placeholder="z" className="rounded border px-3 py-2" />
-      </div>
-    </div>
-  );
-}
 
 export function IntersectRayPlaneForm() {
   const {
@@ -56,13 +38,16 @@ export function IntersectRayPlaneForm() {
     setError,
     shouldAutoRun,
     setShouldAutoRun,
+    setQueryStatus,
+    saveCheckpoint,
+    objectLabels,
   } = usePlaygroundStore();
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -89,6 +74,7 @@ export function IntersectRayPlaneForm() {
       setRayInputs(values);
       setError(null);
       setProjectPointResult(null);
+      setQueryStatus("running");
 
       try {
         const response = await intersectRayPlane({
@@ -103,38 +89,35 @@ export function IntersectRayPlaneForm() {
         });
 
         setRayPlaneResult(response);
+        setQueryStatus("success");
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Something went wrong";
-        setError(message);
-        setRayPlaneResult(null);
+        if (isAbortedRequest(err)) return;
+        setQueryStatus("success");
       }
     },
-    [setRayInputs, setError, setProjectPointResult, setRayPlaneResult]
+    [setRayInputs, setError, setProjectPointResult, setRayPlaneResult, setQueryStatus]
   );
 
   // Auto-run when an example is loaded (or a drag updates the inputs).
   useEffect(() => {
     if (!shouldAutoRun) return;
 
-    handleSubmit(onSubmit)();
-    setShouldAutoRun(false);
+    const timer = window.setTimeout(() => {
+      setShouldAutoRun(false);
+      handleSubmit(onSubmit)();
+    }, 140);
+    return () => window.clearTimeout(timer);
   }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Vec3Fields register={register} prefix="rayOrigin" label="Ray Origin" />
-      <Vec3Fields register={register} prefix="rayDir" label="Ray Direction" />
-      <Vec3Fields register={register} prefix="planePoint" label="Plane Point" />
-      <Vec3Fields register={register} prefix="planeNormal" label="Plane Normal" />
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-      >
-        {isSubmitting ? "Running..." : "Intersect Ray with Plane"}
-      </button>
+    <form onSubmit={handleSubmit(onSubmit)} onSubmitCapture={saveCheckpoint} className="space-y-4" noValidate>
+      <div className="grid gap-3 md:grid-cols-2">
+        <GeometryFields register={register} prefix="rayOrigin" label="Ray origin" symbol={objectLabels.rayOrigin} errors={errors.rayOrigin} />
+        <GeometryFields register={register} prefix="rayDir" label="Ray direction" symbol="d" hint="Does not need to be normalized." errors={errors.rayDir} />
+        <GeometryFields register={register} prefix="planePoint" label="Plane anchor" symbol="Π" errors={errors.planePoint} />
+        <GeometryFields register={register} prefix="planeNormal" label="Plane normal" symbol="n" errors={errors.planeNormal} />
+      </div>
+      <FormActions isSubmitting={isSubmitting} label="Intersect ray and plane" />
     </form>
   );
 }

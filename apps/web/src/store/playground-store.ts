@@ -8,13 +8,47 @@ import type {
   Vec3,
   SegmentSegmentResponse,
 } from "@/types/geometry";
+import {
+  localClosestPointAABB,
+  localClosestPointSegment,
+  localIntersectRayAABB,
+  localIntersectRayPlane,
+  localProjectPointToPlane,
+  localSegmentSegment,
+} from "@/lib/local-geometry";
 
 type SegmentResult = {
   point: Vec3;
   distance: number;
 };
 
+export type ExampleType = QueryType | "ray-plane-hit" | "ray-plane-miss" | "point-inside-box" | "intersecting-segments" | "degenerate-segment" | "ray-box-miss";
+
+export type ScenarioSnapshot = {
+  version: 1;
+  queryType: QueryType;
+  point: Vec3;
+  planePoint: Vec3;
+  planeNormal: Vec3;
+  rayOrigin: Vec3;
+  rayDir: Vec3;
+  segmentA: Vec3;
+  segmentB: Vec3;
+  segmentA1: Vec3;
+  segmentA2: Vec3;
+  segmentB1: Vec3;
+  segmentB2: Vec3;
+  aabbMin: Vec3;
+  aabbMax: Vec3;
+  stepMode: boolean;
+  unit: "units" | "mm" | "cm" | "m";
+  precision: number;
+  snap: number;
+  objectLabels: Record<string, string>;
+};
+
 type PlaygroundState = {
+  version: 1;
   queryType: QueryType;
 
   // shared inputs
@@ -50,6 +84,16 @@ type PlaygroundState = {
   error: string | null;
   shouldAutoRun: boolean;
   stepMode: boolean;
+  queryStatus: "idle" | "running" | "success" | "error";
+  isDragging: boolean;
+  selectedObject: string | null;
+  unit: ScenarioSnapshot["unit"];
+  precision: number;
+  snap: number;
+  theme: "dark" | "light";
+  objectLabels: Record<string, string>;
+  past: ScenarioSnapshot[];
+  future: ScenarioSnapshot[];
 
   // setters
   setQueryType: (queryType: QueryType) => void;
@@ -105,10 +149,22 @@ type PlaygroundState = {
   ) => void;
 
   setError: (error: string | null) => void;
+  setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
+  setIsDragging: (isDragging: boolean) => void;
+  setSelectedObject: (id: string | null) => void;
+  setUnit: (unit: ScenarioSnapshot["unit"]) => void;
+  setPrecision: (precision: number) => void;
+  setSnap: (snap: number) => void;
+  setTheme: (theme: PlaygroundState["theme"]) => void;
+  setObjectLabel: (id: string, label: string) => void;
+  saveCheckpoint: () => void;
+  undo: () => void;
+  redo: () => void;
+  hydrateScenario: (snapshot: ScenarioSnapshot) => void;
   setStepMode: (v: boolean) => void;
   setShouldAutoRun: (v: boolean) => void;
 
-  loadExample: (type: "ray-plane-hit" | "ray-plane-miss") => void;
+  loadExample: (type: ExampleType) => void;
 };
 
 // Clears every query type's result, used whenever the active query type
@@ -123,7 +179,33 @@ const clearedResults = {
   closestPointAABBResult: null,
 };
 
+function captureScenario(state: PlaygroundState): ScenarioSnapshot {
+  return {
+    version: 1,
+    queryType: state.queryType,
+    point: state.point,
+    planePoint: state.planePoint,
+    planeNormal: state.planeNormal,
+    rayOrigin: state.rayOrigin,
+    rayDir: state.rayDir,
+    segmentA: state.segmentA,
+    segmentB: state.segmentB,
+    segmentA1: state.segmentA1,
+    segmentA2: state.segmentA2,
+    segmentB1: state.segmentB1,
+    segmentB2: state.segmentB2,
+    aabbMin: state.aabbMin,
+    aabbMax: state.aabbMax,
+    stepMode: state.stepMode,
+    unit: state.unit,
+    precision: state.precision,
+    snap: state.snap,
+    objectLabels: state.objectLabels,
+  };
+}
+
 export const usePlaygroundStore = create<PlaygroundState>((set) => ({
+  version: 1,
   queryType: "project-point-to-plane",
 
   // base inputs
@@ -149,14 +231,34 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   ...clearedResults,
 
   error: null,
-  shouldAutoRun: false,
+  shouldAutoRun: true,
   stepMode: false,
+  queryStatus: "idle",
+  isDragging: false,
+  selectedObject: null,
+  unit: "units",
+  precision: 3,
+  snap: 0.1,
+  theme: "dark",
+  objectLabels: {
+    point: "P",
+    rayOrigin: "O",
+    segmentA: "A",
+    segmentB: "B",
+    segmentA1: "A₁",
+    segmentA2: "A₂",
+    segmentB1: "B₁",
+    segmentB2: "B₂",
+  },
+  past: [],
+  future: [],
 
   setQueryType: (queryType) =>
     set({
       queryType,
       ...clearedResults,
       error: null,
+      queryStatus: "idle",
     }),
 
   setInputs: ({ point, planePoint, planeNormal }) =>
@@ -164,7 +266,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       point,
       planePoint,
       planeNormal,
-      projectPointResult: null,
+      projectPointResult: localProjectPointToPlane({ point, plane: { point: planePoint, normal: planeNormal } }),
+      queryStatus: "success",
       error: null,
     }),
 
@@ -174,7 +277,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       rayDir,
       planePoint,
       planeNormal,
-      rayPlaneResult: null,
+      rayPlaneResult: localIntersectRayPlane({ ray: { origin: rayOrigin, dir: rayDir }, plane: { point: planePoint, normal: planeNormal } }),
+      queryStatus: "success",
       error: null,
     }),
 
@@ -183,7 +287,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       point,
       segmentA,
       segmentB,
-      segmentResult: null,
+      segmentResult: localClosestPointSegment({ point, segment: { a: segmentA, b: segmentB } }),
+      queryStatus: "success",
       error: null,
     }),
 
@@ -193,7 +298,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       segmentA2: a2,
       segmentB1: b1,
       segmentB2: b2,
-      segmentSegmentResult: null,
+      segmentSegmentResult: localSegmentSegment({ a1, a2, b1, b2 }),
+      queryStatus: "success",
       error: null,
     }),
 
@@ -203,7 +309,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       rayDir,
       aabbMin,
       aabbMax,
-      rayAABBResult: null,
+      rayAABBResult: localIntersectRayAABB({ ray: { origin: rayOrigin, dir: rayDir }, aabb: { min: aabbMin, max: aabbMax } }),
+      queryStatus: "success",
       error: null,
     }),
 
@@ -212,7 +319,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       point,
       aabbMin,
       aabbMax,
-      closestPointAABBResult: null,
+      closestPointAABBResult: localClosestPointAABB({ point, aabb: { min: aabbMin, max: aabbMax } }),
+      queryStatus: "success",
       error: null,
     }),
 
@@ -237,14 +345,79 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setError: (error) =>
     set({
       error,
-      ...clearedResults,
+      queryStatus: error ? "error" : "idle",
     }),
 
+  setQueryStatus: (queryStatus) => set({ queryStatus }),
+  setIsDragging: (isDragging) => set({ isDragging }),
+  setSelectedObject: (selectedObject) => set({ selectedObject }),
+  setUnit: (unit) => set({ unit }),
+  setPrecision: (precision) => set({ precision: Math.max(0, Math.min(8, precision)) }),
+  setSnap: (snap) => set({ snap: Math.max(0, Math.min(10, snap)) }),
+  setTheme: (theme) => set({ theme }),
+  setObjectLabel: (id, label) => set((state) => ({ objectLabels: { ...state.objectLabels, [id]: label.slice(0, 8) } })),
+  saveCheckpoint: () => set((state) => ({ past: [...state.past.slice(-39), captureScenario(state)], future: [] })),
+  undo: () => set((state) => {
+    const previous = state.past.at(-1);
+    if (!previous) return state;
+    return {
+      ...previous,
+      past: state.past.slice(0, -1),
+      future: [captureScenario(state), ...state.future].slice(0, 40),
+      ...clearedResults,
+      error: null,
+      shouldAutoRun: true,
+      queryStatus: "idle",
+      selectedObject: null,
+    };
+  }),
+  redo: () => set((state) => {
+    const next = state.future[0];
+    if (!next) return state;
+    return {
+      ...next,
+      past: [...state.past.slice(-39), captureScenario(state)],
+      future: state.future.slice(1),
+      ...clearedResults,
+      error: null,
+      shouldAutoRun: true,
+      queryStatus: "idle",
+      selectedObject: null,
+    };
+  }),
+  hydrateScenario: (snapshot) => set((state) => ({
+    ...snapshot,
+    unit: snapshot.unit ?? state.unit,
+    precision: snapshot.precision ?? state.precision,
+    snap: snapshot.snap ?? state.snap,
+    objectLabels: { ...state.objectLabels, ...(snapshot.objectLabels ?? {}) },
+    past: [...state.past.slice(-39), captureScenario(state)],
+    future: [],
+    ...clearedResults,
+    error: null,
+    shouldAutoRun: true,
+    queryStatus: "idle",
+    selectedObject: null,
+  })),
   setStepMode: (v) => set({ stepMode: v }),
   setShouldAutoRun: (v) => set({ shouldAutoRun: v }),
 
   loadExample: (type) => {
-    if (type === "ray-plane-hit") {
+    usePlaygroundStore.getState().saveCheckpoint();
+    if (type === "project-point-to-plane") {
+      set({
+        queryType: type,
+        point: { x: 1, y: 2, z: 3 },
+        planePoint: { x: 0, y: 0, z: 0 },
+        planeNormal: { x: 0, y: 0, z: 1 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "intersect-ray-plane" || type === "ray-plane-hit") {
       set({
         queryType: "intersect-ray-plane",
         rayOrigin: { x: 0, y: 0, z: 5 },
@@ -253,6 +426,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         planeNormal: { x: 0, y: 0, z: 1 },
         shouldAutoRun: true,
         error: null,
+        queryStatus: "idle",
         ...clearedResults,
       });
     }
@@ -266,8 +440,80 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         planeNormal: { x: 0, y: 0, z: 1 },
         shouldAutoRun: true,
         error: null,
+        queryStatus: "idle",
         ...clearedResults,
       });
     }
+
+    if (type === "closest-point-segment") {
+      set({
+        queryType: type,
+        point: { x: 1, y: 2, z: 3 },
+        segmentA: { x: -2, y: 0, z: 0 },
+        segmentB: { x: 3, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "segment-segment") {
+      set({
+        queryType: type,
+        segmentA1: { x: -2, y: 0, z: 0 },
+        segmentA2: { x: 2, y: 0, z: 0 },
+        segmentB1: { x: 0, y: -2, z: 2 },
+        segmentB2: { x: 0, y: 2, z: 2 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "intersect-ray-aabb") {
+      set({
+        queryType: type,
+        rayOrigin: { x: -4, y: 1, z: 1 },
+        rayDir: { x: 1, y: 0, z: 0 },
+        aabbMin: { x: 0, y: 0, z: 0 },
+        aabbMax: { x: 2, y: 2, z: 2 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "closest-point-aabb") {
+      set({
+        queryType: type,
+        point: { x: 4, y: 3, z: 3 },
+        aabbMin: { x: 0, y: 0, z: 0 },
+        aabbMax: { x: 2, y: 2, z: 2 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "point-inside-box") {
+      set({ queryType: "closest-point-aabb", point: { x: 1, y: 1, z: 1 }, aabbMin: { x: 0, y: 0, z: 0 }, aabbMax: { x: 2, y: 2, z: 2 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+    if (type === "intersecting-segments") {
+      set({ queryType: "segment-segment", segmentA1: { x: -2, y: 0, z: 0 }, segmentA2: { x: 2, y: 0, z: 0 }, segmentB1: { x: 0, y: -2, z: 0 }, segmentB2: { x: 0, y: 2, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+    if (type === "degenerate-segment") {
+      set({ queryType: "closest-point-segment", point: { x: 2, y: 2, z: 1 }, segmentA: { x: 0, y: 0, z: 0 }, segmentB: { x: 0, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+    if (type === "ray-box-miss") {
+      set({ queryType: "intersect-ray-aabb", rayOrigin: { x: -4, y: 4, z: 1 }, rayDir: { x: 1, y: 0, z: 0 }, aabbMin: { x: 0, y: 0, z: 0 }, aabbMax: { x: 2, y: 2, z: 2 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
   },
 }));
+
+export function getScenarioSnapshot() {
+  return captureScenario(usePlaygroundStore.getState());
+}

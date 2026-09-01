@@ -11,96 +11,88 @@ import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { SceneCanvas } from "@/components/scene/SceneCanvas";
 import { usePlaygroundStore } from "@/store/playground-store";
+import { QUERY_META } from "@/lib/query-meta";
+import { WorkspaceActions } from "@/components/WorkspaceActions";
+import { ScenarioGallery } from "@/components/ScenarioGallery";
 
 export function ClientPageShell() {
-  const { queryType, loadExample, stepMode, setStepMode } =
-    usePlaygroundStore();
+  const { queryType, loadExample, queryStatus } = usePlaygroundStore();
+  const meta = QUERY_META[queryType];
+
+  const form = (
+    <>
+      {queryType === "project-point-to-plane" && <ProjectPointToPlaneForm />}
+      {queryType === "intersect-ray-plane" && <IntersectRayPlaneForm />}
+      {queryType === "closest-point-segment" && <ClosestPointSegmentForm />}
+      {queryType === "segment-segment" && <SegmentSegmentForm />}
+      {queryType === "intersect-ray-aabb" && <IntersectRayAABBForm />}
+      {queryType === "closest-point-aabb" && <ClosestPointAABBForm />}
+    </>
+  );
 
   return (
-    <main className="min-h-screen bg-white p-6">
-      <div className="mx-auto max-w-7xl">
-        {/* HEADER */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">geom3d Playground</h1>
-          <p className="mt-2 text-neutral-600">
-            An interactive 3D geometry lab for practical queries and spatial reasoning.
-          </p>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#102535_0,#071018_38%,#050b11_100%)] text-slate-100">
+      <a href="#workspace" className="sr-only z-50 rounded bg-cyan-300 px-4 py-2 text-slate-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to workspace</a>
+      <header className="border-b border-white/5 bg-slate-950/45 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 font-mono text-sm font-black text-cyan-200">G³</div>
+            <div>
+              <h1 className="text-base font-bold tracking-tight sm:text-lg">geom3d Playground</h1>
+              <p className="hidden text-xs text-slate-500 sm:block">Interactive spatial reasoning lab</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-400" role="status" aria-live="polite">
+            <span className={`h-2 w-2 rounded-full ${queryStatus === "running" ? "animate-pulse bg-amber-300" : queryStatus === "error" ? "bg-rose-400" : "bg-emerald-400"}`} />
+            {queryStatus === "running" ? "Computing" : queryStatus === "error" ? "Needs attention" : "Ready"}
+          </div>
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr_320px]">
-          
-          {/* LEFT PANEL */}
-          <section className="space-y-4">
+      <WorkspaceActions />
 
-            {/* 🔽 Query selector */}
-            <QuerySelector />
+      <div id="workspace" className="mx-auto grid max-w-[1600px] gap-4 p-4 sm:p-6 xl:grid-cols-[250px_minmax(0,1fr)_340px]">
+        <aside className="rounded-2xl border border-slate-800 bg-slate-950/55 p-3 shadow-2xl shadow-black/10 xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)] xl:overflow-y-auto" aria-label="Query navigation">
+          <div className="mb-4 px-2">
+            <p className="text-sm font-semibold text-white">Choose a query</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Objects persist across compatible tools. Reset when you want a fresh example.</p>
+          </div>
+          <QuerySelector />
+          <ScenarioGallery />
+        </aside>
 
-            {/* 🔥 Step mode toggle (you forgot this existed) */}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={stepMode}
-                onChange={(e) => setStepMode(e.target.checked)}
-              />
-              Step-by-step mode
-            </label>
-
-            {/* Examples ONLY for ray-plane */}
-            {queryType === "intersect-ray-plane" && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => loadExample("ray-plane-hit")}
-                  className="rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
-                >
-                  Example: Hit
-                </button>
-
-                <button
-                  onClick={() => loadExample("ray-plane-miss")}
-                  className="rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
-                >
-                  Example: Miss
-                </button>
+        <section className="min-w-0 space-y-4" aria-labelledby="query-title">
+          <div className="px-1">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/80">{meta.category}</p>
+                <h2 id="query-title" className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{meta.title}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{meta.description}</p>
               </div>
-            )}
+              <div className="flex gap-2">
+                {queryType === "intersect-ray-plane" && (
+                  <button type="button" onClick={() => loadExample("ray-plane-miss")} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Parallel miss</button>
+                )}
+                <button type="button" onClick={() => loadExample(queryType)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Reset example</button>
+              </div>
+            </div>
+          </div>
 
-            {/* FORMS */}
-            {queryType === "project-point-to-plane" && (
-              <ProjectPointToPlaneForm />
-            )}
+          <SceneCanvas />
+          <div className="xl:hidden"><ResultsPanel /></div>
 
-            {queryType === "intersect-ray-plane" && (
-              <IntersectRayPlaneForm />
-            )}
+          <details open className="group rounded-2xl border border-slate-800 bg-slate-950/55">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300">
+              <span>Geometry inputs</span>
+              <span className="text-slate-500 transition group-open:rotate-180" aria-hidden="true">⌄</span>
+            </summary>
+            <div className="border-t border-slate-800 p-4">{form}</div>
+          </details>
+        </section>
 
-            {queryType === "closest-point-segment" && (
-              <ClosestPointSegmentForm />
-            )}
-
-            {queryType === "segment-segment" && (
-              <SegmentSegmentForm />
-            )}
-
-            {queryType === "intersect-ray-aabb" && (
-              <IntersectRayAABBForm />
-            )}
-
-            {queryType === "closest-point-aabb" && (
-              <ClosestPointAABBForm />
-            )}
-          </section>
-
-          {/* SCENE */}
-          <section>
-            <SceneCanvas />
-          </section>
-
-          {/* RESULTS */}
-          <section>
-            <ResultsPanel />
-          </section>
-
-        </div>
+        <aside className="hidden xl:block" aria-label="Query results">
+          <div className="sticky top-6"><ResultsPanel /></div>
+        </aside>
       </div>
     </main>
   );

@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, Line, Sphere } from "@react-three/drei";
+import { Box, Edges, Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { toTuple, type Vec3, type Vec3Tuple } from "@/types/geometry";
 import { DraggablePoint } from "../primitives/DraggablePoint";
-import * as THREE from "three";
+import { VectorArrow } from "../primitives/VectorArrow";
+import { MeasurementLine } from "../primitives/MeasurementLine";
 
 function boxCenterAndSize(min: Vec3, max: Vec3): { center: Vec3Tuple; size: Vec3Tuple } {
   return {
@@ -26,34 +27,29 @@ export function IntersectRayAABBScene() {
     rayAABBResult,
     setRayAABBInputs,
     setShouldAutoRun,
+    objectLabels,
   } = usePlaygroundStore();
-
-  const dir = new THREE.Vector3(rayDir.x, rayDir.y, rayDir.z).normalize();
-  const rayEnd: Vec3Tuple = [
-    rayOrigin.x + dir.x * 10,
-    rayOrigin.y + dir.y * 10,
-    rayOrigin.z + dir.z * 10,
-  ];
 
   const { center, size } = boxCenterAndSize(aabbMin, aabbMax);
 
   return (
     <>
-      <axesHelper args={[5]} />
-
       <DraggablePoint
         position={rayOrigin}
         color="hotpink"
+        id="rayOrigin"
+        label={objectLabels.rayOrigin}
         onChange={(p) => {
           setRayAABBInputs({ rayOrigin: p, rayDir, aabbMin, aabbMax });
           setShouldAutoRun(true);
         }}
       />
 
-      <Line points={[toTuple(rayOrigin), rayEnd]} color="blue" lineWidth={2} />
+      <VectorArrow origin={rayOrigin} direction={rayDir} length={10} />
 
       <Box args={size} position={center}>
         <meshStandardMaterial color="lightgray" transparent opacity={0.3} />
+        <Edges color="#94a3b8" />
       </Box>
 
       {rayAABBResult?.hit && (
@@ -62,11 +58,7 @@ export function IntersectRayAABBScene() {
             <meshStandardMaterial color="blue" />
           </Sphere>
 
-          <Line
-            points={[toTuple(rayOrigin), toTuple(rayAABBResult.point)]}
-            color="orange"
-            lineWidth={2}
-          />
+          <MeasurementLine start={rayOrigin} end={rayAABBResult.point} label="entry" />
         </>
       )}
     </>

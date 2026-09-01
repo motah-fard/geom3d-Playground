@@ -1,16 +1,17 @@
 "use client";
 
 import { z } from "zod";
-import { useForm, type UseFormRegister } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { closestPointSegment } from "@/lib/api";
+import { closestPointSegment, isAbortedRequest } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { useCallback, useEffect } from "react";
+import { FormActions, GeometryFields } from "@/components/GeometryFields";
 
 const vec3Schema = z.object({
-  x: z.coerce.number(),
-  y: z.coerce.number(),
-  z: z.coerce.number(),
+  x: z.coerce.number({ error: "Enter a number" }).finite(),
+  y: z.coerce.number({ error: "Enter a number" }).finite(),
+  z: z.coerce.number({ error: "Enter a number" }).finite(),
 });
 
 const formSchema = z.object({
@@ -21,27 +22,6 @@ const formSchema = z.object({
 
 type FormInput = z.input<typeof formSchema>;
 type FormValues = z.output<typeof formSchema>;
-
-function Vec3Fields({
-  register,
-  prefix,
-  label,
-}: {
-  register: UseFormRegister<FormInput>;
-  prefix: "point" | "segmentA" | "segmentB";
-  label: string;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border p-4">
-      <h3 className="font-medium">{label}</h3>
-      <div className="grid grid-cols-3 gap-2">
-        <input {...register(`${prefix}.x`)} placeholder="x" className="rounded border px-3 py-2" />
-        <input {...register(`${prefix}.y`)} placeholder="y" className="rounded border px-3 py-2" />
-        <input {...register(`${prefix}.z`)} placeholder="z" className="rounded border px-3 py-2" />
-      </div>
-    </div>
-  );
-}
 
 export function ClosestPointSegmentForm() {
   const {
@@ -55,13 +35,16 @@ export function ClosestPointSegmentForm() {
     setRayPlaneResult,
     shouldAutoRun,
     setShouldAutoRun,
+    setQueryStatus,
+    saveCheckpoint,
+    objectLabels,
   } = usePlaygroundStore();
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -87,6 +70,7 @@ export function ClosestPointSegmentForm() {
       setProjectPointResult(null);
       setRayPlaneResult(null);
       setError(null);
+      setQueryStatus("running");
 
       try {
         const response = await closestPointSegment({
@@ -98,14 +82,13 @@ export function ClosestPointSegmentForm() {
         });
 
         setSegmentResult(response);
+        setQueryStatus("success");
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Something went wrong";
-        setError(message);
-        setSegmentResult(null);
+        if (isAbortedRequest(err)) return;
+        setQueryStatus("success");
       }
     },
-    [setSegmentInputs, setProjectPointResult, setRayPlaneResult, setError, setSegmentResult]
+    [setSegmentInputs, setProjectPointResult, setRayPlaneResult, setError, setSegmentResult, setQueryStatus]
   );
 
   // Auto-run when a drag (or an example) updates the inputs, reusing the
@@ -114,23 +97,21 @@ export function ClosestPointSegmentForm() {
   useEffect(() => {
     if (!shouldAutoRun) return;
 
-    handleSubmit(onSubmit)();
-    setShouldAutoRun(false);
+    const timer = window.setTimeout(() => {
+      setShouldAutoRun(false);
+      handleSubmit(onSubmit)();
+    }, 140);
+    return () => window.clearTimeout(timer);
   }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Vec3Fields register={register} prefix="point" label="Point" />
-      <Vec3Fields register={register} prefix="segmentA" label="Segment A" />
-      <Vec3Fields register={register} prefix="segmentB" label="Segment B" />
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-      >
-        {isSubmitting ? "Running..." : "Closest Point to Segment"}
-      </button>
+    <form onSubmit={handleSubmit(onSubmit)} onSubmitCapture={saveCheckpoint} className="space-y-4" noValidate>
+      <div className="grid gap-3 lg:grid-cols-3">
+        <GeometryFields register={register} prefix="point" label="Point" symbol={objectLabels.point} errors={errors.point} />
+        <GeometryFields register={register} prefix="segmentA" label="Segment start" symbol={objectLabels.segmentA} errors={errors.segmentA} />
+        <GeometryFields register={register} prefix="segmentB" label="Segment end" symbol={objectLabels.segmentB} errors={errors.segmentB} />
+      </div>
+      <FormActions isSubmitting={isSubmitting} label="Find closest point" />
     </form>
   );
 }

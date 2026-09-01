@@ -1,10 +1,12 @@
 "use client";
 
-import { Line, Sphere } from "@react-three/drei";
+import { Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
 import * as THREE from "three";
 import { toTuple } from "@/types/geometry";
+import { MeasurementLine } from "../primitives/MeasurementLine";
+import { VectorArrow } from "../primitives/VectorArrow";
 
 export function PointToPlaneScene() {
   const {
@@ -15,6 +17,7 @@ export function PointToPlaneScene() {
     setShouldAutoRun,
     projectPointResult,
     stepMode,
+    objectLabels,
   } = usePlaygroundStore();
 
   // normalize normal (important or plane behaves weirdly)
@@ -38,11 +41,12 @@ export function PointToPlaneScene() {
 
   return (
     <>
-      <axesHelper args={[5]} />
       {/* 🔴 draggable point */}
       <DraggablePoint
         position={point}
         color="hotpink"
+        id="point"
+        label={objectLabels.point}
         onChange={(p) => {
           setInputs({
             point: p,
@@ -63,6 +67,7 @@ export function PointToPlaneScene() {
           side={THREE.DoubleSide}
         />
       </mesh>
+      <VectorArrow origin={planePoint} direction={planeNormal} length={2.5} color="#c084fc" />
 
       {/* 🟢 projected point + 🟠 distance */}
       {projectPointResult && projectPointResult.projectedPoint && (
@@ -78,28 +83,7 @@ export function PointToPlaneScene() {
             />
           </Sphere>
 
-          {stepMode && (
-            <Line
-              points={[
-                toTuple(point),
-                toTuple(projectPointResult.projectedPoint),
-              ]}
-              color="orange"
-            />
-          )}
-          {stepMode && (
-            <Line
-              points={[
-                toTuple(planePoint),
-                toTuple({
-                  x: planePoint.x + planeNormal.x,
-                  y: planePoint.y + planeNormal.y,
-                  z: planePoint.z + planeNormal.z,
-                }),
-              ]}
-              color="purple"
-            />
-          )}
+          {stepMode && <MeasurementLine start={point} end={projectPointResult.projectedPoint} label="d" />}
         </>
       )}
     </>

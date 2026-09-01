@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #071018;
+  --foreground: #e5eef7;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,15 +13,33 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+
+button, select, input { font: inherit; }
+::selection { background: rgba(34, 211, 238, 0.28); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html[data-theme="light"] body {
+  background: #eef4f8;
+}
+
+html[data-theme="light"] main {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+html[data-theme="light"] canvas {
+  filter: invert(1) hue-rotate(180deg);
 }

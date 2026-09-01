@@ -1,9 +1,10 @@
 "use client";
 
-import { Box, Line, Sphere } from "@react-three/drei";
+import { Box, Edges, Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { toTuple, type Vec3, type Vec3Tuple } from "@/types/geometry";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { MeasurementLine } from "../primitives/MeasurementLine";
 
 function boxCenterAndSize(min: Vec3, max: Vec3): { center: Vec3Tuple; size: Vec3Tuple } {
   return {
@@ -24,17 +25,18 @@ export function ClosestPointAABBScene() {
     closestPointAABBResult,
     setClosestPointAABBInputs,
     setShouldAutoRun,
+    objectLabels,
   } = usePlaygroundStore();
 
   const { center, size } = boxCenterAndSize(aabbMin, aabbMax);
 
   return (
     <>
-      <axesHelper args={[5]} />
-
       <DraggablePoint
         position={point}
         color="hotpink"
+        id="point"
+        label={objectLabels.point}
         onChange={(p) => {
           setClosestPointAABBInputs({ point: p, aabbMin, aabbMax });
           setShouldAutoRun(true);
@@ -43,6 +45,7 @@ export function ClosestPointAABBScene() {
 
       <Box args={size} position={center}>
         <meshStandardMaterial color="lightgray" transparent opacity={0.3} />
+        <Edges color="#94a3b8" />
       </Box>
 
       {closestPointAABBResult && (
@@ -51,11 +54,7 @@ export function ClosestPointAABBScene() {
             <meshStandardMaterial color="green" />
           </Sphere>
 
-          <Line
-            points={[toTuple(point), toTuple(closestPointAABBResult.point)]}
-            color="orange"
-            lineWidth={2}
-          />
+          <MeasurementLine start={point} end={closestPointAABBResult.point} />
         </>
       )}
     </>

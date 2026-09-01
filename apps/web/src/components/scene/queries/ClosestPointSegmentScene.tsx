@@ -4,6 +4,7 @@ import { Line, Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
 import { toTuple } from "@/types/geometry";
+import { MeasurementLine } from "../primitives/MeasurementLine";
 
 export function ClosestPointSegmentScene() {
   const {
@@ -13,15 +14,17 @@ export function ClosestPointSegmentScene() {
     segmentResult,
     setSegmentInputs,
     setShouldAutoRun,
+    objectLabels,
   } = usePlaygroundStore();
 
   return (
     <>
-      <axesHelper args={[5]} />
       {/* 🔴 draggable point */}
       <DraggablePoint
         position={point}
         color="hotpink"
+        id="point"
+        label={objectLabels.point}
         onChange={(p) => {
           setSegmentInputs({
             point: p,
@@ -36,6 +39,8 @@ export function ClosestPointSegmentScene() {
       <DraggablePoint
         position={segmentA}
         color="blue"
+        id="segmentA"
+        label={objectLabels.segmentA}
         onChange={(p) => {
           setSegmentInputs({
             point,
@@ -49,6 +54,8 @@ export function ClosestPointSegmentScene() {
       <DraggablePoint
         position={segmentB}
         color="blue"
+        id="segmentB"
+        label={objectLabels.segmentB}
         onChange={(p) => {
           setSegmentInputs({
             point,
@@ -73,11 +80,7 @@ export function ClosestPointSegmentScene() {
             <meshStandardMaterial color="green" depthTest depthWrite />
           </Sphere>
 
-          <Line
-            points={[toTuple(segmentResult.point), toTuple(point)]}
-            color="orange"
-            lineWidth={2}
-          />
+          <MeasurementLine start={segmentResult.point} end={point} />
         </>
       )}
     </>

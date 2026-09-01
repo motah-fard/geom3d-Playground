@@ -1,15 +1,17 @@
 "use client";
 
 import { z } from "zod";
-import { useForm, type UseFormRegister } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePlaygroundStore } from "@/store/playground-store";
-import { segmentSegmentDistance } from "@/lib/api";
+import { isAbortedRequest, segmentSegmentDistance } from "@/lib/api";
+import { FormActions, GeometryFields } from "@/components/GeometryFields";
+import { useCallback, useEffect } from "react";
 
 const vec3Schema = z.object({
-  x: z.coerce.number(),
-  y: z.coerce.number(),
-  z: z.coerce.number(),
+  x: z.coerce.number({ error: "Enter a number" }).finite(),
+  y: z.coerce.number({ error: "Enter a number" }).finite(),
+  z: z.coerce.number({ error: "Enter a number" }).finite(),
 });
 
 const formSchema = z.object({
@@ -22,92 +24,75 @@ const formSchema = z.object({
 type FormInput = z.input<typeof formSchema>;
 type FormValues = z.output<typeof formSchema>;
 
-function Vec3Fields({
-  register,
-  prefix,
-  label,
-}: {
-  register: UseFormRegister<FormInput>;
-  prefix: "a1" | "a2" | "b1" | "b2";
-  label: string;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border p-4">
-      <h3 className="font-medium">{label}</h3>
-      <div className="grid grid-cols-3 gap-2">
-        <input
-          {...register(`${prefix}.x`)}
-          placeholder="x"
-          className="rounded border px-3 py-2"
-        />
-        <input
-          {...register(`${prefix}.y`)}
-          placeholder="y"
-          className="rounded border px-3 py-2"
-        />
-        <input
-          {...register(`${prefix}.z`)}
-          placeholder="z"
-          className="rounded border px-3 py-2"
-        />
-      </div>
-    </div>
-  );
-}
-
 export function SegmentSegmentForm() {
   const {
-    segmentA,
+    segmentA1,
+    segmentA2,
+    segmentB1,
+    segmentB2,
     setSegmentSegmentResult,
     setError,
     setSegmentSegmentInputs,
+    shouldAutoRun,
+    setShouldAutoRun,
+    setQueryStatus,
+    saveCheckpoint,
+    objectLabels,
   } = usePlaygroundStore();
 
   const {
     register,
     handleSubmit,
-    formState: { isSubmitting },
+    reset,
+    formState: { isSubmitting, errors },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      a1: segmentA,
-      a2: { x: 3, y: 0, z: 0 }, // reasonable default
-      b1: { x: 1, y: 2, z: 0 },
-      b2: { x: 1, y: -2, z: 0 },
+      a1: segmentA1,
+      a2: segmentA2,
+      b1: segmentB1,
+      b2: segmentB2,
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  useEffect(() => {
+    reset({ a1: segmentA1, a2: segmentA2, b1: segmentB1, b2: segmentB2 });
+  }, [segmentA1, segmentA2, segmentB1, segmentB2, reset]);
+
+  const onSubmit = useCallback(async (values: FormValues) => {
     setError(null);
-    setSegmentSegmentInputs(values); // ✅ once, before API
+    setSegmentSegmentInputs(values);
+    setQueryStatus("running");
 
     try {
       const response = await segmentSegmentDistance(values);
 
       setSegmentSegmentResult(response);
+      setQueryStatus("success");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Something went wrong";
-
-      setError(message);
-      setSegmentSegmentResult(null);
+      if (isAbortedRequest(err)) return;
+      setQueryStatus("success");
     }
-  };
+  }, [setError, setSegmentSegmentInputs, setSegmentSegmentResult, setQueryStatus]);
+
+  useEffect(() => {
+    if (!shouldAutoRun) return;
+    const timer = window.setTimeout(() => {
+      setShouldAutoRun(false);
+      handleSubmit(onSubmit)();
+    }, 140);
+    return () => window.clearTimeout(timer);
+  }, [shouldAutoRun, segmentA1, segmentA2, segmentB1, segmentB2, handleSubmit, onSubmit, setShouldAutoRun]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Vec3Fields register={register} prefix="a1" label="Segment A - Start" />
-      <Vec3Fields register={register} prefix="a2" label="Segment A - End" />
-      <Vec3Fields register={register} prefix="b1" label="Segment B - Start" />
-      <Vec3Fields register={register} prefix="b2" label="Segment B - End" />
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-      >
-        {isSubmitting ? "Running..." : "Segment-Segment Distance"}
-      </button>
+    <form onSubmit={handleSubmit(onSubmit)} onSubmitCapture={saveCheckpoint} className="space-y-4" noValidate>
+      <div className="grid gap-3 md:grid-cols-2">
+        <GeometryFields register={register} prefix="a1" label="Segment A start" symbol={objectLabels.segmentA1} errors={errors.a1} />
+        <GeometryFields register={register} prefix="a2" label="Segment A end" symbol={objectLabels.segmentA2} errors={errors.a2} />
+        <GeometryFields register={register} prefix="b1" label="Segment B start" symbol={objectLabels.segmentB1} errors={errors.b1} />
+        <GeometryFields register={register} prefix="b2" label="Segment B end" symbol={objectLabels.segmentB2} errors={errors.b2} />
+      </div>
+      <FormActions isSubmitting={isSubmitting} label="Measure segment distance" />
     </form>
   );
 }

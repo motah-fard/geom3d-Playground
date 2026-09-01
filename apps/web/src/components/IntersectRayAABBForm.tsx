@@ -1,16 +1,17 @@
 "use client";
 
 import { z } from "zod";
-import { useForm, type UseFormRegister } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { intersectRayAABB } from "@/lib/api";
+import { intersectRayAABB, isAbortedRequest } from "@/lib/api";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { useCallback, useEffect } from "react";
+import { FormActions, GeometryFields } from "@/components/GeometryFields";
 
 const vec3Schema = z.object({
-  x: z.coerce.number(),
-  y: z.coerce.number(),
-  z: z.coerce.number(),
+  x: z.coerce.number({ error: "Enter a number" }).finite(),
+  y: z.coerce.number({ error: "Enter a number" }).finite(),
+  z: z.coerce.number({ error: "Enter a number" }).finite(),
 });
 
 const formSchema = z.object({
@@ -18,31 +19,12 @@ const formSchema = z.object({
   rayDir: vec3Schema,
   aabbMin: vec3Schema,
   aabbMax: vec3Schema,
-});
+})
+  .refine(({ rayDir }) => Math.hypot(rayDir.x, rayDir.y, rayDir.z) > 0, { message: "Direction cannot be zero", path: ["rayDir", "x"] })
+  .refine(({ aabbMin, aabbMax }) => aabbMin.x <= aabbMax.x && aabbMin.y <= aabbMax.y && aabbMin.z <= aabbMax.z, { message: "Min must not exceed max", path: ["aabbMin", "x"] });
 
 type FormInput = z.input<typeof formSchema>;
 type FormValues = z.output<typeof formSchema>;
-
-function Vec3Fields({
-  register,
-  prefix,
-  label,
-}: {
-  register: UseFormRegister<FormInput>;
-  prefix: "rayOrigin" | "rayDir" | "aabbMin" | "aabbMax";
-  label: string;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border p-4">
-      <h3 className="font-medium">{label}</h3>
-      <div className="grid grid-cols-3 gap-2">
-        <input {...register(`${prefix}.x`)} placeholder="x" className="rounded border px-3 py-2" />
-        <input {...register(`${prefix}.y`)} placeholder="y" className="rounded border px-3 py-2" />
-        <input {...register(`${prefix}.z`)} placeholder="z" className="rounded border px-3 py-2" />
-      </div>
-    </div>
-  );
-}
 
 export function IntersectRayAABBForm() {
   const {
@@ -55,13 +37,16 @@ export function IntersectRayAABBForm() {
     setError,
     shouldAutoRun,
     setShouldAutoRun,
+    setQueryStatus,
+    saveCheckpoint,
+    objectLabels,
   } = usePlaygroundStore();
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -80,6 +65,7 @@ export function IntersectRayAABBForm() {
     async (values: FormValues) => {
       setRayAABBInputs(values);
       setError(null);
+      setQueryStatus("running");
 
       try {
         const response = await intersectRayAABB({
@@ -88,37 +74,34 @@ export function IntersectRayAABBForm() {
         });
 
         setRayAABBResult(response);
+        setQueryStatus("success");
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Something went wrong";
-        setError(message);
-        setRayAABBResult(null);
+        if (isAbortedRequest(err)) return;
+        setQueryStatus("success");
       }
     },
-    [setRayAABBInputs, setError, setRayAABBResult]
+    [setRayAABBInputs, setError, setRayAABBResult, setQueryStatus]
   );
 
   useEffect(() => {
     if (!shouldAutoRun) return;
 
-    handleSubmit(onSubmit)();
-    setShouldAutoRun(false);
+    const timer = window.setTimeout(() => {
+      setShouldAutoRun(false);
+      handleSubmit(onSubmit)();
+    }, 140);
+    return () => window.clearTimeout(timer);
   }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Vec3Fields register={register} prefix="rayOrigin" label="Ray Origin" />
-      <Vec3Fields register={register} prefix="rayDir" label="Ray Direction" />
-      <Vec3Fields register={register} prefix="aabbMin" label="Box Min" />
-      <Vec3Fields register={register} prefix="aabbMax" label="Box Max" />
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-      >
-        {isSubmitting ? "Running..." : "Intersect Ray with Box"}
-      </button>
+    <form onSubmit={handleSubmit(onSubmit)} onSubmitCapture={saveCheckpoint} className="space-y-4" noValidate>
+      <div className="grid gap-3 md:grid-cols-2">
+        <GeometryFields register={register} prefix="rayOrigin" label="Ray origin" symbol={objectLabels.rayOrigin} errors={errors.rayOrigin} />
+        <GeometryFields register={register} prefix="rayDir" label="Ray direction" symbol="d" errors={errors.rayDir} />
+        <GeometryFields register={register} prefix="aabbMin" label="Box minimum" symbol="min" errors={errors.aabbMin} />
+        <GeometryFields register={register} prefix="aabbMax" label="Box maximum" symbol="max" errors={errors.aabbMax} />
+      </div>
+      <FormActions isSubmitting={isSubmitting} label="Intersect ray and box" />
     </form>
   );
 }
