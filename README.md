@@ -5,6 +5,29 @@ An interactive 3D geometry lab for practical queries and spatial reasoning
 
 An interactive 3D geometry lab for practical queries and spatial reasoning.
 
+## Current status
+
+Phases 1-3 of the roadmap below are implemented and running end-to-end
+(Next.js frontend, Go backend on `geom3d` v1.1.0):
+
+* Point → plane projection
+* Ray → plane intersection
+* Closest point → segment
+* Segment ↔ segment distance
+* Ray → box (AABB) intersection
+* Closest point → box (AABB)
+
+Each has a numeric form, a live 3D viewport (drag points to re-run the
+query), and a results panel. `Triangle` objects/queries and Phase 4 polish
+(scenario persistence, dark mode, etc.) are not yet implemented — see the
+roadmap sections below for what's next.
+
+To run locally: `go run ./services/api/cmd/server` (backend, port 8081)
+and `pnpm --dir apps/web dev` (frontend, port 3000). The frontend falls
+back to `http://localhost:8081` for the API if `NEXT_PUBLIC_API_BASE_URL`
+isn't set — see `apps/web/.env.local.example` if you need to point it
+elsewhere.
+
 ## Goal
 
 Build a full-stack app around the `geom3d` library with:
