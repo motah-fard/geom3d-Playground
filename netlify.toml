@@ -1,0 +1,11 @@
+[build]
+  base = "apps/web"
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_PUBLIC_API_BASE_URL = "https://apigeom3d-playground-api.fly.dev"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
