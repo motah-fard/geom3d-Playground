@@ -32,6 +32,7 @@ import { QUERY_META } from "@/lib/query-meta";
 import { WorkspaceActions } from "@/components/WorkspaceActions";
 import { ScenarioGallery } from "@/components/ScenarioGallery";
 import { IntroSection } from "@/components/IntroSection";
+import { NATURE_EXAMPLES } from "@/lib/nature-examples";
 
 export function ClientPageShell() {
   const { queryType, loadExample, queryStatus } = usePlaygroundStore();
@@ -103,6 +104,12 @@ export function ClientPageShell() {
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/80">{meta.category}</p>
                 <h2 id="query-title" className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{meta.title}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{meta.description}</p>
+                {NATURE_EXAMPLES[queryType] && (
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-200/80">
+                    <span className="font-semibold text-emerald-300">Seen in nature: </span>
+                    {NATURE_EXAMPLES[queryType]}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 {queryType === "intersect-ray-plane" && (
