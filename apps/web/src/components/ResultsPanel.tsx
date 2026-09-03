@@ -38,11 +38,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -70,6 +70,7 @@ export function ResultsPanel() {
     state.queryType === "cartesian-transform" ? state.transformResult :
     state.queryType === "log-spiral-growth" ? state.spiralResult :
     state.queryType === "cell-packing" ? state.cellResult :
+    state.queryType === "helical-shell-growth" ? state.helixResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -103,7 +104,9 @@ export function ResultsPanel() {
                 ? `r(θ) = a·e^(bθ); a = ${state.spiralResult ? formatNumber(state.spiralResult.a, state.precision) : "—"}, b = ${state.spiralResult ? formatNumber(state.spiralResult.b, state.precision) : "—"}`
                 : state.queryType === "cell-packing"
                   ? "cell = ⋂ { x : (x − site)·(neighbor − site) ≤ (‖neighbor‖² − ‖site‖²)/2 }"
-                  : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                  : state.queryType === "helical-shell-growth"
+                    ? `x,y,z(θ) = r·cos θ, r·sin θ, cθ; r = a·e^(bθ); a = ${state.helixResult ? formatNumber(state.helixResult.a, state.precision) : "—"}, b = ${state.helixResult ? formatNumber(state.helixResult.b, state.precision) : "—"}`
+                    : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -188,6 +191,15 @@ export function ResultsPanel() {
                 <Metric label="Isoperimetric quotient (4πA ÷ P²)" value={state.cellResult.isoperimetricQuotient} suffix="" />
                 <Metric label="Sides" value={state.cellResult.sides} suffix="" />
                 <p className="text-xs leading-5 text-slate-500">A perfect circle scores 1; a regular hexagon scores ≈0.907. The centered cell sits at the hexagonal equilibrium — drag it away and the quotient drops as the cell becomes less efficient.</p>
+              </>
+            )}
+
+            {state.queryType === "helical-shell-growth" && state.helixResult && (
+              <>
+                <Metric label="Growth ratio per whorl (turn)" value={state.helixResult.growthRatio} suffix="×" />
+                <Metric label="Rise per whorl (turn)" value={state.helixResult.risePerTurn} />
+                <Metric label="Equiangular pitch" value={state.helixResult.pitchAngleDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">Set the rise to 0 and this is exactly the flat nautilus-style spiral; raise it and the same widening pattern climbs into a turreted shell instead.</p>
               </>
             )}
 

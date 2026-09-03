@@ -8,9 +8,11 @@ import {
   localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
+  localHelicalShell,
   localIntersectRayAABB,
   localIntersectRayPlane,
   localLogSpiral,
+  helicalShellPoint,
   localProjectPointToPlane,
   localSegmentSegment,
 } from "./local-geometry.ts";
@@ -92,6 +94,25 @@ test("a logarithmic spiral recovers its growth rate constant from the two contro
   const result = localLogSpiral({ start: { x: 1, y: 0, z: 0 }, turn: { x: rTurn, y: 0, z: 0 } });
   assert.ok(Math.abs(result.b - b) < 1e-9);
   assert.ok(result.pitchAngleDeg > 0 && result.pitchAngleDeg < 90);
+});
+
+test("a helical shell reduces to the flat spiral when rise-per-turn is zero", () => {
+  const flat = localHelicalShell({ start: { x: 1, y: 0, z: 0 }, turn: { x: 1.4, y: 0, z: 0 } });
+  const spiral = localLogSpiral({ start: { x: 1, y: 0, z: 0 }, turn: { x: 1.4, y: 0, z: 0 } });
+  assert.equal(flat.c, 0);
+  assert.equal(flat.a, spiral.a);
+  assert.equal(flat.b, spiral.b);
+  assert.equal(flat.pitchAngleDeg, spiral.pitchAngleDeg);
+  // with c = 0, the curve never leaves the z = 0 plane
+  assert.equal(helicalShellPoint(3, flat.a, flat.b, flat.c).z, 0);
+});
+
+test("a helical shell rises by exactly the turn point's z after one full turn", () => {
+  const result = localHelicalShell({ start: { x: 1, y: 0, z: 0 }, turn: { x: 1.4, y: 0, z: 1.2 } });
+  assert.equal(result.risePerTurn, 1.2);
+  const afterOneTurn = helicalShellPoint(2 * Math.PI, result.a, result.b, result.c);
+  assert.ok(Math.abs(afterOneTurn.z - 1.2) < 1e-9);
+  assert.ok(Math.abs(afterOneTurn.x - result.a * result.growthRatio) < 1e-9);
 });
 
 test("a centered cell in a regular hexagonal ring is a regular hexagon", () => {

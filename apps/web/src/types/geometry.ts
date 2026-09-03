@@ -153,6 +153,21 @@ export type LogSpiralResponse = {
 };
 
 // =======================
+// Helical (turreted) shell growth — the 3D generalization of the flat
+// equiangular spiral, where the curve also rises as it winds
+// (On Growth and Form, Ch. XI).
+// =======================
+
+export type HelicalShellResponse = {
+  a: number;
+  b: number;
+  c: number;
+  growthRatio: number;
+  risePerTurn: number;
+  pitchAngleDeg: number;
+};
+
+// =======================
 // Soap-bubble / cell packing (On Growth and Form, Ch. VI–VII)
 // =======================
 
@@ -175,4 +190,5 @@ export type QueryType =
   | "closest-point-aabb"
   | "cartesian-transform"
   | "log-spiral-growth"
-  | "cell-packing";
+  | "cell-packing"
+  | "helical-shell-growth";

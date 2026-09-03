@@ -3,6 +3,7 @@ import type {
   CartesianTransformResponse,
   CellPackingResponse,
   ClosestPointAABBResponse,
+  HelicalShellResponse,
   IntersectRayAABBResponse,
   IntersectRayPlaneResponse,
   LogSpiralResponse,
@@ -17,6 +18,7 @@ import {
   localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
+  localHelicalShell,
   localIntersectRayAABB,
   localIntersectRayPlane,
   localLogSpiral,
@@ -54,6 +56,8 @@ export type ScenarioSnapshot = {
   spiralStart: Vec3;
   spiralTurn: Vec3;
   cellCenter: Vec3;
+  helixStart: Vec3;
+  helixTurn: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -100,6 +104,10 @@ type PlaygroundState = {
   // cell-packing growth center
   cellCenter: Vec3;
 
+  // helical shell control points
+  helixStart: Vec3;
+  helixTurn: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -110,6 +118,7 @@ type PlaygroundState = {
   transformResult: CartesianTransformResponse | null;
   spiralResult: LogSpiralResponse | null;
   cellResult: CellPackingResponse | null;
+  helixResult: HelicalShellResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -176,6 +185,7 @@ type PlaygroundState = {
 
   setSpiralInputs: (payload: { start: Vec3; turn: Vec3 }) => void;
   setCellCenterInput: (center: Vec3) => void;
+  setHelixInputs: (payload: { start: Vec3; turn: Vec3 }) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -190,6 +200,7 @@ type PlaygroundState = {
   setTransformResult: (result: CartesianTransformResponse | null) => void;
   setSpiralResult: (result: LogSpiralResponse | null) => void;
   setCellResult: (result: CellPackingResponse | null) => void;
+  setHelixResult: (result: HelicalShellResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -223,6 +234,7 @@ const clearedResults = {
   transformResult: null,
   spiralResult: null,
   cellResult: null,
+  helixResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -249,6 +261,8 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     spiralStart: state.spiralStart,
     spiralTurn: state.spiralTurn,
     cellCenter: state.cellCenter,
+    helixStart: state.helixStart,
+    helixTurn: state.helixTurn,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -290,6 +304,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   cellCenter: { x: 0, y: 0, z: 0 },
 
+  helixStart: { x: 1, y: 0, z: 0 },
+  helixTurn: { x: 1.3, y: 0, z: 1.2 },
+
   // results
   ...clearedResults,
 
@@ -319,6 +336,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     spiralStart: "S",
     spiralTurn: "T",
     cellCenter: "C",
+    helixStart: "S",
+    helixTurn: "T",
   },
   past: [],
   future: [],
@@ -422,6 +441,15 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setHelixInputs: ({ start, turn }) =>
+    set({
+      helixStart: start,
+      helixTurn: turn,
+      helixResult: localHelicalShell({ start, turn }),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -448,6 +476,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setCellResult: (result) =>
     set({ cellResult: result, error: null }),
+
+  setHelixResult: (result) =>
+    set({ helixResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -645,6 +676,18 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       set({
         queryType: type,
         cellCenter: { x: 0, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "helical-shell-growth") {
+      set({
+        queryType: type,
+        helixStart: { x: 1, y: 0, z: 0 },
+        helixTurn: { x: 1.3, y: 0, z: 1.2 },
         shouldAutoRun: true,
         error: null,
         queryStatus: "idle",

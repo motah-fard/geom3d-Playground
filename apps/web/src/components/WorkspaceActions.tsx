@@ -36,6 +36,7 @@ export function WorkspaceActions() {
     if (store.queryType === "cartesian-transform") return ["transformP00", "transformP10", "transformP01", "transformP11"];
     if (store.queryType === "log-spiral-growth") return ["spiralStart", "spiralTurn"];
     if (store.queryType === "cell-packing") return ["cellCenter"];
+    if (store.queryType === "helical-shell-growth") return ["helixStart", "helixTurn"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

@@ -82,6 +82,14 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag the center point; its cell is the region closer to it than to any neighbor.",
     accent: "#fb923c",
   },
+  "helical-shell-growth": {
+    category: "Growth & Form",
+    title: "Helical shell growth",
+    shortTitle: "Helical shell",
+    description: "The 3D generalization of the equiangular spiral — a turreted shell that both widens and rises with each turn, rather than staying flat like a nautilus cross-section — after On Growth and Form, Ch. XI.",
+    instruction: "Drag T outward to widen each turn, or up to make it rise — S sets the base radius.",
+    accent: "#e879f9",
+  },
 };
 
 export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(

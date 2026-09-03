@@ -8,6 +8,7 @@ import type {
   ClosestPointSegmentResponse,
   IntersectRayAABBRequest,
   IntersectRayAABBResponse,
+  HelicalShellResponse,
   IntersectRayPlaneRequest,
   IntersectRayPlaneResponse,
   LogSpiralResponse,
@@ -325,6 +326,34 @@ function countPolygonSides(polygon: Vec3[]): number {
     if (Math.atan2(Math.abs(cross), dot) > 1e-3) sides++;
   }
   return sides;
+}
+
+// =======================
+// Helical (turreted) shell growth (On Growth and Form, Ch. XI)
+//
+// A flat equiangular spiral has zero rise per turn. Most real snail shells
+// also translate along an axis as they wind, tracing a 3D curve that both
+// widens (radius growth, exactly as before) and climbs (a constant rise
+// per turn) at once — the "turreted" shell shape, as opposed to the
+// nearly-flat cross-section of a nautilus.
+// =======================
+
+export function helicalShellPoint(theta: number, a: number, b: number, c: number): Vec3 {
+  const r = a * Math.exp(b * theta);
+  return { x: r * Math.cos(theta), y: r * Math.sin(theta), z: c * theta };
+}
+
+export function localHelicalShell(input: { start: Vec3; turn: Vec3 }): HelicalShellResponse {
+  const a = Math.max(Math.hypot(input.start.x, input.start.y), EPSILON);
+  const rTurn = Math.max(Math.hypot(input.turn.x, input.turn.y), EPSILON);
+  const growthRatio = rTurn / a;
+  const b = Math.log(growthRatio) / (2 * Math.PI);
+  // T is "the point after one full turn" for its radius, so its z is
+  // likewise the rise after one turn — z(θ) = cθ needs c per radian.
+  const risePerTurn = input.turn.z;
+  const c = risePerTurn / (2 * Math.PI);
+  const pitchAngleDeg = Math.acos(Math.abs(b) / Math.sqrt(1 + b * b)) * (180 / Math.PI);
+  return { a, b, c, growthRatio, risePerTurn, pitchAngleDeg };
 }
 
 export function localCellPacking(center: Vec3): CellPackingResponse {
