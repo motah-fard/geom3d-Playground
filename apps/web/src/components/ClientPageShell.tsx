@@ -31,6 +31,7 @@ import { usePlaygroundStore } from "@/store/playground-store";
 import { QUERY_META } from "@/lib/query-meta";
 import { WorkspaceActions } from "@/components/WorkspaceActions";
 import { ScenarioGallery } from "@/components/ScenarioGallery";
+import { IntroSection } from "@/components/IntroSection";
 
 export function ClientPageShell() {
   const { queryType, loadExample, queryStatus } = usePlaygroundStore();
@@ -83,6 +84,7 @@ export function ClientPageShell() {
       </header>
 
       <WorkspaceActions />
+      <IntroSection />
 
       <div id="workspace" className="mx-auto grid max-w-[1600px] gap-4 p-4 sm:p-6 xl:grid-cols-[250px_minmax(0,1fr)_340px]">
         <aside className="rounded-2xl border border-slate-800 bg-slate-950/55 p-3 shadow-2xl shadow-black/10 xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)] xl:overflow-y-auto" aria-label="Query navigation">

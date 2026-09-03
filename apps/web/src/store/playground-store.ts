@@ -53,6 +53,7 @@ import {
   GOLDEN_ANGLE_RAD,
   LOGISTIC_TIME_SPAN,
   BEE_CELL_OPTIMAL_RISE,
+  BEE_CELL_MIN_RISE,
 } from "@/lib/local-geometry";
 
 type SegmentResult = {
@@ -60,7 +61,30 @@ type SegmentResult = {
   distance: number;
 };
 
-export type ExampleType = QueryType | "ray-plane-hit" | "ray-plane-miss" | "point-inside-box" | "intersecting-segments" | "degenerate-segment" | "ray-box-miss";
+export type ExampleType =
+  | QueryType
+  | "ray-plane-hit"
+  | "ray-plane-miss"
+  | "point-inside-box"
+  | "intersecting-segments"
+  | "degenerate-segment"
+  | "ray-box-miss"
+  | "cartesian-extreme-stretch"
+  | "log-spiral-near-circle"
+  | "cell-off-center"
+  | "helical-flat-nautilus"
+  | "square-cube-elephant"
+  | "catenary-slack-rope"
+  | "allometric-hyper"
+  | "phyllotaxis-simple-fraction"
+  | "logistic-fast-grower"
+  | "geodesic-coarse"
+  | "whirling-just-three"
+  | "catenoid-pinched-neck"
+  | "milk-coronet-triangle"
+  | "egg-sharply-pointed"
+  | "helicoid-tight-screw"
+  | "bee-cell-flat-lid";
 
 export type ScenarioSnapshot = {
   version: 1;
@@ -1186,6 +1210,71 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
     if (type === "ray-box-miss") {
       set({ queryType: "intersect-ray-aabb", rayOrigin: { x: -4, y: 4, z: 1 }, rayDir: { x: 1, y: 0, z: 0 }, aabbMin: { x: 0, y: 0, z: 0 }, aabbMax: { x: 2, y: 2, z: 2 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "cartesian-extreme-stretch") {
+      set({ queryType: "cartesian-transform", transformP00: { x: -3, y: -1.6, z: 0 }, transformP10: { x: 7, y: -1.6, z: 0 }, transformP01: { x: -3, y: 1.6, z: 0 }, transformP11: { x: 3, y: 1.6, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "log-spiral-near-circle") {
+      set({ queryType: "log-spiral-growth", spiralStart: { x: 1.5, y: 0, z: 0 }, spiralTurn: { x: 1.55, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "cell-off-center") {
+      set({ queryType: "cell-packing", cellCenter: { x: 1.2, y: 0.6, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "helical-flat-nautilus") {
+      set({ queryType: "helical-shell-growth", helixStart: { x: 1, y: 0, z: 0 }, helixTurn: { x: 1.3, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "square-cube-elephant") {
+      set({ queryType: "square-cube-law", magnitudePoint: { x: 4.5, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "catenary-slack-rope") {
+      set({ queryType: "catenary-arch", catenaryA: { x: 0.6, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "allometric-hyper") {
+      set({ queryType: "allometric-growth", allometrySize: { x: 1, y: 0, z: 0 }, allometryExponent: { x: 3, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "phyllotaxis-simple-fraction") {
+      const angle = (2 * Math.PI) / 3; // 120 degrees -- a simple fraction of a full turn
+      set({ queryType: "phyllotaxis", phyllotaxisDivergence: { x: PHYLLOTAXIS_DIAL_RADIUS * Math.cos(angle), y: PHYLLOTAXIS_DIAL_RADIUS * Math.sin(angle), z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "logistic-fast-grower") {
+      set({ queryType: "logistic-growth", logisticR: { x: 2.4, y: 0, z: 0 }, logisticK: { x: LOGISTIC_TIME_SPAN, y: 8, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "geodesic-coarse") {
+      set({ queryType: "geodesic-sphere", geodesicDetail: { x: 0, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "whirling-just-three") {
+      set({ queryType: "whirling-squares", whirlingCount: { x: 3, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "catenoid-pinched-neck") {
+      set({ queryType: "catenoid", catenoidA: { x: 0.5, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "milk-coronet-triangle") {
+      set({ queryType: "milk-coronet", milkRadius: { x: 2.4, y: 0, z: 0 }, milkCount: { x: 3, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "egg-sharply-pointed") {
+      set({ queryType: "egg-curve", eggBig: { x: 1.6, y: 0, z: 0 }, eggSmall: { x: 0.4, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "helicoid-tight-screw") {
+      set({ queryType: "helicoid", helicoidRadius: { x: 1.8, y: 0, z: 0 }, helicoidPitch: { x: 0, y: 0, z: 0.6 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "bee-cell-flat-lid") {
+      set({ queryType: "bee-cell", beeCellRise: { x: BEE_CELL_MIN_RISE, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
     }
   },
 }));
