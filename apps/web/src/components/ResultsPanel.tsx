@@ -38,11 +38,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -74,6 +74,11 @@ export function ResultsPanel() {
     state.queryType === "square-cube-law" ? state.magnitudeResult :
     state.queryType === "catenary-arch" ? state.catenaryResult :
     state.queryType === "allometric-growth" ? state.allometryResult :
+    state.queryType === "phyllotaxis" ? state.phyllotaxisResult :
+    state.queryType === "logistic-growth" ? state.logisticResult :
+    state.queryType === "geodesic-sphere" ? state.geodesicResult :
+    state.queryType === "whirling-squares" ? state.whirlingResult :
+    state.queryType === "catenoid" ? state.catenoidResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -115,7 +120,17 @@ export function ResultsPanel() {
                         ? "y(x) = a·(cosh(x/a) − 1); arc length = 2a·sinh(halfSpan/a)"
                         : state.queryType === "allometric-growth"
                           ? "y = x^k (k = 1 is isometric growth)"
-                          : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                          : state.queryType === "phyllotaxis"
+                            ? "seed i: r = c√i, θ = i·δ (δ = divergence angle)"
+                            : state.queryType === "logistic-growth"
+                              ? "N(t) = K / (1 + e^(r(c−t))); max growth rate = rK/4 at N = K/2"
+                              : state.queryType === "geodesic-sphere"
+                                ? "V = 10f²+2, E = 30f², F = 20f² (f = 2^detail); V − E + F = 2"
+                                : state.queryType === "whirling-squares"
+                                  ? "side_i = side_0 / φ^i; arc length = (π/2)·Σ side_i"
+                                  : state.queryType === "catenoid"
+                                    ? "r(z) = a·cosh(z/a); area = 2πa²·(H + sinh(2H)/2), H = h/a"
+                                    : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -234,6 +249,49 @@ export function ResultsPanel() {
                 <Metric label="Part size (y = xᵏ)" value={state.allometryResult.y} />
                 <Metric label="Part ÷ body ratio" value={state.allometryResult.ratio} suffix="×" />
                 <p className="text-xs leading-5 text-slate-500">At k = 1 this ratio stays constant as the body grows — the same shape at every size. Away from k = 1, the part claims a changing share of the whole as size increases.</p>
+              </>
+            )}
+
+            {state.queryType === "phyllotaxis" && state.phyllotaxisResult && (
+              <>
+                <Metric label="Divergence angle" value={state.phyllotaxisResult.divergenceDeg} suffix="°" />
+                <Metric label="Deviation from golden (137.508°)" value={state.phyllotaxisResult.deviationDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">At exactly the golden angle the seeds pack with no gaps and no visible spiral arms — drag even slightly away from it and the arms snap into view, because nearby angles are well approximated by simple fractions.</p>
+              </>
+            )}
+
+            {state.queryType === "logistic-growth" && state.logisticResult && (
+              <>
+                <Metric label="Value at the inflection (t = 6)" value={state.logisticResult.k / 2} />
+                <Metric label="Maximum growth rate (rK/4)" value={state.logisticResult.maxGrowthRate} />
+                <p className="text-xs leading-5 text-slate-500">Growth is slow at first, fastest exactly halfway to the ceiling, then slows again as it approaches K — the S-curve shape of almost all real growth over time.</p>
+              </>
+            )}
+
+            {state.queryType === "geodesic-sphere" && state.geodesicResult && (
+              <>
+                <Metric label="Vertices" value={state.geodesicResult.vertices} />
+                <Metric label="Edges" value={state.geodesicResult.edges} />
+                <Metric label="Faces" value={state.geodesicResult.faces} />
+                <Metric label="Euler characteristic (V − E + F)" value={state.geodesicResult.eulerCharacteristic} />
+                <p className="text-xs leading-5 text-slate-500">No matter how finely the lattice is subdivided, V − E + F always equals 2 — a topological fact true of any sphere-like mesh, not just this construction.</p>
+              </>
+            )}
+
+            {state.queryType === "whirling-squares" && state.whirlingResult && (
+              <>
+                <Metric label="Squares" value={state.whirlingResult.count} suffix="" />
+                <Metric label="Shrink ratio per square (φ)" value={state.whirlingResult.ratio} suffix="×" />
+                <Metric label="Approximating spiral arc length" value={state.whirlingResult.totalArcLength} />
+                <p className="text-xs leading-5 text-slate-500">Only the golden ratio makes every remaining rectangle exactly similar to the last — the property that lets this discrete construction approximate a true equiangular spiral.</p>
+              </>
+            )}
+
+            {state.queryType === "catenoid" && state.catenoidResult && (
+              <>
+                <Metric label="Rim radius" value={state.catenoidResult.rimRadius} />
+                <Metric label="Film surface area" value={state.catenoidResult.surfaceArea} suffix={`${state.unit}²`} />
+                <p className="text-xs leading-5 text-slate-500">Of every surface spanning these two rings, this exact shape has the least area — which is precisely why a real soap film settles into it.</p>
               </>
             )}
 

@@ -40,6 +40,11 @@ export function WorkspaceActions() {
     if (store.queryType === "square-cube-law") return ["magnitudePoint"];
     if (store.queryType === "catenary-arch") return ["catenaryA"];
     if (store.queryType === "allometric-growth") return ["allometrySize", "allometryExponent"];
+    if (store.queryType === "phyllotaxis") return ["phyllotaxisDivergence"];
+    if (store.queryType === "logistic-growth") return ["logisticR", "logisticK"];
+    if (store.queryType === "geodesic-sphere") return ["geodesicDetail"];
+    if (store.queryType === "whirling-squares") return ["whirlingCount"];
+    if (store.queryType === "catenoid") return ["catenoidA"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

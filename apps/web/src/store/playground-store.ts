@@ -3,17 +3,22 @@ import type {
   AllometricGrowthResponse,
   CartesianTransformResponse,
   CatenaryResponse,
+  CatenoidResponse,
   CellPackingResponse,
   ClosestPointAABBResponse,
+  GeodesicSphereResponse,
   HelicalShellResponse,
   IntersectRayAABBResponse,
   IntersectRayPlaneResponse,
+  LogisticGrowthResponse,
   LogSpiralResponse,
   MagnitudeScalingResponse,
+  PhyllotaxisResponse,
   ProjectPointToPlaneResponse,
   QueryType,
   Vec3,
   SegmentSegmentResponse,
+  WhirlingSquaresResponse,
 } from "@/types/geometry";
 import {
   CATENARY_HALF_SPAN,
@@ -21,16 +26,24 @@ import {
   localAllometricGrowth,
   localCartesianTransform,
   localCatenary,
+  localCatenoid,
   localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
+  localGeodesicSphere,
   localHelicalShell,
   localIntersectRayAABB,
   localIntersectRayPlane,
+  localLogisticGrowth,
   localLogSpiral,
+  localPhyllotaxis,
   localProjectPointToPlane,
   localSegmentSegment,
   localSquareCubeLaw,
+  localWhirlingSquares,
+  PHYLLOTAXIS_DIAL_RADIUS,
+  GOLDEN_ANGLE_RAD,
+  LOGISTIC_TIME_SPAN,
 } from "@/lib/local-geometry";
 
 type SegmentResult = {
@@ -69,6 +82,12 @@ export type ScenarioSnapshot = {
   catenaryA: Vec3;
   allometrySize: Vec3;
   allometryExponent: Vec3;
+  phyllotaxisDivergence: Vec3;
+  logisticR: Vec3;
+  logisticK: Vec3;
+  geodesicDetail: Vec3;
+  whirlingCount: Vec3;
+  catenoidA: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -129,6 +148,22 @@ type PlaygroundState = {
   allometrySize: Vec3;
   allometryExponent: Vec3;
 
+  // phyllotaxis divergence dial
+  phyllotaxisDivergence: Vec3;
+
+  // logistic growth control points
+  logisticR: Vec3;
+  logisticK: Vec3;
+
+  // geodesic sphere subdivision control
+  geodesicDetail: Vec3;
+
+  // whirling-squares count control
+  whirlingCount: Vec3;
+
+  // catenoid parameter point
+  catenoidA: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -139,6 +174,11 @@ type PlaygroundState = {
   transformResult: CartesianTransformResponse | null;
   spiralResult: LogSpiralResponse | null;
   cellResult: CellPackingResponse | null;
+  phyllotaxisResult: PhyllotaxisResponse | null;
+  logisticResult: LogisticGrowthResponse | null;
+  geodesicResult: GeodesicSphereResponse | null;
+  whirlingResult: WhirlingSquaresResponse | null;
+  catenoidResult: CatenoidResponse | null;
   helixResult: HelicalShellResponse | null;
   magnitudeResult: MagnitudeScalingResponse | null;
   catenaryResult: CatenaryResponse | null;
@@ -213,6 +253,11 @@ type PlaygroundState = {
   setMagnitudeInput: (point: Vec3) => void;
   setCatenaryInput: (aPoint: Vec3) => void;
   setAllometryInputs: (payload: { sizePoint: Vec3; exponentPoint: Vec3 }) => void;
+  setPhyllotaxisInput: (divergencePoint: Vec3) => void;
+  setLogisticInputs: (payload: { rPoint: Vec3; kPoint: Vec3 }) => void;
+  setGeodesicInput: (detailPoint: Vec3) => void;
+  setWhirlingInput: (countPoint: Vec3) => void;
+  setCatenoidInput: (aPoint: Vec3) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -231,6 +276,11 @@ type PlaygroundState = {
   setMagnitudeResult: (result: MagnitudeScalingResponse | null) => void;
   setCatenaryResult: (result: CatenaryResponse | null) => void;
   setAllometryResult: (result: AllometricGrowthResponse | null) => void;
+  setPhyllotaxisResult: (result: PhyllotaxisResponse | null) => void;
+  setLogisticResult: (result: LogisticGrowthResponse | null) => void;
+  setGeodesicResult: (result: GeodesicSphereResponse | null) => void;
+  setWhirlingResult: (result: WhirlingSquaresResponse | null) => void;
+  setCatenoidResult: (result: CatenoidResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -268,6 +318,11 @@ const clearedResults = {
   magnitudeResult: null,
   catenaryResult: null,
   allometryResult: null,
+  phyllotaxisResult: null,
+  logisticResult: null,
+  geodesicResult: null,
+  whirlingResult: null,
+  catenoidResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -300,6 +355,12 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     catenaryA: state.catenaryA,
     allometrySize: state.allometrySize,
     allometryExponent: state.allometryExponent,
+    phyllotaxisDivergence: state.phyllotaxisDivergence,
+    logisticR: state.logisticR,
+    logisticK: state.logisticK,
+    geodesicDetail: state.geodesicDetail,
+    whirlingCount: state.whirlingCount,
+    catenoidA: state.catenoidA,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -351,6 +412,21 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   allometrySize: { x: 1, y: 0, z: 0 },
   allometryExponent: { x: 1.8, y: 0, z: 0 },
 
+  phyllotaxisDivergence: {
+    x: PHYLLOTAXIS_DIAL_RADIUS * Math.cos(GOLDEN_ANGLE_RAD),
+    y: PHYLLOTAXIS_DIAL_RADIUS * Math.sin(GOLDEN_ANGLE_RAD),
+    z: 0,
+  },
+
+  logisticR: { x: 0.8, y: 0, z: 0 },
+  logisticK: { x: LOGISTIC_TIME_SPAN, y: 8, z: 0 },
+
+  geodesicDetail: { x: 2, y: 0, z: 0 },
+
+  whirlingCount: { x: 8, y: 0, z: 0 },
+
+  catenoidA: { x: 1.2, y: 0, z: 0 },
+
   // results
   ...clearedResults,
 
@@ -386,6 +462,12 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     catenaryA: "A",
     allometrySize: "X",
     allometryExponent: "K",
+    phyllotaxisDivergence: "D",
+    logisticR: "R",
+    logisticK: "K",
+    geodesicDetail: "F",
+    whirlingCount: "N",
+    catenoidA: "A",
   },
   past: [],
   future: [],
@@ -523,6 +605,47 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setPhyllotaxisInput: (divergencePoint) =>
+    set({
+      phyllotaxisDivergence: divergencePoint,
+      phyllotaxisResult: localPhyllotaxis(divergencePoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setLogisticInputs: ({ rPoint, kPoint }) =>
+    set({
+      logisticR: rPoint,
+      logisticK: kPoint,
+      logisticResult: localLogisticGrowth(rPoint, kPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setGeodesicInput: (detailPoint) =>
+    set({
+      geodesicDetail: detailPoint,
+      geodesicResult: localGeodesicSphere(Math.hypot(detailPoint.x, detailPoint.y)),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setWhirlingInput: (countPoint) =>
+    set({
+      whirlingCount: countPoint,
+      whirlingResult: localWhirlingSquares(countPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setCatenoidInput: (aPoint) =>
+    set({
+      catenoidA: aPoint,
+      catenoidResult: localCatenoid(aPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -561,6 +684,21 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setAllometryResult: (result) =>
     set({ allometryResult: result, error: null }),
+
+  setPhyllotaxisResult: (result) =>
+    set({ phyllotaxisResult: result, error: null }),
+
+  setLogisticResult: (result) =>
+    set({ logisticResult: result, error: null }),
+
+  setGeodesicResult: (result) =>
+    set({ geodesicResult: result, error: null }),
+
+  setWhirlingResult: (result) =>
+    set({ whirlingResult: result, error: null }),
+
+  setCatenoidResult: (result) =>
+    set({ catenoidResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -804,6 +942,66 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         queryType: type,
         allometrySize: { x: 1, y: 0, z: 0 },
         allometryExponent: { x: 1.8, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "phyllotaxis") {
+      set({
+        queryType: type,
+        phyllotaxisDivergence: {
+          x: PHYLLOTAXIS_DIAL_RADIUS * Math.cos(GOLDEN_ANGLE_RAD),
+          y: PHYLLOTAXIS_DIAL_RADIUS * Math.sin(GOLDEN_ANGLE_RAD),
+          z: 0,
+        },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "logistic-growth") {
+      set({
+        queryType: type,
+        logisticR: { x: 0.8, y: 0, z: 0 },
+        logisticK: { x: LOGISTIC_TIME_SPAN, y: 8, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "geodesic-sphere") {
+      set({
+        queryType: type,
+        geodesicDetail: { x: 2, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "whirling-squares") {
+      set({
+        queryType: type,
+        whirlingCount: { x: 8, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "catenoid") {
+      set({
+        queryType: type,
+        catenoidA: { x: 1.2, y: 0, z: 0 },
         shouldAutoRun: true,
         error: null,
         queryStatus: "idle",

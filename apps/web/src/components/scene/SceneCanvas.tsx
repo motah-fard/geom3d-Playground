@@ -18,6 +18,11 @@ import { HelicalShellScene } from "@/components/scene/queries/HelicalShellScene"
 import { SquareCubeLawScene } from "@/components/scene/queries/SquareCubeLawScene";
 import { CatenaryScene } from "@/components/scene/queries/CatenaryScene";
 import { AllometricGrowthScene } from "@/components/scene/queries/AllometricGrowthScene";
+import { PhyllotaxisScene } from "@/components/scene/queries/PhyllotaxisScene";
+import { LogisticGrowthScene } from "@/components/scene/queries/LogisticGrowthScene";
+import { GeodesicSphereScene } from "@/components/scene/queries/GeodesicSphereScene";
+import { WhirlingSquaresScene } from "@/components/scene/queries/WhirlingSquaresScene";
+import { CatenoidScene } from "@/components/scene/queries/CatenoidScene";
 
 export function SceneCanvas() {
   const store = usePlaygroundStore();
@@ -46,7 +51,17 @@ export function SceneCanvas() {
                     ? [{ id: "catenaryA", role: "Catenary parameter", value: store.catenaryA }]
                     : queryType === "allometric-growth"
                       ? [{ id: "allometrySize", role: "Body size", value: store.allometrySize }, { id: "allometryExponent", role: "Allometric exponent", value: store.allometryExponent }]
-                      : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
+                      : queryType === "phyllotaxis"
+                        ? [{ id: "phyllotaxisDivergence", role: "Divergence dial", value: store.phyllotaxisDivergence }]
+                        : queryType === "logistic-growth"
+                          ? [{ id: "logisticR", role: "Growth rate", value: store.logisticR }, { id: "logisticK", role: "Ceiling", value: store.logisticK }]
+                          : queryType === "geodesic-sphere"
+                            ? [{ id: "geodesicDetail", role: "Subdivision level", value: store.geodesicDetail }]
+                            : queryType === "whirling-squares"
+                              ? [{ id: "whirlingCount", role: "Square count", value: store.whirlingCount }]
+                              : queryType === "catenoid"
+                                ? [{ id: "catenoidA", role: "Waist parameter", value: store.catenoidA }]
+                                : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#09131c] shadow-2xl shadow-black/20">
@@ -96,6 +111,11 @@ export function SceneCanvas() {
             {queryType === "square-cube-law" && <SquareCubeLawScene />}
             {queryType === "catenary-arch" && <CatenaryScene />}
             {queryType === "allometric-growth" && <AllometricGrowthScene />}
+            {queryType === "phyllotaxis" && <PhyllotaxisScene />}
+            {queryType === "logistic-growth" && <LogisticGrowthScene />}
+            {queryType === "geodesic-sphere" && <GeodesicSphereScene />}
+            {queryType === "whirling-squares" && <WhirlingSquaresScene />}
+            {queryType === "catenoid" && <CatenoidScene />}
           </Bounds>
         </Canvas>
         <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-lg border border-white/10 bg-slate-950/80 px-2.5 py-2 text-[10px] text-slate-300 backdrop-blur">

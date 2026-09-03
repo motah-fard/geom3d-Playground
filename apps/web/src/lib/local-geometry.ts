@@ -3,23 +3,28 @@ import type {
   CartesianTransformCorners,
   CartesianTransformResponse,
   CatenaryResponse,
+  CatenoidResponse,
   CellPackingResponse,
   ClosestPointAABBRequest,
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
   ClosestPointSegmentResponse,
+  GeodesicSphereResponse,
   IntersectRayAABBRequest,
   IntersectRayAABBResponse,
   HelicalShellResponse,
   IntersectRayPlaneRequest,
   IntersectRayPlaneResponse,
+  LogisticGrowthResponse,
   LogSpiralResponse,
   MagnitudeScalingResponse,
+  PhyllotaxisResponse,
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
   SegmentSegmentRequest,
   SegmentSegmentResponse,
   Vec3,
+  WhirlingSquaresResponse,
 } from "@/types/geometry";
 
 const EPSILON = 1e-9;
@@ -420,4 +425,150 @@ export function localAllometricGrowth(sizePoint: Vec3, exponentPoint: Vec3): All
   const k = Math.max(Math.hypot(exponentPoint.x, exponentPoint.y), EPSILON);
   const y = Math.pow(x, k);
   return { x, k, y, ratio: y / x };
+}
+
+// =======================
+// Phyllotaxis — Vogel's model of a sunflower head. Seed i sits at angle
+// i·δ and radius c·√i; only the golden angle δ = π(3−√5) packs every
+// seed against its neighbors with no gaps and no overlapping spiral
+// arms, because it is the real number worst approximated by fractions.
+// =======================
+
+export const GOLDEN_ANGLE_RAD = Math.PI * (3 - Math.sqrt(5));
+export const PHYLLOTAXIS_SEED_COUNT = 250;
+export const PHYLLOTAXIS_SCALE = 0.14;
+export const PHYLLOTAXIS_DIAL_RADIUS = 3.2;
+
+export function phyllotaxisPoint(index: number, divergenceRad: number, scale: number): Vec3 {
+  const theta = index * divergenceRad;
+  const r = scale * Math.sqrt(index);
+  return { x: r * Math.cos(theta), y: r * Math.sin(theta), z: 0 };
+}
+
+export function localPhyllotaxis(divergencePoint: Vec3): PhyllotaxisResponse {
+  const rawAngle = Math.atan2(divergencePoint.y, divergencePoint.x);
+  const divergenceRad = rawAngle < 0 ? rawAngle + 2 * Math.PI : rawAngle;
+  const divergenceDeg = divergenceRad * (180 / Math.PI);
+  const goldenAngleDeg = GOLDEN_ANGLE_RAD * (180 / Math.PI);
+  return {
+    divergenceDeg,
+    goldenAngleDeg,
+    deviationDeg: Math.abs(divergenceDeg - goldenAngleDeg),
+  };
+}
+
+// =======================
+// The logistic growth curve (On Growth and Form, Ch. III–IV): growth as
+// a function of TIME rather than of another part. N(t) = K / (1 + e^(r(c−t)))
+// is centered so its inflection always falls at t = c, where N = K/2 and
+// the growth rate itself is at its maximum, exactly rK/4.
+// =======================
+
+export const LOGISTIC_TIME_CENTER = 6;
+export const LOGISTIC_TIME_SPAN = 12;
+
+export function logisticPoint(t: number, r: number, k: number): Vec3 {
+  const n = k / (1 + Math.exp(r * (LOGISTIC_TIME_CENTER - t)));
+  return { x: t, y: n, z: 0 };
+}
+
+export function localLogisticGrowth(rPoint: Vec3, kPoint: Vec3): LogisticGrowthResponse {
+  const r = Math.max(Math.hypot(rPoint.x, rPoint.y), EPSILON);
+  const k = Math.max(kPoint.y, EPSILON);
+  return {
+    r,
+    k,
+    inflectionTime: LOGISTIC_TIME_CENTER,
+    maxGrowthRate: (r * k) / 4,
+  };
+}
+
+// =======================
+// The geodesic sphere (On Growth and Form's note on geodesics, and the
+// lattice skeletons of Radiolaria such as Aulonia hexagona). Subdividing
+// an icosahedron to frequency f (three.js's "detail" + 1: each edge is
+// split into f segments) always gives V = 10f²+2, E = 30f², F = 20f² —
+// and therefore V − E + F = 2, Euler's formula, regardless of how fine
+// the lattice is.
+// =======================
+
+export function localGeodesicSphere(rawDetail: number): GeodesicSphereResponse {
+  const detail = Math.max(0, Math.min(6, Math.round(rawDetail)));
+  const f = detail + 1;
+  const vertices = 10 * f * f + 2;
+  const edges = 30 * f * f;
+  const faces = 20 * f * f;
+  return { detail, vertices, edges, faces, eulerCharacteristic: vertices - edges + faces };
+}
+
+// =======================
+// The golden rectangle / whirling squares construction — the discrete
+// geometric origin of the equiangular spiral. Removing the largest
+// square from a golden rectangle always leaves a smaller golden
+// rectangle, rotated a quarter turn, so consecutive squares' sides
+// shrink by exactly φ every step.
+// =======================
+
+export const PHI = (1 + Math.sqrt(5)) / 2;
+
+export type WhirlingSquare = { x0: number; y0: number; x1: number; y1: number; direction: "left" | "bottom" | "right" | "top" };
+
+export function buildWhirlingSquares(count: number): WhirlingSquare[] {
+  const directions: WhirlingSquare["direction"][] = ["left", "bottom", "right", "top"];
+  let x0 = 0, y0 = 0, x1 = PHI, y1 = 1;
+  const squares: WhirlingSquare[] = [];
+  for (let i = 0; i < count; i++) {
+    const width = x1 - x0;
+    const height = y1 - y0;
+    const side = Math.min(width, height);
+    const direction = directions[i % 4];
+    let square: WhirlingSquare;
+    if (direction === "left") {
+      square = { x0, y0, x1: x0 + side, y1, direction };
+      x0 += side;
+    } else if (direction === "bottom") {
+      square = { x0, y0, x1, y1: y0 + side, direction };
+      y0 += side;
+    } else if (direction === "right") {
+      square = { x0: x1 - side, y0, x1, y1, direction };
+      x1 -= side;
+    } else {
+      square = { x0, y0: y1 - side, x1, y1, direction };
+      y1 -= side;
+    }
+    squares.push(square);
+  }
+  return squares;
+}
+
+export function localWhirlingSquares(countPoint: Vec3): WhirlingSquaresResponse {
+  const count = Math.max(1, Math.min(14, Math.round(Math.max(Math.hypot(countPoint.x, countPoint.y), 1))));
+  // side_i = 1/φ^i (i = 0..count-1); each quarter-circle arc has length (π/2)·side_i.
+  let totalArcLength = 0;
+  for (let i = 0; i < count; i++) {
+    totalArcLength += (Math.PI / 2) * PHI ** -i;
+  }
+  return { count, ratio: PHI, totalArcLength };
+}
+
+// =======================
+// The catenoid — the actual soap film that spans two coaxial rings,
+// the surface swept by revolving the catenary r(z) = a·cosh(z/a) around
+// its axis. Its area between z = ±h has the closed form
+// 2πa²·(H + sinh(2H)/2), where H = h/a.
+// =======================
+
+export const CATENOID_HALF_HEIGHT = 2;
+
+export function catenoidRadius(z: number, a: number): number {
+  return a * Math.cosh(z / a);
+}
+
+export function localCatenoid(aPoint: Vec3): CatenoidResponse {
+  const a = Math.max(Math.hypot(aPoint.x, aPoint.y), EPSILON);
+  const h = CATENOID_HALF_HEIGHT;
+  const rimRadius = catenoidRadius(h, a);
+  const bigH = h / a;
+  const surfaceArea = 2 * Math.PI * a * a * (bigH + Math.sinh(2 * bigH) / 2);
+  return { a, rimRadius, surfaceArea };
 }

@@ -201,6 +201,65 @@ export type AllometricGrowthResponse = {
 };
 
 // =======================
+// Phyllotaxis — the golden-angle divergence that packs sunflower seeds
+// and leaf primordia without gaps or overlaps.
+// =======================
+
+export type PhyllotaxisResponse = {
+  divergenceDeg: number;
+  goldenAngleDeg: number;
+  deviationDeg: number;
+};
+
+// =======================
+// The logistic growth curve (On Growth and Form, Ch. III–IV, growth
+// as a function of time rather than of another part).
+// =======================
+
+export type LogisticGrowthResponse = {
+  r: number;
+  k: number;
+  inflectionTime: number;
+  maxGrowthRate: number;
+};
+
+// =======================
+// The geodesic sphere — the triangulated lattice Thompson likens to
+// the skeletons of Radiolaria such as Aulonia hexagona.
+// =======================
+
+export type GeodesicSphereResponse = {
+  detail: number;
+  vertices: number;
+  edges: number;
+  faces: number;
+  eulerCharacteristic: number;
+};
+
+// =======================
+// The golden rectangle / whirling squares construction — the discrete
+// geometric origin of the equiangular spiral from continued similar
+// rectangles.
+// =======================
+
+export type WhirlingSquaresResponse = {
+  count: number;
+  ratio: number;
+  totalArcLength: number;
+};
+
+// =======================
+// The catenoid — the actual 3D minimal surface a soap film forms
+// between two coaxial rings, the surface of revolution of the catenary.
+// =======================
+
+export type CatenoidResponse = {
+  a: number;
+  rimRadius: number;
+  surfaceArea: number;
+};
+
+// =======================
 // Soap-bubble / cell packing (On Growth and Form, Ch. VI–VII)
 // =======================
 
@@ -227,4 +286,9 @@ export type QueryType =
   | "helical-shell-growth"
   | "square-cube-law"
   | "catenary-arch"
-  | "allometric-growth";
+  | "allometric-growth"
+  | "phyllotaxis"
+  | "logistic-growth"
+  | "geodesic-sphere"
+  | "whirling-squares"
+  | "catenoid";

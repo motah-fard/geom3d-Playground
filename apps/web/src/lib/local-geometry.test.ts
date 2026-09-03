@@ -6,15 +6,26 @@ import {
   bilinearPoint,
   localCartesianTransform,
   localCellPacking,
+  buildWhirlingSquares,
+  catenoidRadius,
+  GOLDEN_ANGLE_RAD,
   localAllometricGrowth,
   localCatenary,
+  localCatenoid,
   localClosestPointAABB,
   localClosestPointSegment,
+  localGeodesicSphere,
   localHelicalShell,
   localIntersectRayAABB,
   localIntersectRayPlane,
+  localLogisticGrowth,
+  LOGISTIC_TIME_CENTER,
   localLogSpiral,
+  localPhyllotaxis,
   localSquareCubeLaw,
+  localWhirlingSquares,
+  logisticPoint,
+  PHI,
   helicalShellPoint,
   localProjectPointToPlane,
   localSegmentSegment,
@@ -172,4 +183,93 @@ test("allometric growth with k = 2 makes the part grow with the square of body s
   const result = localAllometricGrowth({ x: 3, y: 0, z: 0 }, { x: 2, y: 0, z: 0 });
   assert.ok(Math.abs(result.y - 9) < 1e-9);
   assert.ok(Math.abs(result.ratio - 3) < 1e-9);
+});
+
+test("the golden angle equals pi(3 - sqrt(5)), i.e. 360 degrees / phi^2", () => {
+  const goldenAngleDeg = GOLDEN_ANGLE_RAD * (180 / Math.PI);
+  assert.ok(Math.abs(goldenAngleDeg - 360 / (PHI * PHI)) < 1e-9);
+  assert.ok(Math.abs(goldenAngleDeg - 137.50776405) < 1e-6);
+});
+
+test("phyllotaxis reports the divergence angle of the control point and its deviation from golden", () => {
+  const result = localPhyllotaxis({ x: Math.cos(GOLDEN_ANGLE_RAD), y: Math.sin(GOLDEN_ANGLE_RAD), z: 0 });
+  assert.ok(Math.abs(result.deviationDeg) < 1e-6);
+  const offAngle = localPhyllotaxis({ x: 1, y: 0, z: 0 }); // 0 degrees
+  assert.ok(Math.abs(offAngle.divergenceDeg - 0) < 1e-9);
+  assert.ok(offAngle.deviationDeg > 100);
+});
+
+test("the logistic curve passes through K/2 exactly at its center time, for any r or K", () => {
+  for (const [r, k] of [[0.5, 10], [1.2, 3], [0.1, 100]] as const) {
+    const point = logisticPoint(LOGISTIC_TIME_CENTER, r, k);
+    assert.ok(Math.abs(point.y - k / 2) < 1e-9, `r=${r} k=${k}`);
+  }
+});
+
+test("the logistic curve's maximum growth rate is exactly r*K/4", () => {
+  const result = localLogisticGrowth({ x: 0.8, y: 0, z: 0 }, { x: 12, y: 6, z: 0 });
+  assert.equal(result.r, 0.8);
+  assert.equal(result.k, 6);
+  assert.ok(Math.abs(result.maxGrowthRate - (0.8 * 6) / 4) < 1e-9);
+  // cross-check against a numerical derivative at the inflection point
+  const h = 1e-5;
+  const before = logisticPoint(LOGISTIC_TIME_CENTER - h, result.r, result.k).y;
+  const after = logisticPoint(LOGISTIC_TIME_CENTER + h, result.r, result.k).y;
+  const numericalSlope = (after - before) / (2 * h);
+  assert.ok(Math.abs(numericalSlope - result.maxGrowthRate) < 1e-4);
+});
+
+test("a geodesic sphere satisfies Euler's formula V - E + F = 2 at every subdivision level", () => {
+  for (let detail = 0; detail <= 6; detail++) {
+    const result = localGeodesicSphere(detail);
+    assert.equal(result.eulerCharacteristic, 2, `detail=${detail}`);
+  }
+});
+
+test("geodesic sphere face count matches THREE.IcosahedronGeometry's actual output at every detail level", async () => {
+  const THREE = await import("three");
+  for (let detail = 0; detail <= 5; detail++) {
+    const result = localGeodesicSphere(detail);
+    const geometry = new THREE.IcosahedronGeometry(1, detail);
+    const actualFaces = geometry.attributes.position.count / 3;
+    assert.equal(result.faces, actualFaces, `detail=${detail}: expected ${result.faces}, three.js produced ${actualFaces}`);
+  }
+});
+
+test("whirling squares shrink by exactly phi every step", () => {
+  const squares = buildWhirlingSquares(6);
+  for (let i = 1; i < squares.length; i++) {
+    const sideBefore = squares[i - 1].x1 - squares[i - 1].x0;
+    const sideAfter = squares[i].x1 - squares[i].x0;
+    // whichever dimension is the actual square side
+    const before = Math.min(squares[i - 1].x1 - squares[i - 1].x0, squares[i - 1].y1 - squares[i - 1].y0);
+    const after = Math.min(squares[i].x1 - squares[i].x0, squares[i].y1 - squares[i].y0);
+    assert.ok(Math.abs(before / after - PHI) < 1e-9, `step ${i}: ${sideBefore} -> ${sideAfter}`);
+  }
+});
+
+test("the whirling-squares arc length matches the direct geometric-series sum", () => {
+  const result = localWhirlingSquares({ x: 8, y: 0, z: 0 });
+  assert.equal(result.count, 8);
+  let expected = 0;
+  for (let i = 0; i < 8; i++) expected += (Math.PI / 2) * PHI ** -i;
+  assert.ok(Math.abs(result.totalArcLength - expected) < 1e-9);
+});
+
+test("catenoid area matches numerical integration of the surface-of-revolution formula", () => {
+  for (const a of [0.8, 1.2, 2.5]) {
+    const result = localCatenoid({ x: a, y: 0, z: 0 });
+    // numerically integrate 2*pi*r*sqrt(1+r'^2) dz via a fine Riemann sum
+    const h = 2; // CATENOID_HALF_HEIGHT
+    const steps = 200000;
+    const dz = (2 * h) / steps;
+    let numericalArea = 0;
+    for (let i = 0; i < steps; i++) {
+      const z = -h + (i + 0.5) * dz;
+      const r = catenoidRadius(z, a);
+      const rPrime = Math.sinh(z / a);
+      numericalArea += 2 * Math.PI * r * Math.sqrt(1 + rPrime * rPrime) * dz;
+    }
+    assert.ok(Math.abs(numericalArea - result.surfaceArea) / result.surfaceArea < 1e-4, `a=${a}: numerical=${numericalArea} closed-form=${result.surfaceArea}`);
+  }
 });

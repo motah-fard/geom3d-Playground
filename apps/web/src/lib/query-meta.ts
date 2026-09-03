@@ -114,6 +114,46 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag X to change body size, or K to change how disproportionately the part grows with it.",
     accent: "#f87171",
   },
+  "phyllotaxis": {
+    category: "Growth & Form",
+    title: "Phyllotaxis",
+    shortTitle: "Phyllotaxis",
+    description: "The golden-angle divergence, 137.5°, that packs sunflower seeds and leaf primordia with no gaps and no overlapping spiral arms — the angle worst approximated by any simple fraction.",
+    instruction: "Drag D around the dial to change the divergence angle away from golden and watch the spiral arms appear.",
+    accent: "#eab308",
+  },
+  "logistic-growth": {
+    category: "Growth & Form",
+    title: "The logistic growth curve",
+    shortTitle: "Logistic curve",
+    description: "Growth as a function of time rather than of another part — the S-shaped curve of an organism (or population) approaching a ceiling — after On Growth and Form, Ch. III–IV.",
+    instruction: "Drag R to change growth rate, or K to change the ceiling it approaches.",
+    accent: "#2dd4bf",
+  },
+  "geodesic-sphere": {
+    category: "Growth & Form",
+    title: "The geodesic sphere",
+    shortTitle: "Geodesic sphere",
+    description: "A triangulated lattice sphere, after Thompson's note on geodesics and his comparison of Radiolarian skeletons like Aulonia hexagona to such networks.",
+    instruction: "Drag F outward to subdivide the lattice further — Euler's formula V − E + F = 2 always holds.",
+    accent: "#818cf8",
+  },
+  "whirling-squares": {
+    category: "Growth & Form",
+    title: "The golden rectangle",
+    shortTitle: "Whirling squares",
+    description: "Removing the largest square from a golden rectangle always leaves a smaller golden rectangle — the discrete construction behind the continuous equiangular spiral.",
+    instruction: "Drag N to add or remove squares from the whirling sequence.",
+    accent: "#fb7185",
+  },
+  "catenoid": {
+    category: "Growth & Form",
+    title: "The catenoid",
+    shortTitle: "Catenoid",
+    description: "The actual soap film spanning two coaxial rings — the minimal surface swept by revolving the catenary around its own axis.",
+    instruction: "Drag A to change the waist radius and watch the rings and surface area respond.",
+    accent: "#0ea5e9",
+  },
 };
 
 export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(

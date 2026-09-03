@@ -14,6 +14,11 @@ import { HelicalShellForm } from "@/components/HelicalShellForm";
 import { SquareCubeLawForm } from "@/components/SquareCubeLawForm";
 import { CatenaryForm } from "@/components/CatenaryForm";
 import { AllometricGrowthForm } from "@/components/AllometricGrowthForm";
+import { PhyllotaxisForm } from "@/components/PhyllotaxisForm";
+import { LogisticGrowthForm } from "@/components/LogisticGrowthForm";
+import { GeodesicSphereForm } from "@/components/GeodesicSphereForm";
+import { WhirlingSquaresForm } from "@/components/WhirlingSquaresForm";
+import { CatenoidForm } from "@/components/CatenoidForm";
 
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -42,6 +47,11 @@ export function ClientPageShell() {
       {queryType === "square-cube-law" && <SquareCubeLawForm />}
       {queryType === "catenary-arch" && <CatenaryForm />}
       {queryType === "allometric-growth" && <AllometricGrowthForm />}
+      {queryType === "phyllotaxis" && <PhyllotaxisForm />}
+      {queryType === "logistic-growth" && <LogisticGrowthForm />}
+      {queryType === "geodesic-sphere" && <GeodesicSphereForm />}
+      {queryType === "whirling-squares" && <WhirlingSquaresForm />}
+      {queryType === "catenoid" && <CatenoidForm />}
     </>
   );
 
