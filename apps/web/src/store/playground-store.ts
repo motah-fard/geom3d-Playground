@@ -1,20 +1,26 @@
 import { create } from "zustand";
 import type {
+  AllometricGrowthResponse,
   CartesianTransformResponse,
+  CatenaryResponse,
   CellPackingResponse,
   ClosestPointAABBResponse,
   HelicalShellResponse,
   IntersectRayAABBResponse,
   IntersectRayPlaneResponse,
   LogSpiralResponse,
+  MagnitudeScalingResponse,
   ProjectPointToPlaneResponse,
   QueryType,
   Vec3,
   SegmentSegmentResponse,
 } from "@/types/geometry";
 import {
+  CATENARY_HALF_SPAN,
   DEFAULT_TRANSFORM_CORNERS,
+  localAllometricGrowth,
   localCartesianTransform,
+  localCatenary,
   localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
@@ -24,6 +30,7 @@ import {
   localLogSpiral,
   localProjectPointToPlane,
   localSegmentSegment,
+  localSquareCubeLaw,
 } from "@/lib/local-geometry";
 
 type SegmentResult = {
@@ -58,6 +65,10 @@ export type ScenarioSnapshot = {
   cellCenter: Vec3;
   helixStart: Vec3;
   helixTurn: Vec3;
+  magnitudePoint: Vec3;
+  catenaryA: Vec3;
+  allometrySize: Vec3;
+  allometryExponent: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -108,6 +119,16 @@ type PlaygroundState = {
   helixStart: Vec3;
   helixTurn: Vec3;
 
+  // square-cube law scale point
+  magnitudePoint: Vec3;
+
+  // catenary parameter point
+  catenaryA: Vec3;
+
+  // allometric growth control points
+  allometrySize: Vec3;
+  allometryExponent: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -119,6 +140,9 @@ type PlaygroundState = {
   spiralResult: LogSpiralResponse | null;
   cellResult: CellPackingResponse | null;
   helixResult: HelicalShellResponse | null;
+  magnitudeResult: MagnitudeScalingResponse | null;
+  catenaryResult: CatenaryResponse | null;
+  allometryResult: AllometricGrowthResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -186,6 +210,9 @@ type PlaygroundState = {
   setSpiralInputs: (payload: { start: Vec3; turn: Vec3 }) => void;
   setCellCenterInput: (center: Vec3) => void;
   setHelixInputs: (payload: { start: Vec3; turn: Vec3 }) => void;
+  setMagnitudeInput: (point: Vec3) => void;
+  setCatenaryInput: (aPoint: Vec3) => void;
+  setAllometryInputs: (payload: { sizePoint: Vec3; exponentPoint: Vec3 }) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -201,6 +228,9 @@ type PlaygroundState = {
   setSpiralResult: (result: LogSpiralResponse | null) => void;
   setCellResult: (result: CellPackingResponse | null) => void;
   setHelixResult: (result: HelicalShellResponse | null) => void;
+  setMagnitudeResult: (result: MagnitudeScalingResponse | null) => void;
+  setCatenaryResult: (result: CatenaryResponse | null) => void;
+  setAllometryResult: (result: AllometricGrowthResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -235,6 +265,9 @@ const clearedResults = {
   spiralResult: null,
   cellResult: null,
   helixResult: null,
+  magnitudeResult: null,
+  catenaryResult: null,
+  allometryResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -263,6 +296,10 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     cellCenter: state.cellCenter,
     helixStart: state.helixStart,
     helixTurn: state.helixTurn,
+    magnitudePoint: state.magnitudePoint,
+    catenaryA: state.catenaryA,
+    allometrySize: state.allometrySize,
+    allometryExponent: state.allometryExponent,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -307,6 +344,13 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   helixStart: { x: 1, y: 0, z: 0 },
   helixTurn: { x: 1.3, y: 0, z: 1.2 },
 
+  magnitudePoint: { x: 1.5, y: 0, z: 0 },
+
+  catenaryA: { x: 1.5, y: 0, z: 0 },
+
+  allometrySize: { x: 1, y: 0, z: 0 },
+  allometryExponent: { x: 1.8, y: 0, z: 0 },
+
   // results
   ...clearedResults,
 
@@ -338,6 +382,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     cellCenter: "C",
     helixStart: "S",
     helixTurn: "T",
+    magnitudePoint: "R",
+    catenaryA: "A",
+    allometrySize: "X",
+    allometryExponent: "K",
   },
   past: [],
   future: [],
@@ -450,6 +498,31 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setMagnitudeInput: (point) =>
+    set({
+      magnitudePoint: point,
+      magnitudeResult: localSquareCubeLaw(point),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setCatenaryInput: (aPoint) =>
+    set({
+      catenaryA: aPoint,
+      catenaryResult: localCatenary(aPoint, CATENARY_HALF_SPAN),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setAllometryInputs: ({ sizePoint, exponentPoint }) =>
+    set({
+      allometrySize: sizePoint,
+      allometryExponent: exponentPoint,
+      allometryResult: localAllometricGrowth(sizePoint, exponentPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -479,6 +552,15 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setHelixResult: (result) =>
     set({ helixResult: result, error: null }),
+
+  setMagnitudeResult: (result) =>
+    set({ magnitudeResult: result, error: null }),
+
+  setCatenaryResult: (result) =>
+    set({ catenaryResult: result, error: null }),
+
+  setAllometryResult: (result) =>
+    set({ allometryResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -688,6 +770,40 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         queryType: type,
         helixStart: { x: 1, y: 0, z: 0 },
         helixTurn: { x: 1.3, y: 0, z: 1.2 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "square-cube-law") {
+      set({
+        queryType: type,
+        magnitudePoint: { x: 1.5, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "catenary-arch") {
+      set({
+        queryType: type,
+        catenaryA: { x: 1.5, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "allometric-growth") {
+      set({
+        queryType: type,
+        allometrySize: { x: 1, y: 0, z: 0 },
+        allometryExponent: { x: 1.8, y: 0, z: 0 },
         shouldAutoRun: true,
         error: null,
         queryStatus: "idle",

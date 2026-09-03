@@ -37,6 +37,9 @@ export function WorkspaceActions() {
     if (store.queryType === "log-spiral-growth") return ["spiralStart", "spiralTurn"];
     if (store.queryType === "cell-packing") return ["cellCenter"];
     if (store.queryType === "helical-shell-growth") return ["helixStart", "helixTurn"];
+    if (store.queryType === "square-cube-law") return ["magnitudePoint"];
+    if (store.queryType === "catenary-arch") return ["catenaryA"];
+    if (store.queryType === "allometric-growth") return ["allometrySize", "allometryExponent"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

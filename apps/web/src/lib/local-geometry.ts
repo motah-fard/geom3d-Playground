@@ -1,6 +1,8 @@
 import type {
+  AllometricGrowthResponse,
   CartesianTransformCorners,
   CartesianTransformResponse,
+  CatenaryResponse,
   CellPackingResponse,
   ClosestPointAABBRequest,
   ClosestPointAABBResponse,
@@ -12,6 +14,7 @@ import type {
   IntersectRayPlaneRequest,
   IntersectRayPlaneResponse,
   LogSpiralResponse,
+  MagnitudeScalingResponse,
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
   SegmentSegmentRequest,
@@ -366,4 +369,55 @@ export function localCellPacking(center: Vec3): CellPackingResponse {
     isoperimetricQuotient: perimeter < EPSILON ? 0 : (4 * Math.PI * area) / (perimeter * perimeter),
     sides: countPolygonSides(cell),
   };
+}
+
+// =======================
+// The square-cube law (On Growth and Form, Ch. II, "On Magnitude")
+//
+// Uniformly scaling a shape by a factor L grows its surface area by L² but
+// its volume by L³, so surface-to-volume falls as 1/L — the reason a
+// larger animal cannot simply be a scaled-up copy of a smaller one.
+// =======================
+
+export function localSquareCubeLaw(point: Vec3): MagnitudeScalingResponse {
+  const radius = Math.max(Math.hypot(point.x, point.y, point.z), EPSILON);
+  const surfaceArea = 4 * Math.PI * radius * radius;
+  const volume = (4 / 3) * Math.PI * radius * radius * radius;
+  return { radius, surfaceArea, volume, ratio: surfaceArea / volume };
+}
+
+// =======================
+// The catenary arch — the exact equilibrium shape of a chain hanging
+// under its own weight (and, inverted, the ideal pure-compression arch),
+// y = a·(cosh(x/a) − 1) with its lowest point at the origin.
+// =======================
+
+export const CATENARY_HALF_SPAN = 3;
+
+export function catenaryPoint(x: number, a: number): Vec3 {
+  return { x, y: a * (Math.cosh(x / a) - 1), z: 0 };
+}
+
+export function localCatenary(aPoint: Vec3, halfSpan: number): CatenaryResponse {
+  const a = Math.max(Math.hypot(aPoint.x, aPoint.y), EPSILON);
+  const sag = a * (Math.cosh(halfSpan / a) - 1);
+  const arcLength = 2 * a * Math.sinh(halfSpan / a);
+  return { a, sag, arcLength };
+}
+
+// =======================
+// Allometric growth (On Growth and Form, Ch. IV, "On the Rate of Growth")
+//
+// Huxley and Thompson's allometric equation y = b·x^k relates the size of
+// a part (y) to the size of the whole (x) as an organism grows. k = 1 is
+// isometric (constant shape at every size); k ≠ 1 means the part's share
+// of the whole changes with size — the source of most shape change in
+// growth and evolution alike.
+// =======================
+
+export function localAllometricGrowth(sizePoint: Vec3, exponentPoint: Vec3): AllometricGrowthResponse {
+  const x = Math.max(Math.hypot(sizePoint.x, sizePoint.y), EPSILON);
+  const k = Math.max(Math.hypot(exponentPoint.x, exponentPoint.y), EPSILON);
+  const y = Math.pow(x, k);
+  return { x, k, y, ratio: y / x };
 }

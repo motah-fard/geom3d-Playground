@@ -6,12 +6,15 @@ import {
   bilinearPoint,
   localCartesianTransform,
   localCellPacking,
+  localAllometricGrowth,
+  localCatenary,
   localClosestPointAABB,
   localClosestPointSegment,
   localHelicalShell,
   localIntersectRayAABB,
   localIntersectRayPlane,
   localLogSpiral,
+  localSquareCubeLaw,
   helicalShellPoint,
   localProjectPointToPlane,
   localSegmentSegment,
@@ -129,4 +132,44 @@ test("an off-center cell is less regular than the centered one", () => {
   // still fully enclosed by its six neighbors
   assert.ok(offCenter.sides >= 3);
   assert.ok(CELL_RING_SITES.length === 6);
+});
+
+test("the square-cube law: surface area is 4*pi*r^2, volume is (4/3)*pi*r^3, and their ratio is 3/r", () => {
+  const result = localSquareCubeLaw({ x: 2, y: 0, z: 0 });
+  assert.equal(result.radius, 2);
+  assert.ok(Math.abs(result.surfaceArea - 4 * Math.PI * 4) < 1e-9);
+  assert.ok(Math.abs(result.volume - (4 / 3) * Math.PI * 8) < 1e-9);
+  assert.ok(Math.abs(result.ratio - 3 / 2) < 1e-9);
+});
+
+test("doubling the radius quarters the surface-to-volume ratio (the square-cube law itself)", () => {
+  const small = localSquareCubeLaw({ x: 1, y: 0, z: 0 });
+  const large = localSquareCubeLaw({ x: 2, y: 0, z: 0 });
+  assert.ok(Math.abs(small.ratio / large.ratio - 2) < 1e-9);
+});
+
+test("a catenary's sag and arc length satisfy (sag+a)^2 - (arcLength/2)^2 = a^2 for any span", () => {
+  for (const [a, halfSpan] of [[1, 1], [0.5, 2], [3, 0.7]] as const) {
+    const result = localCatenary({ x: a, y: 0, z: 0 }, halfSpan);
+    const lhs = (result.sag + a) ** 2 - (result.arcLength / 2) ** 2;
+    assert.ok(Math.abs(lhs - a * a) < 1e-9, `a=${a} halfSpan=${halfSpan}`);
+  }
+});
+
+test("a taut catenary (large a) sags far less than a slack one (small a) over the same span", () => {
+  const taut = localCatenary({ x: 1000, y: 0, z: 0 }, 1);
+  const slack = localCatenary({ x: 0.5, y: 0, z: 0 }, 1);
+  assert.ok(taut.sag < slack.sag);
+});
+
+test("allometric growth is isometric (y = x) exactly when k = 1", () => {
+  const result = localAllometricGrowth({ x: 3, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
+  assert.ok(Math.abs(result.y - 3) < 1e-9);
+  assert.ok(Math.abs(result.ratio - 1) < 1e-9);
+});
+
+test("allometric growth with k = 2 makes the part grow with the square of body size", () => {
+  const result = localAllometricGrowth({ x: 3, y: 0, z: 0 }, { x: 2, y: 0, z: 0 });
+  assert.ok(Math.abs(result.y - 9) < 1e-9);
+  assert.ok(Math.abs(result.ratio - 3) < 1e-9);
 });

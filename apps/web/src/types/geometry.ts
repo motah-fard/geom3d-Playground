@@ -168,6 +168,39 @@ export type HelicalShellResponse = {
 };
 
 // =======================
+// The square-cube law (On Growth and Form, Ch. II, "On Magnitude")
+// =======================
+
+export type MagnitudeScalingResponse = {
+  radius: number;
+  surfaceArea: number;
+  volume: number;
+  ratio: number;
+};
+
+// =======================
+// The catenary arch (mechanical equilibrium of a hanging chain,
+// discussed alongside Thompson's treatment of mechanical efficiency)
+// =======================
+
+export type CatenaryResponse = {
+  a: number;
+  sag: number;
+  arcLength: number;
+};
+
+// =======================
+// Allometric growth (On Growth and Form, Ch. IV, "On the Rate of Growth")
+// =======================
+
+export type AllometricGrowthResponse = {
+  x: number;
+  k: number;
+  y: number;
+  ratio: number;
+};
+
+// =======================
 // Soap-bubble / cell packing (On Growth and Form, Ch. VI–VII)
 // =======================
 
@@ -191,4 +224,7 @@ export type QueryType =
   | "cartesian-transform"
   | "log-spiral-growth"
   | "cell-packing"
-  | "helical-shell-growth";
+  | "helical-shell-growth"
+  | "square-cube-law"
+  | "catenary-arch"
+  | "allometric-growth";

@@ -90,6 +90,30 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag T outward to widen each turn, or up to make it rise — S sets the base radius.",
     accent: "#e879f9",
   },
+  "square-cube-law": {
+    category: "Growth & Form",
+    title: "The square-cube law",
+    shortTitle: "Square-cube law",
+    description: "Scaling a shape up grows its surface by the square but its volume by the cube — the reason a larger animal can't just be a bigger copy of a smaller one — after On Growth and Form, Ch. II, \"On Magnitude\".",
+    instruction: "Drag R to resize the sphere and watch its surface-to-volume ratio fall as it grows.",
+    accent: "#4ade80",
+  },
+  "catenary-arch": {
+    category: "Growth & Form",
+    title: "The catenary arch",
+    shortTitle: "Catenary arch",
+    description: "The exact shape a chain takes hanging under its own weight — and, inverted, the ideal pure-compression arch — a curve of mechanical equilibrium rather than growth.",
+    instruction: "Drag A to make the hanging curve tauter or slacker over a fixed span.",
+    accent: "#facc15",
+  },
+  "allometric-growth": {
+    category: "Growth & Form",
+    title: "Allometric growth",
+    shortTitle: "Allometric growth",
+    description: "Huxley and Thompson's allometric equation, y = x^k, relating a part's size to the whole as an organism grows — after On Growth and Form, Ch. IV, \"On the Rate of Growth\".",
+    instruction: "Drag X to change body size, or K to change how disproportionately the part grows with it.",
+    accent: "#f87171",
+  },
 };
 
 export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(

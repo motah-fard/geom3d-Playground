@@ -38,11 +38,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -71,6 +71,9 @@ export function ResultsPanel() {
     state.queryType === "log-spiral-growth" ? state.spiralResult :
     state.queryType === "cell-packing" ? state.cellResult :
     state.queryType === "helical-shell-growth" ? state.helixResult :
+    state.queryType === "square-cube-law" ? state.magnitudeResult :
+    state.queryType === "catenary-arch" ? state.catenaryResult :
+    state.queryType === "allometric-growth" ? state.allometryResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -106,7 +109,13 @@ export function ResultsPanel() {
                   ? "cell = ⋂ { x : (x − site)·(neighbor − site) ≤ (‖neighbor‖² − ‖site‖²)/2 }"
                   : state.queryType === "helical-shell-growth"
                     ? `x,y,z(θ) = r·cos θ, r·sin θ, cθ; r = a·e^(bθ); a = ${state.helixResult ? formatNumber(state.helixResult.a, state.precision) : "—"}, b = ${state.helixResult ? formatNumber(state.helixResult.b, state.precision) : "—"}`
-                    : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                    : state.queryType === "square-cube-law"
+                      ? "S = 4πr²; V = (4/3)πr³; S/V = 3/r"
+                      : state.queryType === "catenary-arch"
+                        ? "y(x) = a·(cosh(x/a) − 1); arc length = 2a·sinh(halfSpan/a)"
+                        : state.queryType === "allometric-growth"
+                          ? "y = x^k (k = 1 is isometric growth)"
+                          : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -200,6 +209,31 @@ export function ResultsPanel() {
                 <Metric label="Rise per whorl (turn)" value={state.helixResult.risePerTurn} />
                 <Metric label="Equiangular pitch" value={state.helixResult.pitchAngleDeg} suffix="°" />
                 <p className="text-xs leading-5 text-slate-500">Set the rise to 0 and this is exactly the flat nautilus-style spiral; raise it and the same widening pattern climbs into a turreted shell instead.</p>
+              </>
+            )}
+
+            {state.queryType === "square-cube-law" && state.magnitudeResult && (
+              <>
+                <Metric label="Surface area" value={state.magnitudeResult.surfaceArea} suffix={`${state.unit}²`} />
+                <Metric label="Volume" value={state.magnitudeResult.volume} suffix={`${state.unit}³`} />
+                <Metric label="Surface ÷ volume" value={state.magnitudeResult.ratio} suffix={`${state.unit}⁻¹`} />
+                <p className="text-xs leading-5 text-slate-500">Grow the sphere and this ratio falls as 1/r — the reason a scaled-up animal has relatively less surface (for breathing, cooling, absorbing) per unit of the volume it must support and feed.</p>
+              </>
+            )}
+
+            {state.queryType === "catenary-arch" && state.catenaryResult && (
+              <>
+                <Metric label="Sag over the span" value={state.catenaryResult.sag} />
+                <Metric label="Chain length needed" value={state.catenaryResult.arcLength} />
+                <p className="text-xs leading-5 text-slate-500">This is the exact equilibrium shape of a chain hanging under its own weight — and, turned upside down, the ideal arch shape carrying pure compression with no bending at all.</p>
+              </>
+            )}
+
+            {state.queryType === "allometric-growth" && state.allometryResult && (
+              <>
+                <Metric label="Part size (y = xᵏ)" value={state.allometryResult.y} />
+                <Metric label="Part ÷ body ratio" value={state.allometryResult.ratio} suffix="×" />
+                <p className="text-xs leading-5 text-slate-500">At k = 1 this ratio stays constant as the body grows — the same shape at every size. Away from k = 1, the part claims a changing share of the whole as size increases.</p>
               </>
             )}
 
