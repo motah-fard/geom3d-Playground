@@ -34,6 +34,8 @@ export function WorkspaceActions() {
     if (store.queryType === "intersect-ray-plane" || store.queryType === "intersect-ray-aabb") return ["rayOrigin"];
     if (store.queryType === "closest-point-segment") return ["point", "segmentA", "segmentB"];
     if (store.queryType === "cartesian-transform") return ["transformP00", "transformP10", "transformP01", "transformP11"];
+    if (store.queryType === "log-spiral-growth") return ["spiralStart", "spiralTurn"];
+    if (store.queryType === "cell-packing") return ["cellCenter"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

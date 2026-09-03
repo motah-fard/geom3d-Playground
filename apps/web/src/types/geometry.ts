@@ -141,6 +141,28 @@ export type CartesianTransformResponse = {
   elongation: number;
 };
 
+// =======================
+// Logarithmic (equiangular) spiral growth (On Growth and Form, Ch. XI)
+// =======================
+
+export type LogSpiralResponse = {
+  a: number;
+  b: number;
+  growthRatio: number;
+  pitchAngleDeg: number;
+};
+
+// =======================
+// Soap-bubble / cell packing (On Growth and Form, Ch. VI–VII)
+// =======================
+
+export type CellPackingResponse = {
+  area: number;
+  perimeter: number;
+  isoperimetricQuotient: number;
+  sides: number;
+};
+
 // The full set of query types the playground supports. Kept here (rather
 // than inline in the store) so it can be imported anywhere a properly
 // typed QueryType is needed instead of casting through `any`.
@@ -151,4 +173,6 @@ export type QueryType =
   | "segment-segment"
   | "intersect-ray-aabb"
   | "closest-point-aabb"
-  | "cartesian-transform";
+  | "cartesian-transform"
+  | "log-spiral-growth"
+  | "cell-packing";

@@ -1,13 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  CELL_RING_SITES,
   DEFAULT_TRANSFORM_CORNERS,
   bilinearPoint,
   localCartesianTransform,
+  localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
   localIntersectRayAABB,
   localIntersectRayPlane,
+  localLogSpiral,
   localProjectPointToPlane,
   localSegmentSegment,
 } from "./local-geometry.ts";
@@ -74,4 +77,35 @@ test("Cartesian transform is identity at the default corners and scales area wit
   const stretched = localCartesianTransform(stretchedX);
   assert.ok(Math.abs(stretched.areaRatio - 2) < 1e-9);
   assert.ok(Math.abs(stretched.elongation - 2) < 1e-9);
+});
+
+test("a logarithmic spiral with equal start and turn radii is a circle (b = 0, pitch = 90°)", () => {
+  const result = localLogSpiral({ start: { x: 1, y: 0, z: 0 }, turn: { x: 1, y: 0, z: 0 } });
+  assert.equal(result.growthRatio, 1);
+  assert.equal(result.b, 0);
+  assert.ok(Math.abs(result.pitchAngleDeg - 90) < 1e-9);
+});
+
+test("a logarithmic spiral recovers its growth rate constant from the two control points", () => {
+  const b = 0.1;
+  const rTurn = Math.exp(2 * Math.PI * b);
+  const result = localLogSpiral({ start: { x: 1, y: 0, z: 0 }, turn: { x: rTurn, y: 0, z: 0 } });
+  assert.ok(Math.abs(result.b - b) < 1e-9);
+  assert.ok(result.pitchAngleDeg > 0 && result.pitchAngleDeg < 90);
+});
+
+test("a centered cell in a regular hexagonal ring is a regular hexagon", () => {
+  const result = localCellPacking({ x: 0, y: 0, z: 0 });
+  assert.equal(result.sides, 6);
+  // 4*pi*area / perimeter^2 for a regular hexagon is pi*sqrt(3)/6 ≈ 0.9069.
+  assert.ok(Math.abs(result.isoperimetricQuotient - (Math.PI * Math.sqrt(3)) / 6) < 1e-9);
+});
+
+test("an off-center cell is less regular than the centered one", () => {
+  const centered = localCellPacking({ x: 0, y: 0, z: 0 });
+  const offCenter = localCellPacking({ x: 1, y: 0, z: 0 });
+  assert.ok(offCenter.isoperimetricQuotient < centered.isoperimetricQuotient);
+  // still fully enclosed by its six neighbors
+  assert.ok(offCenter.sides >= 3);
+  assert.ok(CELL_RING_SITES.length === 6);
 });

@@ -8,6 +8,8 @@ import { SegmentSegmentForm } from "@/components/SegmentSegmentForm";
 import { IntersectRayAABBForm } from "@/components/IntersectRayAABBForm";
 import { ClosestPointAABBForm } from "@/components/ClosestPointAABBForm";
 import { CartesianTransformForm } from "@/components/CartesianTransformForm";
+import { LogSpiralForm } from "@/components/LogSpiralForm";
+import { CellPackingForm } from "@/components/CellPackingForm";
 
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -30,6 +32,8 @@ export function ClientPageShell() {
       {queryType === "intersect-ray-aabb" && <IntersectRayAABBForm />}
       {queryType === "closest-point-aabb" && <ClosestPointAABBForm />}
       {queryType === "cartesian-transform" && <CartesianTransformForm />}
+      {queryType === "log-spiral-growth" && <LogSpiralForm />}
+      {queryType === "cell-packing" && <CellPackingForm />}
     </>
   );
 

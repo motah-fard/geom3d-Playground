@@ -38,11 +38,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -68,6 +68,8 @@ export function ResultsPanel() {
     state.queryType === "segment-segment" ? state.segmentSegmentResult :
     state.queryType === "intersect-ray-aabb" ? state.rayAABBResult :
     state.queryType === "cartesian-transform" ? state.transformResult :
+    state.queryType === "log-spiral-growth" ? state.spiralResult :
+    state.queryType === "cell-packing" ? state.cellResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -97,7 +99,11 @@ export function ResultsPanel() {
             ? "intersect the X, Y, and Z ray slabs; hit when tEntry ≤ tExit"
             : state.queryType === "cartesian-transform"
               ? "X(u,v) = (1−u)(1−v)P₀₀ + u(1−v)P₁₀ + (1−u)v·P₀₁ + uv·P₁₁"
-              : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+              : state.queryType === "log-spiral-growth"
+                ? `r(θ) = a·e^(bθ); a = ${state.spiralResult ? formatNumber(state.spiralResult.a, state.precision) : "—"}, b = ${state.spiralResult ? formatNumber(state.spiralResult.b, state.precision) : "—"}`
+                : state.queryType === "cell-packing"
+                  ? "cell = ⋂ { x : (x − site)·(neighbor − site) ≤ (‖neighbor‖² − ‖site‖²)/2 }"
+                  : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -166,6 +172,22 @@ export function ResultsPanel() {
                 <Metric label="Area ratio (warped ÷ reference)" value={state.transformResult.areaRatio} suffix="×" />
                 <Metric label="Elongation (aspect ratio change)" value={state.transformResult.elongation} suffix="×" />
                 <p className="text-xs leading-5 text-slate-500">A ratio above 1 means that region of the growth grid has expanded; below 1, it has been compressed — the same warp Thompson used to relate one species&rsquo; form to another.</p>
+              </>
+            )}
+
+            {state.queryType === "log-spiral-growth" && state.spiralResult && (
+              <>
+                <Metric label="Growth ratio per whorl (turn)" value={state.spiralResult.growthRatio} suffix="×" />
+                <Metric label="Equiangular pitch" value={state.spiralResult.pitchAngleDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">A pitch of 90° is a plain circle (no growth); the smaller the angle, the more rapidly the shell flares outward each turn — but it always crosses every radius at this same angle.</p>
+              </>
+            )}
+
+            {state.queryType === "cell-packing" && state.cellResult && (
+              <>
+                <Metric label="Isoperimetric quotient (4πA ÷ P²)" value={state.cellResult.isoperimetricQuotient} suffix="" />
+                <Metric label="Sides" value={state.cellResult.sides} suffix="" />
+                <p className="text-xs leading-5 text-slate-500">A perfect circle scores 1; a regular hexagon scores ≈0.907. The centered cell sits at the hexagonal equilibrium — drag it away and the quotient drops as the cell becomes less efficient.</p>
               </>
             )}
 

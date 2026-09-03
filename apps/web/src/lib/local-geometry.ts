@@ -1,6 +1,7 @@
 import type {
   CartesianTransformCorners,
   CartesianTransformResponse,
+  CellPackingResponse,
   ClosestPointAABBRequest,
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
@@ -9,6 +10,7 @@ import type {
   IntersectRayAABBResponse,
   IntersectRayPlaneRequest,
   IntersectRayPlaneResponse,
+  LogSpiralResponse,
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
   SegmentSegmentRequest,
@@ -175,7 +177,7 @@ export function bilinearPoint(u: number, v: number, corners: CartesianTransformC
   };
 }
 
-function shoelaceArea(polygon: Vec3[]): number {
+export function polygonArea(polygon: Vec3[]): number {
   let sum = 0;
   for (let i = 0; i < polygon.length; i++) {
     const current = polygon[i];
@@ -183,6 +185,16 @@ function shoelaceArea(polygon: Vec3[]): number {
     sum += current.x * next.y - next.x * current.y;
   }
   return Math.abs(sum) / 2;
+}
+
+export function polygonPerimeter(polygon: Vec3[]): number {
+  let total = 0;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i];
+    const b = polygon[(i + 1) % polygon.length];
+    total += Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  return total;
 }
 
 function boundingAspect(polygon: Vec3[]): number {
@@ -197,8 +209,8 @@ export function localCartesianTransform(corners: CartesianTransformCorners): Car
   const currentPolygon = FISH_OUTLINE.map(([u, v]) => bilinearPoint(u, v, corners));
   const referencePolygon = FISH_OUTLINE.map(([u, v]) => bilinearPoint(u, v, DEFAULT_TRANSFORM_CORNERS));
 
-  const currentArea = shoelaceArea(currentPolygon);
-  const referenceArea = shoelaceArea(referencePolygon);
+  const currentArea = polygonArea(currentPolygon);
+  const referenceArea = polygonArea(referencePolygon);
   const currentAspect = boundingAspect(currentPolygon);
   const referenceAspect = boundingAspect(referencePolygon);
 
@@ -207,5 +219,122 @@ export function localCartesianTransform(corners: CartesianTransformCorners): Car
     referenceArea,
     areaRatio: referenceArea < EPSILON ? 0 : currentArea / referenceArea,
     elongation: referenceAspect < EPSILON ? 0 : currentAspect / referenceAspect,
+  };
+}
+
+// =======================
+// Logarithmic (equiangular) spiral growth (On Growth and Form, Ch. XI)
+//
+// A shell or horn that grows by adding material only at its margin, while
+// always keeping the same shape, traces r(θ) = a·e^(bθ) — the defining
+// property is that the curve crosses every radius at the same angle.
+// =======================
+
+export function logSpiralPoint(theta: number, a: number, b: number): Vec3 {
+  const r = a * Math.exp(b * theta);
+  return { x: r * Math.cos(theta), y: r * Math.sin(theta), z: 0 };
+}
+
+export function localLogSpiral(input: { start: Vec3; turn: Vec3 }): LogSpiralResponse {
+  const a = Math.max(Math.hypot(input.start.x, input.start.y), EPSILON);
+  const rTurn = Math.max(Math.hypot(input.turn.x, input.turn.y), EPSILON);
+  const growthRatio = rTurn / a;
+  const b = Math.log(growthRatio) / (2 * Math.PI);
+  const pitchAngleDeg = Math.acos(Math.abs(b) / Math.sqrt(1 + b * b)) * (180 / Math.PI);
+  return { a, b, growthRatio, pitchAngleDeg };
+}
+
+// =======================
+// Soap-bubble / cell packing (On Growth and Form, Ch. VI–VII)
+//
+// Plateau's laws: films meet at 120°, and cells that grow from separate
+// centers until they touch partition space exactly along the perpendicular
+// bisectors between centers — a Voronoi diagram. A regular hexagonal
+// arrangement of centers is the equilibrium Thompson describes; moving one
+// center degrades its cell away from that ideal.
+// =======================
+
+export const CELL_RING_SITES: Vec3[] = Array.from({ length: 6 }, (_, i) => {
+  const angle = (Math.PI / 3) * i;
+  const radius = 2.2;
+  return { x: radius * Math.cos(angle), y: radius * Math.sin(angle), z: 0 };
+});
+
+const CELL_BOUNDS = { minX: -5, maxX: 5, minY: -5, maxY: 5 };
+
+function clipPolygonHalfPlane(polygon: Vec3[], normal: { x: number; y: number }, c: number): Vec3[] {
+  const result: Vec3[] = [];
+  const n = polygon.length;
+  for (let i = 0; i < n; i++) {
+    const curr = polygon[i];
+    const next = polygon[(i + 1) % n];
+    const currInside = curr.x * normal.x + curr.y * normal.y <= c;
+    const nextInside = next.x * normal.x + next.y * normal.y <= c;
+    if (currInside) result.push(curr);
+    if (currInside !== nextInside) {
+      const d = { x: next.x - curr.x, y: next.y - curr.y };
+      const denom = d.x * normal.x + d.y * normal.y;
+      const t = Math.abs(denom) < EPSILON ? 0 : (c - (curr.x * normal.x + curr.y * normal.y)) / denom;
+      result.push({ x: curr.x + t * d.x, y: curr.y + t * d.y, z: 0 });
+    }
+  }
+  return result;
+}
+
+// The Voronoi cell of `site`: the region closer to it than to any site in
+// `others`, found by intersecting the perpendicular-bisector half-planes,
+// clipped to a bounding box so the diagram stays finite.
+export function voronoiCell(site: Vec3, others: Vec3[]): Vec3[] {
+  let polygon: Vec3[] = [
+    { x: CELL_BOUNDS.minX, y: CELL_BOUNDS.minY, z: 0 },
+    { x: CELL_BOUNDS.maxX, y: CELL_BOUNDS.minY, z: 0 },
+    { x: CELL_BOUNDS.maxX, y: CELL_BOUNDS.maxY, z: 0 },
+    { x: CELL_BOUNDS.minX, y: CELL_BOUNDS.maxY, z: 0 },
+  ];
+  for (const other of others) {
+    const normal = { x: other.x - site.x, y: other.y - site.y };
+    const c = (other.x * other.x + other.y * other.y - (site.x * site.x + site.y * site.y)) / 2;
+    polygon = clipPolygonHalfPlane(polygon, normal, c);
+    if (polygon.length === 0) break;
+  }
+  return polygon;
+}
+
+function countPolygonSides(polygon: Vec3[]): number {
+  const deduped: Vec3[] = [];
+  for (const p of polygon) {
+    const last = deduped[deduped.length - 1];
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 1e-6) deduped.push(p);
+  }
+  if (deduped.length > 1) {
+    const first = deduped[0];
+    const last = deduped[deduped.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) < 1e-6) deduped.pop();
+  }
+  const n = deduped.length;
+  if (n < 3) return n;
+  let sides = 0;
+  for (let i = 0; i < n; i++) {
+    const prev = deduped[(i - 1 + n) % n];
+    const curr = deduped[i];
+    const next = deduped[(i + 1) % n];
+    const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+    const cross = v1.x * v2.y - v1.y * v2.x;
+    const dot = v1.x * v2.x + v1.y * v2.y;
+    if (Math.atan2(Math.abs(cross), dot) > 1e-3) sides++;
+  }
+  return sides;
+}
+
+export function localCellPacking(center: Vec3): CellPackingResponse {
+  const cell = voronoiCell(center, CELL_RING_SITES);
+  const area = polygonArea(cell);
+  const perimeter = polygonPerimeter(cell);
+  return {
+    area,
+    perimeter,
+    isoperimetricQuotient: perimeter < EPSILON ? 0 : (4 * Math.PI * area) / (perimeter * perimeter),
+    sides: countPolygonSides(cell),
   };
 }

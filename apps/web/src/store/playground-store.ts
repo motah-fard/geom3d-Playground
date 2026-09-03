@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import type {
   CartesianTransformResponse,
+  CellPackingResponse,
   ClosestPointAABBResponse,
   IntersectRayAABBResponse,
   IntersectRayPlaneResponse,
+  LogSpiralResponse,
   ProjectPointToPlaneResponse,
   QueryType,
   Vec3,
@@ -12,10 +14,12 @@ import type {
 import {
   DEFAULT_TRANSFORM_CORNERS,
   localCartesianTransform,
+  localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
   localIntersectRayAABB,
   localIntersectRayPlane,
+  localLogSpiral,
   localProjectPointToPlane,
   localSegmentSegment,
 } from "@/lib/local-geometry";
@@ -47,6 +51,9 @@ export type ScenarioSnapshot = {
   transformP10: Vec3;
   transformP01: Vec3;
   transformP11: Vec3;
+  spiralStart: Vec3;
+  spiralTurn: Vec3;
+  cellCenter: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -86,6 +93,13 @@ type PlaygroundState = {
   transformP01: Vec3;
   transformP11: Vec3;
 
+  // logarithmic spiral control points
+  spiralStart: Vec3;
+  spiralTurn: Vec3;
+
+  // cell-packing growth center
+  cellCenter: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -94,6 +108,8 @@ type PlaygroundState = {
   rayAABBResult: IntersectRayAABBResponse | null;
   closestPointAABBResult: ClosestPointAABBResponse | null;
   transformResult: CartesianTransformResponse | null;
+  spiralResult: LogSpiralResponse | null;
+  cellResult: CellPackingResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -158,6 +174,9 @@ type PlaygroundState = {
     p11: Vec3;
   }) => void;
 
+  setSpiralInputs: (payload: { start: Vec3; turn: Vec3 }) => void;
+  setCellCenterInput: (center: Vec3) => void;
+
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
   setSegmentResult: (result: SegmentResult | null) => void;
@@ -169,6 +188,8 @@ type PlaygroundState = {
     result: ClosestPointAABBResponse | null
   ) => void;
   setTransformResult: (result: CartesianTransformResponse | null) => void;
+  setSpiralResult: (result: LogSpiralResponse | null) => void;
+  setCellResult: (result: CellPackingResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -200,6 +221,8 @@ const clearedResults = {
   rayAABBResult: null,
   closestPointAABBResult: null,
   transformResult: null,
+  spiralResult: null,
+  cellResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -223,6 +246,9 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     transformP10: state.transformP10,
     transformP01: state.transformP01,
     transformP11: state.transformP11,
+    spiralStart: state.spiralStart,
+    spiralTurn: state.spiralTurn,
+    cellCenter: state.cellCenter,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -259,6 +285,11 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   transformP01: DEFAULT_TRANSFORM_CORNERS.p01,
   transformP11: DEFAULT_TRANSFORM_CORNERS.p11,
 
+  spiralStart: { x: 1, y: 0, z: 0 },
+  spiralTurn: { x: 1.4, y: 0, z: 0 },
+
+  cellCenter: { x: 0, y: 0, z: 0 },
+
   // results
   ...clearedResults,
 
@@ -285,6 +316,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     transformP10: "P₁₀",
     transformP01: "P₀₁",
     transformP11: "P₁₁",
+    spiralStart: "S",
+    spiralTurn: "T",
+    cellCenter: "C",
   },
   past: [],
   future: [],
@@ -371,6 +405,23 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setSpiralInputs: ({ start, turn }) =>
+    set({
+      spiralStart: start,
+      spiralTurn: turn,
+      spiralResult: localLogSpiral({ start, turn }),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setCellCenterInput: (center) =>
+    set({
+      cellCenter: center,
+      cellResult: localCellPacking(center),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -391,6 +442,12 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setTransformResult: (result) =>
     set({ transformResult: result, error: null }),
+
+  setSpiralResult: (result) =>
+    set({ spiralResult: result, error: null }),
+
+  setCellResult: (result) =>
+    set({ cellResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -565,6 +622,29 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         transformP10: DEFAULT_TRANSFORM_CORNERS.p10,
         transformP01: DEFAULT_TRANSFORM_CORNERS.p01,
         transformP11: DEFAULT_TRANSFORM_CORNERS.p11,
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "log-spiral-growth") {
+      set({
+        queryType: type,
+        spiralStart: { x: 1, y: 0, z: 0 },
+        spiralTurn: { x: 1.4, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "cell-packing") {
+      set({
+        queryType: type,
+        cellCenter: { x: 0, y: 0, z: 0 },
         shouldAutoRun: true,
         error: null,
         queryStatus: "idle",

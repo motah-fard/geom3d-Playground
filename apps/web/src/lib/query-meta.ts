@@ -66,6 +66,22 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag any corner of the grid to warp it and the fish outline together.",
     accent: "#fbbf24",
   },
+  "log-spiral-growth": {
+    category: "Growth & Form",
+    title: "Logarithmic spiral growth",
+    shortTitle: "Log spiral",
+    description: "Model shell and horn growth as an equiangular spiral — after On Growth and Form, Ch. XI.",
+    instruction: "Drag S along its radius to resize, or T to change the whorl growth ratio.",
+    accent: "#c084fc",
+  },
+  "cell-packing": {
+    category: "Growth & Form",
+    title: "Soap-bubble cell packing",
+    shortTitle: "Cell packing",
+    description: "See a growth center's cell approach the surface-tension-minimizing hexagon — after On Growth and Form, Ch. VI–VII.",
+    instruction: "Drag the center point; its cell is the region closer to it than to any neighbor.",
+    accent: "#fb923c",
+  },
 };
 
 export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(
