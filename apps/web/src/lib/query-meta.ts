@@ -178,6 +178,14 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag R to widen the ribbon, or P to change how tightly it twists.",
     accent: "#a5f3fc",
   },
+  "bee-cell": {
+    category: "Growth & Form",
+    title: "The bee's cell",
+    shortTitle: "Bee's cell",
+    description: "Réaumur, Maraldi, König, and Maclaurin's problem, which Thompson revisits in his account of the honeycomb: closing a hexagonal prism with three rhombi instead of a flat lid saves wax at exactly one trimming depth.",
+    instruction: "Drag X to change how far the three alternating corners are trimmed, and watch the total surface area find its minimum.",
+    accent: "#fde047",
+  },
 };
 
 export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(

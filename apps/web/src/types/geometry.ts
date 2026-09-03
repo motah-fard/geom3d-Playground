@@ -317,6 +317,25 @@ export type HelicoidResponse = {
   area: number;
 };
 
+// =======================
+// The bee's cell — Thompson's account of the honeycomb, and the classic
+// problem (Réaumur, Maraldi, König, Maclaurin) of the trihedral angle
+// that closes a hexagonal prism with three rhombi for the least wax:
+// pushing three alternating corners down by a rise x while a shared
+// apex rises by the same x turns each closing rhombus's diagonals into
+// a fixed hexagon diagonal and a diagonal that grows with x, trading
+// rhombus area against shortened prism walls until a genuine minimum.
+// =======================
+
+export type BeeCellResponse = {
+  x: number;
+  ridgeAngleDeg: number;
+  rhombusArea: number;
+  totalSurfaceArea: number;
+  optimalX: number;
+  optimalRidgeAngleDeg: number;
+};
+
 // The full set of query types the playground supports. Kept here (rather
 // than inline in the store) so it can be imported anywhere a properly
 // typed QueryType is needed instead of casting through `any`.
@@ -341,4 +360,5 @@ export type QueryType =
   | "catenoid"
   | "milk-coronet"
   | "egg-curve"
-  | "helicoid";
+  | "helicoid"
+  | "bee-cell";

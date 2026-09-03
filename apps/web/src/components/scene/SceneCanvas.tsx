@@ -26,6 +26,7 @@ import { CatenoidScene } from "@/components/scene/queries/CatenoidScene";
 import { MilkCoronetScene } from "@/components/scene/queries/MilkCoronetScene";
 import { EggCurveScene } from "@/components/scene/queries/EggCurveScene";
 import { HelicoidScene } from "@/components/scene/queries/HelicoidScene";
+import { BeeCellScene } from "@/components/scene/queries/BeeCellScene";
 
 export function SceneCanvas() {
   const store = usePlaygroundStore();
@@ -70,7 +71,9 @@ export function SceneCanvas() {
                                     ? [{ id: "eggBig", role: "Round end radius", value: store.eggBig }, { id: "eggSmall", role: "Pointed end radius", value: store.eggSmall }]
                                     : queryType === "helicoid"
                                       ? [{ id: "helicoidRadius", role: "Ribbon radius", value: store.helicoidRadius }, { id: "helicoidPitch", role: "Pitch point", value: store.helicoidPitch }]
-                                      : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
+                                      : queryType === "bee-cell"
+                                        ? [{ id: "beeCellRise", role: "Trim / apex rise", value: store.beeCellRise }]
+                                        : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#09131c] shadow-2xl shadow-black/20">
@@ -128,6 +131,7 @@ export function SceneCanvas() {
             {queryType === "milk-coronet" && <MilkCoronetScene />}
             {queryType === "egg-curve" && <EggCurveScene />}
             {queryType === "helicoid" && <HelicoidScene />}
+            {queryType === "bee-cell" && <BeeCellScene />}
           </Bounds>
         </Canvas>
         <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-lg border border-white/10 bg-slate-950/80 px-2.5 py-2 text-[10px] text-slate-300 backdrop-blur">

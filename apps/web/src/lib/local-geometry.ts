@@ -1,5 +1,6 @@
 import type {
   AllometricGrowthResponse,
+  BeeCellResponse,
   CartesianTransformCorners,
   CartesianTransformResponse,
   CatenaryResponse,
@@ -724,4 +725,63 @@ export function localHelicoid(radiusPoint: Vec3, pitchPoint: Vec3): HelicoidResp
   const s = Math.sqrt(radius * radius + c * c);
   const area = totalAngle * ((radius / 2) * s + (c * c / 2) * Math.log((radius + s) / c));
   return { radius, c, risePerTurn, area };
+}
+
+// =======================
+// The bee's cell (Réaumur, Maraldi, König, and Maclaurin's problem,
+// which Thompson revisits in his account of the honeycomb). A hexagonal
+// prism cell, side length 1, is closed not by a flat lid but by 3
+// congruent rhombi meeting at a point: three alternating top corners
+// ("kept", A) stay put while the other three ("trimmed", B) are pushed
+// down by a rise x, and a shared apex rises by the same x directly
+// above the hexagon's center. Each closing face — kept corner, trimmed
+// corner, next kept corner, apex — is planar and a genuine rhombus for
+// EVERY x (its short diagonal is the hexagon's fixed second-neighbor
+// span, √3; its long diagonal, from the trimmed corner to the apex,
+// grows with x), so trimming trades rhombus area against shortened
+// prism walls. The trade has a real minimum, first solved by Maclaurin
+// with calculus: the wax-minimizing rise is x = 1/(2√2), where each
+// ridge (apex to a kept corner) makes an angle of exactly arccos(1/3)
+// ≈ 70.53° with the prism's axis.
+// =======================
+
+export const BEE_CELL_HEXAGON_SIDE = 1;
+export const BEE_CELL_WALL_HEIGHT = 2;
+export const BEE_CELL_MIN_RISE = 0.05;
+export const BEE_CELL_MAX_RISE = 1.1;
+export const BEE_CELL_OPTIMAL_RISE = 1 / (2 * Math.sqrt(2));
+
+// Rim vertex `index` (0..5, 60° apart): even indices are "kept" (A-type,
+// z = 0), odd indices are "trimmed" (B-type, pushed down to z = -x).
+export function beeCellRimVertex(index: number, x: number): Vec3 {
+  const angle = (Math.PI / 3) * index;
+  const isKept = index % 2 === 0;
+  return {
+    x: BEE_CELL_HEXAGON_SIDE * Math.cos(angle),
+    y: BEE_CELL_HEXAGON_SIDE * Math.sin(angle),
+    z: isKept ? 0 : -x,
+  };
+}
+
+export function beeCellApex(x: number): Vec3 {
+  return { x: 0, y: 0, z: x };
+}
+
+export function beeCellRhombusArea(x: number): number {
+  // diagonal 1: between the two kept corners flanking one trimmed
+  // corner — the hexagon's fixed second-neighbor distance, √3.
+  // diagonal 2: trimmed corner to apex, √(1 + 4x²).
+  return (Math.sqrt(3) / 2) * Math.sqrt(1 + 4 * x * x);
+}
+
+export function localBeeCell(risePoint: Vec3): BeeCellResponse {
+  const x = Math.max(BEE_CELL_MIN_RISE, Math.min(BEE_CELL_MAX_RISE, Math.hypot(risePoint.x, risePoint.y)));
+  const rhombusArea = beeCellRhombusArea(x);
+  const ridgeAngleDeg = Math.acos(x / Math.sqrt(1 + x * x)) * (180 / Math.PI);
+  const wallHeight = BEE_CELL_WALL_HEIGHT;
+  // 3 full-height "kept" walls + 3 shortened "trimmed" walls + 3 rhombi.
+  const totalSurfaceArea = 3 * wallHeight + 3 * (wallHeight - x) + 3 * rhombusArea;
+  const optimalX = BEE_CELL_OPTIMAL_RISE;
+  const optimalRidgeAngleDeg = Math.acos(optimalX / Math.sqrt(1 + optimalX * optimalX)) * (180 / Math.PI);
+  return { x, ridgeAngleDeg, rhombusArea, totalSurfaceArea, optimalX, optimalRidgeAngleDeg };
 }

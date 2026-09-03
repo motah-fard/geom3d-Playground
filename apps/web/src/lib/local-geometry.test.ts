@@ -8,11 +8,17 @@ import {
   localCellPacking,
   buildWhirlingSquares,
   catenoidRadius,
+  BEE_CELL_MAX_RISE,
+  BEE_CELL_MIN_RISE,
+  BEE_CELL_OPTIMAL_RISE,
+  beeCellApex,
+  beeCellRimVertex,
   EGG_CENTER_DISTANCE,
   eggProfilePoints,
   GOLDEN_ANGLE_RAD,
   HELICOID_TURNS,
   localAllometricGrowth,
+  localBeeCell,
   localCatenary,
   localCatenoid,
   localClosestPointAABB,
@@ -381,4 +387,89 @@ test("a helicoid's surface area matches a fine numerical double integral of its 
     const numericalArea = uIntegral * totalAngle;
     assert.ok(Math.abs(numericalArea - result.area) / result.area < 1e-3, `r=${radius}: numerical=${numericalArea} closed-form=${result.area}`);
   }
+});
+
+function vecSub(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+function vecCross(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
+  return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x };
+}
+function vecLength(a: { x: number; y: number; z: number }) {
+  return Math.hypot(a.x, a.y, a.z);
+}
+function vecDot(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+test("a bee cell's closing quadrilateral is genuinely planar and a rhombus for every rise, independent of the diagonal-product formula", () => {
+  for (const x of [0.1, 0.35355339, 0.7, 1.05]) {
+    const apex = beeCellApex(x);
+    for (let i = 0; i < 6; i += 2) {
+      const kept1 = beeCellRimVertex(i, x);
+      const trimmed = beeCellRimVertex(i + 1, x);
+      const kept2 = beeCellRimVertex((i + 2) % 6, x);
+      // Planarity: the vector to the apex must lie in the plane spanned
+      // by the other two edges from kept1 (triple product ~ 0).
+      const normal = vecCross(vecSub(trimmed, kept1), vecSub(kept2, kept1));
+      const planarity = Math.abs(vecDot(normal, vecSub(apex, kept1)));
+      assert.ok(planarity < 1e-9, `x=${x}: not planar, triple product=${planarity}`);
+      // Rhombus: all four sides equal.
+      const sides = [
+        vecLength(vecSub(trimmed, kept1)),
+        vecLength(vecSub(kept2, trimmed)),
+        vecLength(vecSub(apex, kept2)),
+        vecLength(vecSub(kept1, apex)),
+      ];
+      const spread = Math.max(...sides) - Math.min(...sides);
+      assert.ok(spread < 1e-9, `x=${x}: sides not equal, spread=${spread}, sides=${sides}`);
+    }
+  }
+});
+
+test("a bee cell's rhombus area formula matches a direct cross-product quadrilateral area from its vertices", () => {
+  for (const x of [0.15, 0.5, 0.9]) {
+    const apex = beeCellApex(x);
+    const kept1 = beeCellRimVertex(0, x);
+    const trimmed = beeCellRimVertex(1, x);
+    const kept2 = beeCellRimVertex(2, x);
+    const triangle1 = vecLength(vecCross(vecSub(trimmed, kept1), vecSub(kept2, kept1))) / 2;
+    const triangle2 = vecLength(vecCross(vecSub(kept2, kept1), vecSub(apex, kept1))) / 2;
+    const directArea = triangle1 + triangle2;
+    const result = localBeeCell({ x, y: 0, z: 0 });
+    assert.ok(Math.abs(directArea - result.rhombusArea) < 1e-9, `x=${x}: direct=${directArea} formula=${result.rhombusArea}`);
+  }
+});
+
+test("a bee cell's total surface area is genuinely minimized at rise x = 1/(2*sqrt(2)), the historical Maclaurin optimum", () => {
+  const optimal = localBeeCell({ x: BEE_CELL_OPTIMAL_RISE, y: 0, z: 0 });
+  // Sweep a fine grid of rises and confirm none does better than the
+  // claimed optimum — a numerical, from-scratch confirmation rather
+  // than trusting the closed-form derivative algebra alone.
+  let best = Infinity;
+  let bestX = -1;
+  const steps = 20000;
+  for (let i = 0; i <= steps; i++) {
+    const x = BEE_CELL_MIN_RISE + (i / steps) * (BEE_CELL_MAX_RISE - BEE_CELL_MIN_RISE);
+    const area = localBeeCell({ x, y: 0, z: 0 }).totalSurfaceArea;
+    if (area < best) {
+      best = area;
+      bestX = x;
+    }
+  }
+  assert.ok(Math.abs(bestX - BEE_CELL_OPTIMAL_RISE) < 1e-3, `grid search optimum x=${bestX}, expected ${BEE_CELL_OPTIMAL_RISE}`);
+  assert.ok(Math.abs(best - optimal.totalSurfaceArea) < 1e-6);
+  // And confirm it actually IS a minimum, not a saddle or endpoint: area
+  // strictly increases moving away from it on both sides.
+  const below = localBeeCell({ x: BEE_CELL_OPTIMAL_RISE - 0.1, y: 0, z: 0 }).totalSurfaceArea;
+  const above = localBeeCell({ x: BEE_CELL_OPTIMAL_RISE + 0.1, y: 0, z: 0 }).totalSurfaceArea;
+  assert.ok(below > optimal.totalSurfaceArea);
+  assert.ok(above > optimal.totalSurfaceArea);
+});
+
+test("at the optimal rise, the ridge-to-axis angle is exactly arccos(1/3) ≈ 70.53°, the historically cited bee-cell angle", () => {
+  const result = localBeeCell({ x: BEE_CELL_OPTIMAL_RISE, y: 0, z: 0 });
+  const expectedDeg = Math.acos(1 / 3) * (180 / Math.PI);
+  assert.ok(Math.abs(result.ridgeAngleDeg - expectedDeg) < 1e-6);
+  assert.ok(Math.abs(expectedDeg - 70.5288) < 1e-3);
 });

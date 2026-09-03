@@ -22,6 +22,7 @@ import { CatenoidForm } from "@/components/CatenoidForm";
 import { MilkCoronetForm } from "@/components/MilkCoronetForm";
 import { EggCurveForm } from "@/components/EggCurveForm";
 import { HelicoidForm } from "@/components/HelicoidForm";
+import { BeeCellForm } from "@/components/BeeCellForm";
 
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -58,6 +59,7 @@ export function ClientPageShell() {
       {queryType === "milk-coronet" && <MilkCoronetForm />}
       {queryType === "egg-curve" && <EggCurveForm />}
       {queryType === "helicoid" && <HelicoidForm />}
+      {queryType === "bee-cell" && <BeeCellForm />}
     </>
   );
 

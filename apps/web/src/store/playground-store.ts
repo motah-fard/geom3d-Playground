@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type {
   AllometricGrowthResponse,
+  BeeCellResponse,
   CartesianTransformResponse,
   CatenaryResponse,
   CatenoidResponse,
@@ -27,6 +28,7 @@ import {
   CATENARY_HALF_SPAN,
   DEFAULT_TRANSFORM_CORNERS,
   localAllometricGrowth,
+  localBeeCell,
   localCartesianTransform,
   localCatenary,
   localCatenoid,
@@ -50,6 +52,7 @@ import {
   PHYLLOTAXIS_DIAL_RADIUS,
   GOLDEN_ANGLE_RAD,
   LOGISTIC_TIME_SPAN,
+  BEE_CELL_OPTIMAL_RISE,
 } from "@/lib/local-geometry";
 
 type SegmentResult = {
@@ -100,6 +103,7 @@ export type ScenarioSnapshot = {
   eggSmall: Vec3;
   helicoidRadius: Vec3;
   helicoidPitch: Vec3;
+  beeCellRise: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -188,6 +192,9 @@ type PlaygroundState = {
   helicoidRadius: Vec3;
   helicoidPitch: Vec3;
 
+  // bee-cell rise control
+  beeCellRise: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -210,6 +217,7 @@ type PlaygroundState = {
   milkCoronetResult: MilkCoronetResponse | null;
   eggCurveResult: EggCurveResponse | null;
   helicoidResult: HelicoidResponse | null;
+  beeCellResult: BeeCellResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -288,6 +296,7 @@ type PlaygroundState = {
   setMilkCoronetInputs: (payload: { radiusPoint: Vec3; countPoint: Vec3 }) => void;
   setEggCurveInputs: (payload: { bigPoint: Vec3; smallPoint: Vec3 }) => void;
   setHelicoidInputs: (payload: { radiusPoint: Vec3; pitchPoint: Vec3 }) => void;
+  setBeeCellInput: (risePoint: Vec3) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -314,6 +323,7 @@ type PlaygroundState = {
   setMilkCoronetResult: (result: MilkCoronetResponse | null) => void;
   setEggCurveResult: (result: EggCurveResponse | null) => void;
   setHelicoidResult: (result: HelicoidResponse | null) => void;
+  setBeeCellResult: (result: BeeCellResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -359,6 +369,7 @@ const clearedResults = {
   milkCoronetResult: null,
   eggCurveResult: null,
   helicoidResult: null,
+  beeCellResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -403,6 +414,7 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     eggSmall: state.eggSmall,
     helicoidRadius: state.helicoidRadius,
     helicoidPitch: state.helicoidPitch,
+    beeCellRise: state.beeCellRise,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -478,6 +490,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   helicoidRadius: { x: 1.8, y: 0, z: 0 },
   helicoidPitch: { x: 0, y: 0, z: 2.4 },
 
+  beeCellRise: { x: BEE_CELL_OPTIMAL_RISE, y: 0, z: 0 },
+
   // results
   ...clearedResults,
 
@@ -525,6 +539,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     eggSmall: "r",
     helicoidRadius: "R",
     helicoidPitch: "P",
+    beeCellRise: "X",
   },
   past: [],
   future: [],
@@ -730,6 +745,14 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setBeeCellInput: (risePoint) =>
+    set({
+      beeCellRise: risePoint,
+      beeCellResult: localBeeCell(risePoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -792,6 +815,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setHelicoidResult: (result) =>
     set({ helicoidResult: result, error: null }),
+
+  setBeeCellResult: (result) =>
+    set({ beeCellResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -1131,6 +1157,17 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         queryType: type,
         helicoidRadius: { x: 1.8, y: 0, z: 0 },
         helicoidPitch: { x: 0, y: 0, z: 2.4 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "bee-cell") {
+      set({
+        queryType: type,
+        beeCellRise: { x: BEE_CELL_OPTIMAL_RISE, y: 0, z: 0 },
         shouldAutoRun: true,
         error: null,
         queryStatus: "idle",

@@ -48,6 +48,7 @@ export function WorkspaceActions() {
     if (store.queryType === "milk-coronet") return ["milkRadius", "milkCount"];
     if (store.queryType === "egg-curve") return ["eggBig", "eggSmall"];
     if (store.queryType === "helicoid") return ["helicoidRadius", "helicoidPitch"];
+    if (store.queryType === "bee-cell") return ["beeCellRise"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

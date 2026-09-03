@@ -38,11 +38,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch" | "beeCellRise";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : state.queryType === "bee-cell" ? ["beeCellRise"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -82,6 +82,7 @@ export function ResultsPanel() {
     state.queryType === "milk-coronet" ? state.milkCoronetResult :
     state.queryType === "egg-curve" ? state.eggCurveResult :
     state.queryType === "helicoid" ? state.helicoidResult :
+    state.queryType === "bee-cell" ? state.beeCellResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -139,7 +140,9 @@ export function ResultsPanel() {
                                         ? "α = asin((R−r)/d); perimeter = (π−2α)r + (π+2α)R + 2√(d²−(R−r)²)"
                                         : state.queryType === "helicoid"
                                           ? "area = V·[(R/2)√(R²+c²) + (c²/2)·ln((R+√(R²+c²))/c)]"
-                                          : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                                          : state.queryType === "bee-cell"
+                                            ? "rhombus area = (√3/2)·√(1+4x²); total = 3H + 3(H−x) + 3·rhombus area"
+                                            : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -327,6 +330,15 @@ export function ResultsPanel() {
                 <Metric label="Rise per turn" value={state.helicoidResult.risePerTurn} />
                 <Metric label="Surface area" value={state.helicoidResult.area} suffix={`${state.unit}²`} />
                 <p className="text-xs leading-5 text-slate-500">Bend this twisted ribbon flat along its length and it becomes a catenoid — the two are isometric &ldquo;Bonnet pair&rdquo; minimal surfaces despite looking nothing alike.</p>
+              </>
+            )}
+
+            {state.queryType === "bee-cell" && state.beeCellResult && (
+              <>
+                <Metric label="Ridge-to-axis angle" value={state.beeCellResult.ridgeAngleDeg} suffix="°" />
+                <Metric label="Total surface area" value={state.beeCellResult.totalSurfaceArea} suffix={`${state.unit}²`} />
+                <Metric label="Wax-minimizing angle" value={state.beeCellResult.optimalRidgeAngleDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">Trim the corners too little or too much and the total area rises either way — the minimum sits at one exact rise, first found by Maclaurin with calculus, and real bees build within a fraction of a degree of it.</p>
               </>
             )}
 
