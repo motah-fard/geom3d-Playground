@@ -22,7 +22,8 @@ export function DraggablePoint({
 }) {
   const [dragging, setDragging] = useState(false);
   const { camera } = useThree();
-  const { setIsDragging, selectedObject, setSelectedObject, saveCheckpoint, snap } = usePlaygroundStore();
+  const { setIsDragging, selectedObject, setSelectedObject, saveCheckpoint, snap, hoveredTerm } = usePlaygroundStore();
+  const isHovered = hoveredTerm?.targetId === id;
   const dragPlane = useRef(new THREE.Plane());
   const meshRef = useRef<THREE.Mesh>(null);
   const hit = useRef(new THREE.Vector3());
@@ -93,7 +94,21 @@ export function DraggablePoint({
       }}
     >
       <sphereGeometry args={[0.28, 24, 24]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={dragging || selectedObject === id ? 0.45 : 0.12} depthTest depthWrite />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={dragging || selectedObject === id ? 0.45 : isHovered ? 0.9 : 0.12} depthTest depthWrite />
+      {isHovered && (
+        <mesh scale={1.7}>
+          <sphereGeometry args={[0.28, 24, 24]} />
+          <meshBasicMaterial color="#fde047" transparent opacity={0.28} depthWrite={false} />
+        </mesh>
+      )}
+      {isHovered && hoveredTerm && (
+        <Html center position={[0, 1.35, 0]} style={{ pointerEvents: "none" }} zIndexRange={[100, 0]}>
+          <div className="w-max max-w-[220px] rounded-lg border border-amber-300/40 bg-slate-950/95 px-2.5 py-1.5 text-center shadow-2xl">
+            <p className="font-mono text-xs font-bold text-amber-200">{hoveredTerm.symbol} = {hoveredTerm.value}</p>
+            <p className="mt-0.5 text-[10px] leading-4 text-slate-300">{hoveredTerm.meaning}</p>
+          </div>
+        </Html>
+      )}
       {label && (
         <Html center position={[0, 0.55, 0]} style={{ pointerEvents: "auto" }}>
           <button

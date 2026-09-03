@@ -5,12 +5,9 @@ import { QUERY_META } from "@/lib/query-meta";
 import { usePlaygroundStore, type ScenarioSnapshot } from "@/store/playground-store";
 import type { Vec3 } from "@/types/geometry";
 import { ApiInspector } from "@/components/ApiInspector";
-
-function formatNumber(value: number, precision = 5) {
-  if (!Number.isFinite(value)) return String(value);
-  if (Math.abs(value) < 1e-10) return "0";
-  return Number(value.toFixed(precision)).toString();
-}
+import { formatNumber } from "@/lib/format";
+import { FORMULA_BUILDERS } from "@/lib/formula-segments";
+import { FormulaDisplay } from "@/components/FormulaDisplay";
 
 function Coordinate({ label, value }: { label: string; value?: Vec3 }) {
   const { precision, unit } = usePlaygroundStore();
@@ -343,8 +340,15 @@ export function ResultsPanel() {
             )}
 
             <div className="rounded-xl border border-slate-800 bg-slate-900/35 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">Calculation</p>
-              <code className="mt-2 block whitespace-normal font-mono text-[11px] leading-5 text-slate-400">{formula}</code>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">Calculation</p>
+                {FORMULA_BUILDERS[state.queryType] && <p className="text-[10px] text-slate-600">hover a term</p>}
+              </div>
+              {FORMULA_BUILDERS[state.queryType] ? (
+                <FormulaDisplay segments={FORMULA_BUILDERS[state.queryType]!(state)} />
+              ) : (
+                <code className="mt-2 block whitespace-normal font-mono text-[11px] leading-5 text-slate-400">{formula}</code>
+              )}
             </div>
             {state.past.length > 0 && (
               <div>

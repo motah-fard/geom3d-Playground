@@ -111,7 +111,7 @@ export type ScenarioSnapshot = {
   objectLabels: Record<string, string>;
 };
 
-type PlaygroundState = {
+export type PlaygroundState = {
   version: 1;
   queryType: QueryType;
 
@@ -233,6 +233,12 @@ type PlaygroundState = {
   past: ScenarioSnapshot[];
   future: ScenarioSnapshot[];
 
+  // The formula term currently hovered in the results panel, if any.
+  // `targetId` matches a draggable point's `id` so it can glow in the
+  // 3D scene with no per-scene wiring; `symbol`/`meaning`/`value` are
+  // shown in the floating badge regardless of whether a target exists.
+  hoveredTerm: { targetId?: string; symbol: string; meaning: string; value: string } | null;
+
   // setters
   setQueryType: (queryType: QueryType) => void;
 
@@ -328,6 +334,7 @@ type PlaygroundState = {
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
   setIsDragging: (isDragging: boolean) => void;
+  setHoveredTerm: (term: PlaygroundState["hoveredTerm"]) => void;
   setSelectedObject: (id: string | null) => void;
   setUnit: (unit: ScenarioSnapshot["unit"]) => void;
   setPrecision: (precision: number) => void;
@@ -501,6 +508,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   queryStatus: "idle",
   isDragging: false,
   selectedObject: null,
+  hoveredTerm: null,
   unit: "units",
   precision: 3,
   snap: 0.1,
@@ -827,6 +835,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setQueryStatus: (queryStatus) => set({ queryStatus }),
   setIsDragging: (isDragging) => set({ isDragging }),
+  setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
   setSelectedObject: (selectedObject) => set({ selectedObject }),
   setUnit: (unit) => set({ unit }),
   setPrecision: (precision) => set({ precision: Math.max(0, Math.min(8, precision)) }),
