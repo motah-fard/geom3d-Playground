@@ -11,6 +11,7 @@ import { ClosestPointSegmentScene } from "@/components/scene/queries/ClosestPoin
 import { SegmentSegmentScene } from "@/components/scene/queries/SegmentSegmentScene";
 import { IntersectRayAABBScene } from "@/components/scene/queries/IntersectRayAABBScene";
 import { ClosestPointAABBScene } from "@/components/scene/queries/ClosestPointAABBScene";
+import { CartesianTransformScene } from "@/components/scene/queries/CartesianTransformScene";
 
 export function SceneCanvas() {
   const store = usePlaygroundStore();
@@ -25,7 +26,9 @@ export function SceneCanvas() {
       ? [{ id: "rayOrigin", role: "Ray origin", value: store.rayOrigin }]
       : queryType === "closest-point-segment"
         ? [{ id: "point", role: "Point", value: store.point }, { id: "segmentA", role: "Segment start", value: store.segmentA }, { id: "segmentB", role: "Segment end", value: store.segmentB }]
-        : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
+        : queryType === "cartesian-transform"
+          ? [{ id: "transformP00", role: "Bottom-left", value: store.transformP00 }, { id: "transformP10", role: "Bottom-right", value: store.transformP10 }, { id: "transformP01", role: "Top-left", value: store.transformP01 }, { id: "transformP11", role: "Top-right", value: store.transformP11 }]
+          : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#09131c] shadow-2xl shadow-black/20">
@@ -68,6 +71,7 @@ export function SceneCanvas() {
             {queryType === "segment-segment" && <SegmentSegmentScene />}
             {queryType === "intersect-ray-aabb" && <IntersectRayAABBScene />}
             {queryType === "closest-point-aabb" && <ClosestPointAABBScene />}
+            {queryType === "cartesian-transform" && <CartesianTransformScene />}
           </Bounds>
         </Canvas>
         <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-lg border border-white/10 bg-slate-950/80 px-2.5 py-2 text-[10px] text-slate-300 backdrop-blur">

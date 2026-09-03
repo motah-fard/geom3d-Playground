@@ -28,21 +28,21 @@ function Coordinate({ label, value }: { label: string; value?: Vec3 }) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value, suffix }: { label: string; value: number; suffix?: string }) {
   const { precision, unit } = usePlaygroundStore();
   return (
     <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/[0.06] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-200/60">{label}</p>
-      <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-cyan-100">{formatNumber(value, precision)} <span className="text-xs font-medium text-cyan-200/50">{unit}</span></p>
+      <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-cyan-100">{formatNumber(value, precision)} <span className="text-xs font-medium text-cyan-200/50">{suffix ?? unit}</span></p>
     </div>
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -67,6 +67,7 @@ export function ResultsPanel() {
     state.queryType === "closest-point-segment" ? state.segmentResult :
     state.queryType === "segment-segment" ? state.segmentSegmentResult :
     state.queryType === "intersect-ray-aabb" ? state.rayAABBResult :
+    state.queryType === "cartesian-transform" ? state.transformResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -94,7 +95,9 @@ export function ResultsPanel() {
           ? "minimize ‖(A₁ + s·u) − (B₁ + t·v)‖ for s,t ∈ [0,1]"
           : state.queryType === "intersect-ray-aabb"
             ? "intersect the X, Y, and Z ray slabs; hit when tEntry ≤ tExit"
-            : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+            : state.queryType === "cartesian-transform"
+              ? "X(u,v) = (1−u)(1−v)P₀₀ + u(1−v)P₁₀ + (1−u)v·P₀₁ + uv·P₁₁"
+              : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -156,6 +159,14 @@ export function ResultsPanel() {
 
             {state.queryType === "closest-point-aabb" && state.closestPointAABBResult && (
               <><Metric label={state.closestPointAABBResult.distance === 0 ? "Point is inside · distance" : "Distance to box"} value={state.closestPointAABBResult.distance} /><Coordinate label="Closest point C" value={state.closestPointAABBResult.point} /></>
+            )}
+
+            {state.queryType === "cartesian-transform" && state.transformResult && (
+              <>
+                <Metric label="Area ratio (warped ÷ reference)" value={state.transformResult.areaRatio} suffix="×" />
+                <Metric label="Elongation (aspect ratio change)" value={state.transformResult.elongation} suffix="×" />
+                <p className="text-xs leading-5 text-slate-500">A ratio above 1 means that region of the growth grid has expanded; below 1, it has been compressed — the same warp Thompson used to relate one species&rsquo; form to another.</p>
+              </>
             )}
 
             <div className="rounded-xl border border-slate-800 bg-slate-900/35 p-3">

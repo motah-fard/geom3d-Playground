@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type {
+  CartesianTransformResponse,
   ClosestPointAABBResponse,
   IntersectRayAABBResponse,
   IntersectRayPlaneResponse,
@@ -9,6 +10,8 @@ import type {
   SegmentSegmentResponse,
 } from "@/types/geometry";
 import {
+  DEFAULT_TRANSFORM_CORNERS,
+  localCartesianTransform,
   localClosestPointAABB,
   localClosestPointSegment,
   localIntersectRayAABB,
@@ -40,6 +43,10 @@ export type ScenarioSnapshot = {
   segmentB2: Vec3;
   aabbMin: Vec3;
   aabbMax: Vec3;
+  transformP00: Vec3;
+  transformP10: Vec3;
+  transformP01: Vec3;
+  transformP11: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -73,6 +80,12 @@ type PlaygroundState = {
   aabbMin: Vec3;
   aabbMax: Vec3;
 
+  // Cartesian transformation grid corners
+  transformP00: Vec3;
+  transformP10: Vec3;
+  transformP01: Vec3;
+  transformP11: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -80,6 +93,7 @@ type PlaygroundState = {
   segmentSegmentResult: SegmentSegmentResponse | null;
   rayAABBResult: IntersectRayAABBResponse | null;
   closestPointAABBResult: ClosestPointAABBResponse | null;
+  transformResult: CartesianTransformResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -137,6 +151,13 @@ type PlaygroundState = {
     aabbMax: Vec3;
   }) => void;
 
+  setTransformInputs: (payload: {
+    p00: Vec3;
+    p10: Vec3;
+    p01: Vec3;
+    p11: Vec3;
+  }) => void;
+
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
   setSegmentResult: (result: SegmentResult | null) => void;
@@ -147,6 +168,7 @@ type PlaygroundState = {
   setClosestPointAABBResult: (
     result: ClosestPointAABBResponse | null
   ) => void;
+  setTransformResult: (result: CartesianTransformResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -177,6 +199,7 @@ const clearedResults = {
   segmentSegmentResult: null,
   rayAABBResult: null,
   closestPointAABBResult: null,
+  transformResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -196,6 +219,10 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     segmentB2: state.segmentB2,
     aabbMin: state.aabbMin,
     aabbMax: state.aabbMax,
+    transformP00: state.transformP00,
+    transformP10: state.transformP10,
+    transformP01: state.transformP01,
+    transformP11: state.transformP11,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -227,6 +254,11 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   aabbMin: { x: 0, y: 0, z: 0 },
   aabbMax: { x: 2, y: 2, z: 2 },
 
+  transformP00: DEFAULT_TRANSFORM_CORNERS.p00,
+  transformP10: DEFAULT_TRANSFORM_CORNERS.p10,
+  transformP01: DEFAULT_TRANSFORM_CORNERS.p01,
+  transformP11: DEFAULT_TRANSFORM_CORNERS.p11,
+
   // results
   ...clearedResults,
 
@@ -249,6 +281,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     segmentA2: "A₂",
     segmentB1: "B₁",
     segmentB2: "B₂",
+    transformP00: "P₀₀",
+    transformP10: "P₁₀",
+    transformP01: "P₀₁",
+    transformP11: "P₁₁",
   },
   past: [],
   future: [],
@@ -324,6 +360,17 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setTransformInputs: ({ p00, p10, p01, p11 }) =>
+    set({
+      transformP00: p00,
+      transformP10: p10,
+      transformP01: p01,
+      transformP11: p11,
+      transformResult: localCartesianTransform({ p00, p10, p01, p11 }),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -341,6 +388,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setClosestPointAABBResult: (result) =>
     set({ closestPointAABBResult: result, error: null }),
+
+  setTransformResult: (result) =>
+    set({ transformResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -508,6 +558,20 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     if (type === "degenerate-segment") {
       set({ queryType: "closest-point-segment", point: { x: 2, y: 2, z: 1 }, segmentA: { x: 0, y: 0, z: 0 }, segmentB: { x: 0, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
     }
+    if (type === "cartesian-transform") {
+      set({
+        queryType: type,
+        transformP00: DEFAULT_TRANSFORM_CORNERS.p00,
+        transformP10: DEFAULT_TRANSFORM_CORNERS.p10,
+        transformP01: DEFAULT_TRANSFORM_CORNERS.p01,
+        transformP11: DEFAULT_TRANSFORM_CORNERS.p11,
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
     if (type === "ray-box-miss") {
       set({ queryType: "intersect-ray-aabb", rayOrigin: { x: -4, y: 4, z: 1 }, rayDir: { x: 1, y: 0, z: 0 }, aabbMin: { x: 0, y: 0, z: 0 }, aabbMax: { x: 2, y: 2, z: 2 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
     }

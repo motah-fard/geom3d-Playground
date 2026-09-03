@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  DEFAULT_TRANSFORM_CORNERS,
+  bilinearPoint,
+  localCartesianTransform,
   localClosestPointAABB,
   localClosestPointSegment,
   localIntersectRayAABB,
@@ -42,4 +45,33 @@ test("clamps a point to an AABB", () => {
   const result = localClosestPointAABB({ point: { x: 4, y: 3, z: 3 }, aabb: { min: { x: 0, y: 0, z: 0 }, max: { x: 2, y: 2, z: 2 } } });
   assert.deepEqual(result.point, { x: 2, y: 2, z: 2 });
   assert.equal(result.distance, Math.sqrt(6));
+});
+
+test("bilinear map reduces to its corners and center average", () => {
+  const corners = DEFAULT_TRANSFORM_CORNERS;
+  assert.deepEqual(bilinearPoint(0, 0, corners), corners.p00);
+  assert.deepEqual(bilinearPoint(1, 0, corners), corners.p10);
+  assert.deepEqual(bilinearPoint(0, 1, corners), corners.p01);
+  assert.deepEqual(bilinearPoint(1, 1, corners), corners.p11);
+  assert.deepEqual(bilinearPoint(0.5, 0.5, corners), {
+    x: (corners.p00.x + corners.p10.x + corners.p01.x + corners.p11.x) / 4,
+    y: (corners.p00.y + corners.p10.y + corners.p01.y + corners.p11.y) / 4,
+    z: 0,
+  });
+});
+
+test("Cartesian transform is identity at the default corners and scales area with a stretch", () => {
+  const identity = localCartesianTransform(DEFAULT_TRANSFORM_CORNERS);
+  assert.equal(identity.areaRatio, 1);
+  assert.equal(identity.elongation, 1);
+
+  const stretchedX = {
+    p00: { x: -6, y: -1.6, z: 0 },
+    p10: { x: 6, y: -1.6, z: 0 },
+    p01: { x: -6, y: 1.6, z: 0 },
+    p11: { x: 6, y: 1.6, z: 0 },
+  };
+  const stretched = localCartesianTransform(stretchedX);
+  assert.ok(Math.abs(stretched.areaRatio - 2) < 1e-9);
+  assert.ok(Math.abs(stretched.elongation - 2) < 1e-9);
 });

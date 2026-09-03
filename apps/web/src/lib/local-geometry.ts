@@ -1,4 +1,6 @@
 import type {
+  CartesianTransformCorners,
+  CartesianTransformResponse,
   ClosestPointAABBRequest,
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
@@ -125,4 +127,85 @@ export function localClosestPointAABB(input: ClosestPointAABBRequest): ClosestPo
     z: clamp(input.point.z, input.aabb.min.z, input.aabb.max.z),
   };
   return { point, distance: length(sub(input.point, point)) };
+}
+
+// =======================
+// Cartesian transformation (On Growth and Form, Ch. XVII)
+//
+// A flat rectangle is deformed by dragging its four corners; the same
+// bilinear map that warps the grid is applied to a reference outline,
+// showing how a regular growth grid can carry one form into another.
+// =======================
+
+export const DEFAULT_TRANSFORM_CORNERS: CartesianTransformCorners = {
+  p00: { x: -3, y: -1.6, z: 0 },
+  p10: { x: 3, y: -1.6, z: 0 },
+  p01: { x: -3, y: 1.6, z: 0 },
+  p11: { x: 3, y: 1.6, z: 0 },
+};
+
+// A simple closed fish silhouette, in (u, v) ∈ [0, 1]² grid coordinates,
+// after the manner of D'Arcy Thompson's classic fish-transformation figures.
+export const FISH_OUTLINE: Array<[number, number]> = [
+  [0.88, 0.52],
+  [0.78, 0.66],
+  [0.55, 0.72],
+  [0.35, 0.64],
+  [0.24, 0.54],
+  [0.08, 0.68],
+  [0.2, 0.5],
+  [0.08, 0.32],
+  [0.24, 0.46],
+  [0.35, 0.36],
+  [0.55, 0.28],
+  [0.78, 0.34],
+];
+
+export const FISH_EYE: [number, number] = [0.8, 0.56];
+
+export function bilinearPoint(u: number, v: number, corners: CartesianTransformCorners): Vec3 {
+  const w00 = (1 - u) * (1 - v);
+  const w10 = u * (1 - v);
+  const w01 = (1 - u) * v;
+  const w11 = u * v;
+  return {
+    x: w00 * corners.p00.x + w10 * corners.p10.x + w01 * corners.p01.x + w11 * corners.p11.x,
+    y: w00 * corners.p00.y + w10 * corners.p10.y + w01 * corners.p01.y + w11 * corners.p11.y,
+    z: 0,
+  };
+}
+
+function shoelaceArea(polygon: Vec3[]): number {
+  let sum = 0;
+  for (let i = 0; i < polygon.length; i++) {
+    const current = polygon[i];
+    const next = polygon[(i + 1) % polygon.length];
+    sum += current.x * next.y - next.x * current.y;
+  }
+  return Math.abs(sum) / 2;
+}
+
+function boundingAspect(polygon: Vec3[]): number {
+  const xs = polygon.map((p) => p.x);
+  const ys = polygon.map((p) => p.y);
+  const width = Math.max(...xs) - Math.min(...xs);
+  const height = Math.max(...ys) - Math.min(...ys);
+  return height < EPSILON ? 0 : width / height;
+}
+
+export function localCartesianTransform(corners: CartesianTransformCorners): CartesianTransformResponse {
+  const currentPolygon = FISH_OUTLINE.map(([u, v]) => bilinearPoint(u, v, corners));
+  const referencePolygon = FISH_OUTLINE.map(([u, v]) => bilinearPoint(u, v, DEFAULT_TRANSFORM_CORNERS));
+
+  const currentArea = shoelaceArea(currentPolygon);
+  const referenceArea = shoelaceArea(referencePolygon);
+  const currentAspect = boundingAspect(currentPolygon);
+  const referenceAspect = boundingAspect(referencePolygon);
+
+  return {
+    currentArea,
+    referenceArea,
+    areaRatio: referenceArea < EPSILON ? 0 : currentArea / referenceArea,
+    elongation: referenceAspect < EPSILON ? 0 : currentAspect / referenceAspect,
+  };
 }

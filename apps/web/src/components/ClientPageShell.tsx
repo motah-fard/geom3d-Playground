@@ -7,6 +7,7 @@ import { ClosestPointSegmentForm } from "@/components/ClosestPointSegmentForm";
 import { SegmentSegmentForm } from "@/components/SegmentSegmentForm";
 import { IntersectRayAABBForm } from "@/components/IntersectRayAABBForm";
 import { ClosestPointAABBForm } from "@/components/ClosestPointAABBForm";
+import { CartesianTransformForm } from "@/components/CartesianTransformForm";
 
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -28,6 +29,7 @@ export function ClientPageShell() {
       {queryType === "segment-segment" && <SegmentSegmentForm />}
       {queryType === "intersect-ray-aabb" && <IntersectRayAABBForm />}
       {queryType === "closest-point-aabb" && <ClosestPointAABBForm />}
+      {queryType === "cartesian-transform" && <CartesianTransformForm />}
     </>
   );
 

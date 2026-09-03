@@ -33,6 +33,7 @@ export function WorkspaceActions() {
     if (store.queryType === "project-point-to-plane" || store.queryType === "closest-point-aabb") return ["point"];
     if (store.queryType === "intersect-ray-plane" || store.queryType === "intersect-ray-aabb") return ["rayOrigin"];
     if (store.queryType === "closest-point-segment") return ["point", "segmentA", "segmentB"];
+    if (store.queryType === "cartesian-transform") return ["transformP00", "transformP10", "transformP01", "transformP11"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

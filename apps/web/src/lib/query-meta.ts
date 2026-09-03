@@ -1,7 +1,7 @@
 import type { QueryType } from "@/types/geometry";
 
 export type QueryMeta = {
-  category: "Project" | "Intersect" | "Measure";
+  category: "Project" | "Intersect" | "Measure" | "Growth & Form";
   title: string;
   shortTitle: string;
   description: string;
@@ -58,9 +58,17 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag P outside or through the box to compare distance.",
     accent: "#34d399",
   },
+  "cartesian-transform": {
+    category: "Growth & Form",
+    title: "Cartesian transformation",
+    shortTitle: "Grid warp",
+    description: "Warp a growth grid by its corners and watch a form deform with it — after D'Arcy Thompson's On Growth and Form, Ch. XVII.",
+    instruction: "Drag any corner of the grid to warp it and the fish outline together.",
+    accent: "#fbbf24",
+  },
 };
 
-export const QUERY_GROUPS = (["Project", "Intersect", "Measure"] as const).map(
+export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(
   (category) => ({
     category,
     queries: (Object.keys(QUERY_META) as QueryType[]).filter(

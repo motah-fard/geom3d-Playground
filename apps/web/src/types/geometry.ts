@@ -123,6 +123,24 @@ export type ClosestPointAABBResponse = {
   distance: number;
 };
 
+// =======================
+// Cartesian transformation (On Growth and Form, Ch. XVII)
+// =======================
+
+export type CartesianTransformCorners = {
+  p00: Vec3;
+  p10: Vec3;
+  p01: Vec3;
+  p11: Vec3;
+};
+
+export type CartesianTransformResponse = {
+  currentArea: number;
+  referenceArea: number;
+  areaRatio: number;
+  elongation: number;
+};
+
 // The full set of query types the playground supports. Kept here (rather
 // than inline in the store) so it can be imported anywhere a properly
 // typed QueryType is needed instead of casting through `any`.
@@ -132,4 +150,5 @@ export type QueryType =
   | "closest-point-segment"
   | "segment-segment"
   | "intersect-ray-aabb"
-  | "closest-point-aabb";
+  | "closest-point-aabb"
+  | "cartesian-transform";
