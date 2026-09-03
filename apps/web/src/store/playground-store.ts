@@ -6,13 +6,16 @@ import type {
   CatenoidResponse,
   CellPackingResponse,
   ClosestPointAABBResponse,
+  EggCurveResponse,
   GeodesicSphereResponse,
   HelicalShellResponse,
+  HelicoidResponse,
   IntersectRayAABBResponse,
   IntersectRayPlaneResponse,
   LogisticGrowthResponse,
   LogSpiralResponse,
   MagnitudeScalingResponse,
+  MilkCoronetResponse,
   PhyllotaxisResponse,
   ProjectPointToPlaneResponse,
   QueryType,
@@ -30,12 +33,15 @@ import {
   localCellPacking,
   localClosestPointAABB,
   localClosestPointSegment,
+  localEggCurve,
   localGeodesicSphere,
   localHelicalShell,
+  localHelicoid,
   localIntersectRayAABB,
   localIntersectRayPlane,
   localLogisticGrowth,
   localLogSpiral,
+  localMilkCoronet,
   localPhyllotaxis,
   localProjectPointToPlane,
   localSegmentSegment,
@@ -88,6 +94,12 @@ export type ScenarioSnapshot = {
   geodesicDetail: Vec3;
   whirlingCount: Vec3;
   catenoidA: Vec3;
+  milkRadius: Vec3;
+  milkCount: Vec3;
+  eggBig: Vec3;
+  eggSmall: Vec3;
+  helicoidRadius: Vec3;
+  helicoidPitch: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -164,6 +176,18 @@ type PlaygroundState = {
   // catenoid parameter point
   catenoidA: Vec3;
 
+  // milk-coronet control points
+  milkRadius: Vec3;
+  milkCount: Vec3;
+
+  // egg control points
+  eggBig: Vec3;
+  eggSmall: Vec3;
+
+  // helicoid control points
+  helicoidRadius: Vec3;
+  helicoidPitch: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -183,6 +207,9 @@ type PlaygroundState = {
   magnitudeResult: MagnitudeScalingResponse | null;
   catenaryResult: CatenaryResponse | null;
   allometryResult: AllometricGrowthResponse | null;
+  milkCoronetResult: MilkCoronetResponse | null;
+  eggCurveResult: EggCurveResponse | null;
+  helicoidResult: HelicoidResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -258,6 +285,9 @@ type PlaygroundState = {
   setGeodesicInput: (detailPoint: Vec3) => void;
   setWhirlingInput: (countPoint: Vec3) => void;
   setCatenoidInput: (aPoint: Vec3) => void;
+  setMilkCoronetInputs: (payload: { radiusPoint: Vec3; countPoint: Vec3 }) => void;
+  setEggCurveInputs: (payload: { bigPoint: Vec3; smallPoint: Vec3 }) => void;
+  setHelicoidInputs: (payload: { radiusPoint: Vec3; pitchPoint: Vec3 }) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -281,6 +311,9 @@ type PlaygroundState = {
   setGeodesicResult: (result: GeodesicSphereResponse | null) => void;
   setWhirlingResult: (result: WhirlingSquaresResponse | null) => void;
   setCatenoidResult: (result: CatenoidResponse | null) => void;
+  setMilkCoronetResult: (result: MilkCoronetResponse | null) => void;
+  setEggCurveResult: (result: EggCurveResponse | null) => void;
+  setHelicoidResult: (result: HelicoidResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -323,6 +356,9 @@ const clearedResults = {
   geodesicResult: null,
   whirlingResult: null,
   catenoidResult: null,
+  milkCoronetResult: null,
+  eggCurveResult: null,
+  helicoidResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -361,6 +397,12 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     geodesicDetail: state.geodesicDetail,
     whirlingCount: state.whirlingCount,
     catenoidA: state.catenoidA,
+    milkRadius: state.milkRadius,
+    milkCount: state.milkCount,
+    eggBig: state.eggBig,
+    eggSmall: state.eggSmall,
+    helicoidRadius: state.helicoidRadius,
+    helicoidPitch: state.helicoidPitch,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -427,6 +469,15 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   catenoidA: { x: 1.2, y: 0, z: 0 },
 
+  milkRadius: { x: 2.4, y: 0, z: 0 },
+  milkCount: { x: 14, y: 0, z: 0 },
+
+  eggBig: { x: 1.4, y: 0, z: 0 },
+  eggSmall: { x: 0.7, y: 0, z: 0 },
+
+  helicoidRadius: { x: 1.8, y: 0, z: 0 },
+  helicoidPitch: { x: 0, y: 0, z: 2.4 },
+
   // results
   ...clearedResults,
 
@@ -468,6 +519,12 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     geodesicDetail: "F",
     whirlingCount: "N",
     catenoidA: "A",
+    milkRadius: "R",
+    milkCount: "N",
+    eggBig: "R",
+    eggSmall: "r",
+    helicoidRadius: "R",
+    helicoidPitch: "P",
   },
   past: [],
   future: [],
@@ -646,6 +703,33 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setMilkCoronetInputs: ({ radiusPoint, countPoint }) =>
+    set({
+      milkRadius: radiusPoint,
+      milkCount: countPoint,
+      milkCoronetResult: localMilkCoronet(radiusPoint, countPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setEggCurveInputs: ({ bigPoint, smallPoint }) =>
+    set({
+      eggBig: bigPoint,
+      eggSmall: smallPoint,
+      eggCurveResult: localEggCurve(bigPoint, smallPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setHelicoidInputs: ({ radiusPoint, pitchPoint }) =>
+    set({
+      helicoidRadius: radiusPoint,
+      helicoidPitch: pitchPoint,
+      helicoidResult: localHelicoid(radiusPoint, pitchPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -699,6 +783,15 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setCatenoidResult: (result) =>
     set({ catenoidResult: result, error: null }),
+
+  setMilkCoronetResult: (result) =>
+    set({ milkCoronetResult: result, error: null }),
+
+  setEggCurveResult: (result) =>
+    set({ eggCurveResult: result, error: null }),
+
+  setHelicoidResult: (result) =>
+    set({ helicoidResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -1002,6 +1095,42 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       set({
         queryType: type,
         catenoidA: { x: 1.2, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "milk-coronet") {
+      set({
+        queryType: type,
+        milkRadius: { x: 2.4, y: 0, z: 0 },
+        milkCount: { x: 14, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "egg-curve") {
+      set({
+        queryType: type,
+        eggBig: { x: 1.4, y: 0, z: 0 },
+        eggSmall: { x: 0.7, y: 0, z: 0 },
+        shouldAutoRun: true,
+        error: null,
+        queryStatus: "idle",
+        ...clearedResults,
+      });
+    }
+
+    if (type === "helicoid") {
+      set({
+        queryType: type,
+        helicoidRadius: { x: 1.8, y: 0, z: 0 },
+        helicoidPitch: { x: 0, y: 0, z: 2.4 },
         shouldAutoRun: true,
         error: null,
         queryStatus: "idle",

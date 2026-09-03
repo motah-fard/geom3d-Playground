@@ -45,6 +45,9 @@ export function WorkspaceActions() {
     if (store.queryType === "geodesic-sphere") return ["geodesicDetail"];
     if (store.queryType === "whirling-squares") return ["whirlingCount"];
     if (store.queryType === "catenoid") return ["catenoidA"];
+    if (store.queryType === "milk-coronet") return ["milkRadius", "milkCount"];
+    if (store.queryType === "egg-curve") return ["eggBig", "eggSmall"];
+    if (store.queryType === "helicoid") return ["helicoidRadius", "helicoidPitch"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

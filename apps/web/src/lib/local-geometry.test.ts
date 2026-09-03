@@ -8,23 +8,30 @@ import {
   localCellPacking,
   buildWhirlingSquares,
   catenoidRadius,
+  EGG_CENTER_DISTANCE,
+  eggProfilePoints,
   GOLDEN_ANGLE_RAD,
+  HELICOID_TURNS,
   localAllometricGrowth,
   localCatenary,
   localCatenoid,
   localClosestPointAABB,
   localClosestPointSegment,
+  localEggCurve,
   localGeodesicSphere,
   localHelicalShell,
+  localHelicoid,
   localIntersectRayAABB,
   localIntersectRayPlane,
   localLogisticGrowth,
   LOGISTIC_TIME_CENTER,
   localLogSpiral,
+  localMilkCoronet,
   localPhyllotaxis,
   localSquareCubeLaw,
   localWhirlingSquares,
   logisticPoint,
+  MILK_CORONET_MAX_POINTS,
   PHI,
   helicalShellPoint,
   localProjectPointToPlane,
@@ -271,5 +278,107 @@ test("catenoid area matches numerical integration of the surface-of-revolution f
       numericalArea += 2 * Math.PI * r * Math.sqrt(1 + rPrime * rPrime) * dz;
     }
     assert.ok(Math.abs(numericalArea - result.surfaceArea) / result.surfaceArea < 1e-4, `a=${a}: numerical=${numericalArea} closed-form=${result.surfaceArea}`);
+  }
+});
+
+test("a milk-coronet's inscribed polygon perimeter matches an independent law-of-cosines chord derivation", () => {
+  const result = localMilkCoronet({ x: 2, y: 0, z: 0 }, { x: 12, y: 0, z: 0 });
+  assert.equal(result.points, 12);
+  // Chord length via the law of cosines on two radius-R spokes separated
+  // by the central angle 2*pi/N, entirely independent of the half-angle
+  // sine identity the implementation actually uses.
+  const centralAngle = (2 * Math.PI) / result.points;
+  const chordViaLawOfCosines = Math.sqrt(2 * result.radius * result.radius * (1 - Math.cos(centralAngle)));
+  assert.ok(Math.abs(result.polygonPerimeter - result.points * chordViaLawOfCosines) < 1e-9);
+});
+
+test("a milk-coronet's polygon deficit from the true circle shrinks like 1/N^2 as points increase (Archimedes' exhaustion)", () => {
+  const radius = 3;
+  const deficits = [8, 16, 32, MILK_CORONET_MAX_POINTS].map((n) => {
+    const result = localMilkCoronet({ x: radius, y: 0, z: 0 }, { x: n, y: 0, z: 0 });
+    return { n, deficit: result.circleDeficit };
+  });
+  // deficit ≈ (pi^3 * R) / (3 N^2) for large N — check the asymptotic
+  // constant is converged on, not just that the deficit is decreasing.
+  for (const { n, deficit } of deficits) {
+    const predicted = (Math.PI ** 3 * radius) / (3 * n * n);
+    assert.ok(Math.abs(deficit - predicted) / predicted < 0.02, `n=${n}: deficit=${deficit} predicted=${predicted}`);
+  }
+  for (let i = 1; i < deficits.length; i++) {
+    assert.ok(deficits[i].deficit < deficits[i - 1].deficit);
+  }
+});
+
+test("an egg's common tangent line is genuinely tangent to both the round and pointed circles", () => {
+  const bigRadius = 1.4;
+  const smallRadius = 0.7;
+  const samplesPerArc = 24;
+  const profile = eggProfilePoints(bigRadius, smallRadius, samplesPerArc);
+  const tangentStart = profile[samplesPerArc];
+  const tangentEnd = profile[samplesPerArc + 8];
+  const distanceToLine = (center: [number, number]) => {
+    const [x1, y1] = tangentStart;
+    const [x2, y2] = tangentEnd;
+    const [x0, y0] = center;
+    const numerator = Math.abs((x2 - x1) * (y0 - y1) - (x0 - x1) * (y2 - y1));
+    const denominator = Math.hypot(x2 - x1, y2 - y1);
+    return numerator / denominator;
+  };
+  assert.ok(Math.abs(distanceToLine([0, 0]) - smallRadius) < 1e-9);
+  assert.ok(Math.abs(distanceToLine([0, EGG_CENTER_DISTANCE]) - bigRadius) < 1e-9);
+});
+
+test("an egg's perimeter and surface area match a fine numerical trace of its own profile", () => {
+  const bigRadius = 1.5;
+  const smallRadius = 0.6;
+  const result = localEggCurve({ x: bigRadius, y: 0, z: 0 }, { x: smallRadius, y: 0, z: 0 });
+  const profile = eggProfilePoints(bigRadius, smallRadius, 4000);
+  let halfPerimeter = 0;
+  let surfaceArea = 0;
+  for (let i = 1; i < profile.length; i++) {
+    const [r1, z1] = profile[i - 1];
+    const [r2, z2] = profile[i];
+    const segmentLength = Math.hypot(r2 - r1, z2 - z1);
+    halfPerimeter += segmentLength;
+    // Pappus's theorem for a frustum: lateral area = pi*(r1+r2)*slant length.
+    // This is the FULL revolved area already (revolving a half-profile
+    // 360 degrees sweeps out the whole solid), unlike the perimeter below.
+    surfaceArea += Math.PI * (r1 + r2) * segmentLength;
+  }
+  // The profile traces only the upper half of the closed 2D egg outline
+  // (tip to tip); the lower half mirrors it exactly, so the full 2D
+  // perimeter is twice this trace's length.
+  assert.ok(Math.abs(2 * halfPerimeter - result.perimeter) / result.perimeter < 1e-4);
+  assert.ok(Math.abs(surfaceArea - result.surfaceArea) / result.surfaceArea < 1e-4);
+});
+
+test("an egg with equal radii reduces to the known spherocylinder (capsule) perimeter and surface area", () => {
+  const r = 1;
+  const result = localEggCurve({ x: r, y: 0, z: 0 }, { x: r, y: 0, z: 0 });
+  const d = EGG_CENTER_DISTANCE;
+  // Two equal circles joined by common tangents degenerate to a stadium:
+  // two semicircles (perimeter pi*r each) plus two straight sides of
+  // length d — and, revolved, two hemispherical caps (4*pi*r^2 combined)
+  // plus a cylinder's lateral area (2*pi*r*d).
+  assert.ok(Math.abs(result.perimeter - (2 * Math.PI * r + 2 * d)) < 1e-9);
+  assert.ok(Math.abs(result.surfaceArea - (4 * Math.PI * r * r + 2 * Math.PI * r * d)) < 1e-9);
+});
+
+test("a helicoid's surface area matches a fine numerical double integral of its surface element", () => {
+  for (const [radius, risePerTurn] of [[1.5, 2], [2.2, 4], [1, 0.5]] as const) {
+    const result = localHelicoid({ x: radius, y: 0, z: 0 }, { x: 0, y: 0, z: risePerTurn });
+    const uSteps = 400;
+    const totalAngle = HELICOID_TURNS * 2 * Math.PI;
+    const du = radius / uSteps;
+    // The surface element sqrt(u^2+c^2) doesn't depend on v, so the double
+    // integral over v just scales a 1D Riemann sum over u by the total
+    // sweep angle.
+    let uIntegral = 0;
+    for (let i = 0; i < uSteps; i++) {
+      const u = (i + 0.5) * du;
+      uIntegral += Math.sqrt(u * u + result.c * result.c) * du;
+    }
+    const numericalArea = uIntegral * totalAngle;
+    assert.ok(Math.abs(numericalArea - result.area) / result.area < 1e-3, `r=${radius}: numerical=${numericalArea} closed-form=${result.area}`);
   }
 });

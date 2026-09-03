@@ -270,6 +270,53 @@ export type CellPackingResponse = {
   sides: number;
 };
 
+// =======================
+// The milk-drop coronet — Worthington and Edgerton's high-speed
+// photographs of a splash crown, discussed by Thompson alongside other
+// surface-tension phenomena. The crown's N equally spaced points are an
+// N-gon inscribed in the rim circle; its perimeter falls short of the
+// smooth circumference by an amount that shrinks like 1/N² — Archimedes'
+// method of exhausting a circle by polygons, run by nature.
+// =======================
+
+export type MilkCoronetResponse = {
+  radius: number;
+  points: number;
+  circumference: number;
+  polygonPerimeter: number;
+  circleDeficit: number;
+};
+
+// =======================
+// The egg — Thompson's discussion of ovoid curves as circles of two
+// different curvatures smoothly joined, built here from the classic
+// compass-and-straightedge two-circle oval: a small and a large circle
+// joined by their common external tangent lines.
+// =======================
+
+export type EggCurveResponse = {
+  bigRadius: number;
+  smallRadius: number;
+  tangentLength: number;
+  tiltAngleDeg: number;
+  perimeter: number;
+  surfaceArea: number;
+};
+
+// =======================
+// The helicoid — the twisted-ribbon minimal surface a soap film forms on
+// a helical wire frame, the geometric sibling of the catenoid (the two
+// are a classic "Bonnet pair": isometric surfaces of equal mean
+// curvature, zero, related by bending one into the other).
+// =======================
+
+export type HelicoidResponse = {
+  radius: number;
+  c: number;
+  risePerTurn: number;
+  area: number;
+};
+
 // The full set of query types the playground supports. Kept here (rather
 // than inline in the store) so it can be imported anywhere a properly
 // typed QueryType is needed instead of casting through `any`.
@@ -291,4 +338,7 @@ export type QueryType =
   | "logistic-growth"
   | "geodesic-sphere"
   | "whirling-squares"
-  | "catenoid";
+  | "catenoid"
+  | "milk-coronet"
+  | "egg-curve"
+  | "helicoid";

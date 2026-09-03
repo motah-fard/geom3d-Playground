@@ -38,11 +38,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -79,6 +79,9 @@ export function ResultsPanel() {
     state.queryType === "geodesic-sphere" ? state.geodesicResult :
     state.queryType === "whirling-squares" ? state.whirlingResult :
     state.queryType === "catenoid" ? state.catenoidResult :
+    state.queryType === "milk-coronet" ? state.milkCoronetResult :
+    state.queryType === "egg-curve" ? state.eggCurveResult :
+    state.queryType === "helicoid" ? state.helicoidResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -125,12 +128,18 @@ export function ResultsPanel() {
                             : state.queryType === "logistic-growth"
                               ? "N(t) = K / (1 + e^(r(c−t))); max growth rate = rK/4 at N = K/2"
                               : state.queryType === "geodesic-sphere"
-                                ? "V = 10f²+2, E = 30f², F = 20f² (f = 2^detail); V − E + F = 2"
+                                ? "V = 10f²+2, E = 30f², F = 20f² (f = detail+1); V − E + F = 2"
                                 : state.queryType === "whirling-squares"
                                   ? "side_i = side_0 / φ^i; arc length = (π/2)·Σ side_i"
                                   : state.queryType === "catenoid"
                                     ? "r(z) = a·cosh(z/a); area = 2πa²·(H + sinh(2H)/2), H = h/a"
-                                    : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                                    : state.queryType === "milk-coronet"
+                                      ? `perimeter = 2NR·sin(π/N); deficit = 2πR − perimeter ≈ π³R/(3N²)`
+                                      : state.queryType === "egg-curve"
+                                        ? "α = asin((R−r)/d); perimeter = (π−2α)r + (π+2α)R + 2√(d²−(R−r)²)"
+                                        : state.queryType === "helicoid"
+                                          ? "area = V·[(R/2)√(R²+c²) + (c²/2)·ln((R+√(R²+c²))/c)]"
+                                          : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -292,6 +301,32 @@ export function ResultsPanel() {
                 <Metric label="Rim radius" value={state.catenoidResult.rimRadius} />
                 <Metric label="Film surface area" value={state.catenoidResult.surfaceArea} suffix={`${state.unit}²`} />
                 <p className="text-xs leading-5 text-slate-500">Of every surface spanning these two rings, this exact shape has the least area — which is precisely why a real soap film settles into it.</p>
+              </>
+            )}
+
+            {state.queryType === "milk-coronet" && state.milkCoronetResult && (
+              <>
+                <Metric label="Crown points" value={state.milkCoronetResult.points} suffix="" />
+                <Metric label="Inscribed polygon perimeter" value={state.milkCoronetResult.polygonPerimeter} />
+                <Metric label="Deficit from the smooth circle" value={state.milkCoronetResult.circleDeficit} />
+                <p className="text-xs leading-5 text-slate-500">More points trace the rim ever more closely — the deficit shrinks like 1/N², the same exhaustion Archimedes used to bound π with inscribed polygons.</p>
+              </>
+            )}
+
+            {state.queryType === "egg-curve" && state.eggCurveResult && (
+              <>
+                <Metric label="Common tangent length" value={state.eggCurveResult.tangentLength} />
+                <Metric label="Perimeter" value={state.eggCurveResult.perimeter} />
+                <Metric label="Surface area" value={state.eggCurveResult.surfaceArea} suffix={`${state.unit}²`} />
+                <p className="text-xs leading-5 text-slate-500">Revolved around its axis, each circular arc sweeps out an exact spherical zone (Archimedes&rsquo; hat-box theorem) and the tangent line a cone frustum — the egg is two sphere-pieces and a band, joined smoothly.</p>
+              </>
+            )}
+
+            {state.queryType === "helicoid" && state.helicoidResult && (
+              <>
+                <Metric label="Rise per turn" value={state.helicoidResult.risePerTurn} />
+                <Metric label="Surface area" value={state.helicoidResult.area} suffix={`${state.unit}²`} />
+                <p className="text-xs leading-5 text-slate-500">Bend this twisted ribbon flat along its length and it becomes a catenoid — the two are isometric &ldquo;Bonnet pair&rdquo; minimal surfaces despite looking nothing alike.</p>
               </>
             )}
 

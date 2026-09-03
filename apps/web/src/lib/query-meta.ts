@@ -154,6 +154,30 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag A to change the waist radius and watch the rings and surface area respond.",
     accent: "#0ea5e9",
   },
+  "milk-coronet": {
+    category: "Growth & Form",
+    title: "The milk-drop coronet",
+    shortTitle: "Milk coronet",
+    description: "Worthington and Edgerton's high-speed photographs of a splash crown breaking into a fixed number of equally spaced points — nature exhausting a circle by a polygon, exactly as Archimedes did to estimate π.",
+    instruction: "Drag N to change the number of crown points, or R to resize the rim.",
+    accent: "#f8fafc",
+  },
+  "egg-curve": {
+    category: "Growth & Form",
+    title: "The egg",
+    shortTitle: "The egg",
+    description: "Thompson's ovoid curve, built the classical way: a round end and a pointed end, each a circle, joined by their common tangent lines — an asymmetric oval two true spheres and a cone frustum could be cut and reassembled into.",
+    instruction: "Drag R to resize the round end, or r to resize the pointed end.",
+    accent: "#fdba74",
+  },
+  "helicoid": {
+    category: "Growth & Form",
+    title: "The helicoid",
+    shortTitle: "Helicoid",
+    description: "The twisted-ribbon minimal surface a soap film forms on a helical wire frame — the catenoid's geometric sibling, a screw thread instead of a film between two rings, and isometric to it despite looking nothing alike.",
+    instruction: "Drag R to widen the ribbon, or P to change how tightly it twists.",
+    accent: "#a5f3fc",
+  },
 };
 
 export const QUERY_GROUPS = (["Project", "Intersect", "Measure", "Growth & Form"] as const).map(

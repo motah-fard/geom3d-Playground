@@ -1,0 +1,88 @@
+"use client";
+
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { usePlaygroundStore } from "@/store/playground-store";
+import { useCallback, useEffect } from "react";
+import { FormActions, GeometryFields, Vec2Fields } from "@/components/GeometryFields";
+
+const formSchema = z.object({
+  radius: z.object({
+    x: z.coerce.number({ error: "Enter a number" }).finite(),
+    y: z.coerce.number({ error: "Enter a number" }).finite(),
+  }),
+  pitch: z.object({
+    x: z.coerce.number({ error: "Enter a number" }).finite(),
+    y: z.coerce.number({ error: "Enter a number" }).finite(),
+    z: z.coerce.number({ error: "Enter a number" }).finite(),
+  }),
+});
+
+type FormInput = z.input<typeof formSchema>;
+type FormValues = z.output<typeof formSchema>;
+
+export function HelicoidForm() {
+  const {
+    helicoidRadius,
+    helicoidPitch,
+    setHelicoidInputs,
+    shouldAutoRun,
+    setShouldAutoRun,
+    setQueryStatus,
+    saveCheckpoint,
+    objectLabels,
+  } = usePlaygroundStore();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, errors },
+  } = useForm<FormInput, unknown, FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      radius: { x: helicoidRadius.x, y: helicoidRadius.y },
+      pitch: helicoidPitch,
+    },
+  });
+
+  useEffect(() => {
+    reset({ radius: { x: helicoidRadius.x, y: helicoidRadius.y }, pitch: helicoidPitch });
+  }, [helicoidRadius, helicoidPitch, reset]);
+
+  const onSubmit = useCallback(
+    (values: FormValues) => {
+      setQueryStatus("running");
+      setHelicoidInputs({
+        radiusPoint: { ...values.radius, z: 0 },
+        pitchPoint: values.pitch,
+      });
+    },
+    [setHelicoidInputs, setQueryStatus]
+  );
+
+  // Auto-run when a drag (or an example) updates the inputs, reusing the
+  // exact same submit path as a manual form submission rather than
+  // duplicating the transform math and its state updates.
+  useEffect(() => {
+    if (!shouldAutoRun) return;
+
+    const timer = window.setTimeout(() => {
+      setShouldAutoRun(false);
+      handleSubmit(onSubmit)();
+    }, 140);
+    return () => window.clearTimeout(timer);
+  }, [shouldAutoRun, handleSubmit, onSubmit, setShouldAutoRun]);
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} onSubmitCapture={saveCheckpoint} className="space-y-4" noValidate>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Vec2Fields register={register} prefix="radius" label="Ribbon radius (R)" symbol={objectLabels.helicoidRadius} errors={errors.radius} />
+        <GeometryFields register={register} prefix="pitch" label="Pitch point" symbol={objectLabels.helicoidPitch} errors={errors.pitch} />
+      </div>
+      <p className="text-xs leading-5 text-slate-500">Only P&rsquo;s height (z) matters — it sets the rise per full turn; a taller rise twists the ribbon less tightly.</p>
+      <FormActions isSubmitting={isSubmitting} label="Rebuild the surface" />
+    </form>
+  );
+}

@@ -9,7 +9,9 @@ import type {
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
   ClosestPointSegmentResponse,
+  EggCurveResponse,
   GeodesicSphereResponse,
+  HelicoidResponse,
   IntersectRayAABBRequest,
   IntersectRayAABBResponse,
   HelicalShellResponse,
@@ -18,6 +20,7 @@ import type {
   LogisticGrowthResponse,
   LogSpiralResponse,
   MagnitudeScalingResponse,
+  MilkCoronetResponse,
   PhyllotaxisResponse,
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
@@ -571,4 +574,154 @@ export function localCatenoid(aPoint: Vec3): CatenoidResponse {
   const bigH = h / a;
   const surfaceArea = 2 * Math.PI * a * a * (bigH + Math.sinh(2 * bigH) / 2);
   return { a, rimRadius, surfaceArea };
+}
+
+// =======================
+// The milk-drop coronet — Worthington and Edgerton's splash-crown
+// photography. The crown breaks into N roughly equal points around its
+// rim; treating those points as vertices of a regular N-gon inscribed in
+// the rim circle of radius R, the polygon's perimeter 2NR·sin(π/N) falls
+// short of the smooth circumference 2πR by an amount that shrinks like
+// 1/N² as N grows — Archimedes' method of exhausting a circle by
+// polygons, the same convergence nature exploits when the splash settles
+// on a particular number of jets.
+// =======================
+
+export const MILK_CORONET_MIN_POINTS = 3;
+export const MILK_CORONET_MAX_POINTS = 40;
+export const MILK_CORONET_SPIKE_HEIGHT = 1.05;
+export const MILK_CORONET_CRATER_DEPTH = 0.55;
+
+export function milkCoronetSpikeAngle(index: number, points: number): number {
+  return (2 * Math.PI * index) / points;
+}
+
+export function localMilkCoronet(radiusPoint: Vec3, countPoint: Vec3): MilkCoronetResponse {
+  const radius = Math.max(Math.hypot(radiusPoint.x, radiusPoint.y), EPSILON);
+  const rawCount = Math.max(Math.hypot(countPoint.x, countPoint.y), MILK_CORONET_MIN_POINTS);
+  const points = Math.max(MILK_CORONET_MIN_POINTS, Math.min(MILK_CORONET_MAX_POINTS, Math.round(rawCount)));
+  const circumference = 2 * Math.PI * radius;
+  const chordLength = 2 * radius * Math.sin(Math.PI / points);
+  const polygonPerimeter = points * chordLength;
+  return {
+    radius,
+    points,
+    circumference,
+    polygonPerimeter,
+    circleDeficit: circumference - polygonPerimeter,
+  };
+}
+
+// =======================
+// The egg — built from Thompson's own way of comparing ovoid curves: two
+// circles of different radii (a "round end" and a "pointed end"), joined
+// smoothly by their common external tangent lines, exactly the classic
+// compass-and-straightedge method for drafting an egg-shaped oval.
+// Revolving the profile around the axis joining the two centers turns
+// each circular arc into a genuine spherical zone (Archimedes' hat-box
+// theorem: a zone's area is 2π·radius·(its own axial height), regardless
+// of where on the sphere it sits) and the tangent line into a cone
+// frustum, giving an exact closed form for the egg's surface area.
+// =======================
+
+export const EGG_CENTER_DISTANCE = 2.2;
+export const EGG_MIN_RADIUS = 0.4;
+export const EGG_MAX_RADIUS = 1.6;
+
+function clampEggRadius(value: number): number {
+  return Math.max(EGG_MIN_RADIUS, Math.min(EGG_MAX_RADIUS, value));
+}
+
+export function localEggCurve(bigPoint: Vec3, smallPoint: Vec3): EggCurveResponse {
+  const bigRadius = clampEggRadius(Math.max(Math.hypot(bigPoint.x, bigPoint.y), EPSILON));
+  const smallRadius = clampEggRadius(Math.max(Math.hypot(smallPoint.x, smallPoint.y), EPSILON));
+  const d = EGG_CENTER_DISTANCE;
+  const alpha = Math.asin((bigRadius - smallRadius) / d);
+  const tangentLength = Math.sqrt(d * d - (bigRadius - smallRadius) * (bigRadius - smallRadius));
+  // The two tangent points sit at ±(π/2 + α) on EACH circle (parallel
+  // radii, the defining property of an external tangent). That splits
+  // each circle into a "near" arc (facing the other circle, cut away)
+  // and a "far" arc (kept, part of the outline) — but the far arc's
+  // angular width is NOT the same on both circles: it's (π − 2α) on the
+  // small circle (whose near arc, facing outward toward the bigger
+  // circle, is the wider one) and (π + 2α) on the big circle. The two
+  // widths sum to exactly 2π, one full circle's worth, only coinciding
+  // at π apiece when the radii are equal.
+  const smallArcAngle = Math.PI - 2 * alpha;
+  const bigArcAngle = Math.PI + 2 * alpha;
+  const perimeter = smallArcAngle * smallRadius + bigArcAngle * bigRadius + 2 * tangentLength;
+  // The surface area, unlike the perimeter, comes from each arc's AXIAL
+  // span (Archimedes' hat-box theorem: a spherical zone's area is
+  // 2π·radius·(its own height), independent of angular position), so it
+  // doesn't share the perimeter's angular bookkeeping.
+  const surfaceArea =
+    2 * Math.PI * bigRadius * bigRadius * (1 + Math.sin(alpha)) +
+    2 * Math.PI * smallRadius * smallRadius * (1 - Math.sin(alpha)) +
+    Math.PI * (bigRadius + smallRadius) * d * Math.cos(alpha) * Math.cos(alpha);
+  return {
+    bigRadius,
+    smallRadius,
+    tangentLength,
+    tiltAngleDeg: alpha * (180 / Math.PI),
+    perimeter,
+    surfaceArea,
+  };
+}
+
+// The half-profile (radial distance from the axis, position along the
+// axis) that LatheGeometry revolves into the 3D egg: tip of the small
+// circle's far arc, the tangent line, then the big circle's far arc to
+// its tip. Shared by the scene (rendering) and the tests (independent
+// numerical cross-check of the closed-form perimeter and surface area).
+export function eggProfilePoints(bigRadius: number, smallRadius: number, samplesPerArc = 24): Array<[number, number]> {
+  const d = EGG_CENTER_DISTANCE;
+  const alpha = Math.asin((bigRadius - smallRadius) / d);
+  const points: Array<[number, number]> = [];
+
+  for (let i = 0; i <= samplesPerArc; i++) {
+    const theta = Math.PI - (i / samplesPerArc) * (Math.PI / 2 - alpha);
+    points.push([smallRadius * Math.sin(theta), smallRadius * Math.cos(theta)]);
+  }
+  const tSmall = points[points.length - 1];
+  const bigTangentAxial = d - bigRadius * Math.sin(alpha);
+  const bigTangentRadial = bigRadius * Math.cos(alpha);
+  const tangentSamples = 8;
+  for (let i = 1; i <= tangentSamples; i++) {
+    const t = i / tangentSamples;
+    points.push([
+      tSmall[0] + t * (bigTangentRadial - tSmall[0]),
+      tSmall[1] + t * (bigTangentAxial - tSmall[1]),
+    ]);
+  }
+  for (let i = 1; i <= samplesPerArc; i++) {
+    const theta = (Math.PI / 2 + alpha) * (1 - i / samplesPerArc);
+    points.push([bigRadius * Math.sin(theta), d + bigRadius * Math.cos(theta)]);
+  }
+  return points;
+}
+
+// =======================
+// The helicoid — the twisted-ribbon minimal surface a soap film forms on
+// a helical wire frame: (u, v) ↦ (u·cos v, u·sin v, c·v). It is the
+// geometric sibling of the catenoid (the two are a classic "Bonnet
+// pair"): where the catenoid is the film on two rings, the helicoid is
+// the film on a screw thread. Its surface-element is √(u² + c²), so the
+// area swept over a radius R and a total sweep angle V has the closed
+// form V·[(R/2)√(R²+c²) + (c²/2)·ln((R+√(R²+c²))/c)].
+// =======================
+
+export const HELICOID_TURNS = 2.5;
+
+export function helicoidPoint(u: number, v: number, c: number): Vec3 {
+  return { x: u * Math.cos(v), y: u * Math.sin(v), z: c * v };
+}
+
+export function localHelicoid(radiusPoint: Vec3, pitchPoint: Vec3): HelicoidResponse {
+  const radius = Math.max(Math.hypot(radiusPoint.x, radiusPoint.y), EPSILON);
+  const risePerTurn = Math.max(Math.abs(pitchPoint.z), EPSILON);
+  const c = risePerTurn / (2 * Math.PI);
+  const totalAngle = HELICOID_TURNS * 2 * Math.PI;
+  const s = Math.sqrt(radius * radius + c * c);
+  const area = totalAngle * ((radius / 2) * s + (c * c / 2) * Math.log((radius + s) / c));
+  return { radius, c, risePerTurn, area };
 }

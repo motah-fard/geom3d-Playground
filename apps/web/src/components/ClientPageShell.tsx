@@ -19,6 +19,9 @@ import { LogisticGrowthForm } from "@/components/LogisticGrowthForm";
 import { GeodesicSphereForm } from "@/components/GeodesicSphereForm";
 import { WhirlingSquaresForm } from "@/components/WhirlingSquaresForm";
 import { CatenoidForm } from "@/components/CatenoidForm";
+import { MilkCoronetForm } from "@/components/MilkCoronetForm";
+import { EggCurveForm } from "@/components/EggCurveForm";
+import { HelicoidForm } from "@/components/HelicoidForm";
 
 import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -52,6 +55,9 @@ export function ClientPageShell() {
       {queryType === "geodesic-sphere" && <GeodesicSphereForm />}
       {queryType === "whirling-squares" && <WhirlingSquaresForm />}
       {queryType === "catenoid" && <CatenoidForm />}
+      {queryType === "milk-coronet" && <MilkCoronetForm />}
+      {queryType === "egg-curve" && <EggCurveForm />}
+      {queryType === "helicoid" && <HelicoidForm />}
     </>
   );
 
