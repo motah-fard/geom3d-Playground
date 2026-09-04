@@ -37,9 +37,12 @@ import { usePlaygroundStore } from "@/store/playground-store";
 import { LEARNING_PATH, QUERY_META } from "@/lib/query-meta";
 import { WorkspaceActions } from "@/components/WorkspaceActions";
 import { ScenarioGallery } from "@/components/ScenarioGallery";
+import { GlossaryPanel } from "@/components/GlossaryPanel";
 import { IntroSection } from "@/components/IntroSection";
 import { NATURE_EXAMPLES } from "@/lib/nature-examples";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
+import { ComprehensionCheck } from "@/components/ComprehensionCheck";
+import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
 
 export function ClientPageShell() {
   const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint } = usePlaygroundStore();
@@ -116,6 +119,7 @@ export function ClientPageShell() {
           </div>
           <QuerySelector />
           <ScenarioGallery />
+          <GlossaryPanel />
         </aside>
 
         <section className="min-w-0 space-y-4" aria-labelledby="query-title">
@@ -154,6 +158,8 @@ export function ClientPageShell() {
             </summary>
             <div className="border-t border-slate-800 p-4">{form}</div>
           </details>
+
+          <ComprehensionCheck question={COMPREHENSION_QUESTIONS[queryType]} chapterKey={queryType} />
 
           {(previousQuery || nextQuery) && (
             <nav className="flex items-center justify-between gap-3" aria-label="Guided path navigation">
