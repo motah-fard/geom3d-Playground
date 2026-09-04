@@ -4,10 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { getScenarioSnapshot, type ScenarioSnapshot, usePlaygroundStore } from "@/store/playground-store";
 import { trackInteraction } from "@/lib/analytics";
 import { UsageInsights } from "@/components/UsageInsights";
+import { QUERY_META } from "@/lib/query-meta";
+import type { QueryType } from "@/types/geometry";
 
 const STORAGE_KEY = "geom3d-playground-scenario-v1";
 const VISITED_STORAGE_KEY = "geom3d-visited-queries-v1";
 const PROGRESS_STORAGE_KEY = "geom3d-progress-v1";
+const LAST_QUERY_STORAGE_KEY = "geom3d-last-query-v1";
 
 function encodeScenario(snapshot: ScenarioSnapshot) {
   const bytes = new TextEncoder().encode(JSON.stringify(snapshot));
@@ -84,26 +87,48 @@ export function WorkspaceActions() {
       // ignore malformed local storage
     }
     const encoded = new URL(window.location.href).searchParams.get("scenario");
-    if (!encoded) return;
+    if (encoded) {
+      try {
+        usePlaygroundStore.getState().hydrateScenario(decodeScenario(encoded));
+        return;
+      } catch {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+    // No shared scenario in the URL — resume whichever chapter this
+    // visitor was last on, so a returning visitor doesn't land back at
+    // Angles every time. A brand-new visitor has nothing saved yet, so
+    // the store's own default (Angles) stands.
     try {
-      usePlaygroundStore.getState().hydrateScenario(decodeScenario(encoded));
+      const savedQuery = localStorage.getItem(LAST_QUERY_STORAGE_KEY);
+      if (savedQuery && savedQuery in QUERY_META) {
+        usePlaygroundStore.getState().setQueryType(savedQuery as QueryType);
+      }
     } catch {
-      window.history.replaceState({}, "", window.location.pathname);
+      // ignore malformed local storage
     }
   }, []);
 
   useEffect(() => {
-    usePlaygroundStore.getState().markVisited(store.queryType);
+    // Read the live store rather than the closed-over `store.queryType`: this
+    // effect and the mount-hydration effect above can both run within the
+    // same commit (React batches the hydration effect's setQueryType call),
+    // so the closure here can still be the pre-hydration default. Reading
+    // getState() ensures we persist whatever the store actually resolved to.
+    const currentQuery = usePlaygroundStore.getState().queryType;
+    usePlaygroundStore.getState().markVisited(currentQuery);
+    localStorage.setItem(LAST_QUERY_STORAGE_KEY, currentQuery);
   }, [store.queryType]);
 
   useEffect(() => {
-    localStorage.setItem(VISITED_STORAGE_KEY, JSON.stringify(store.visitedQueries));
+    localStorage.setItem(VISITED_STORAGE_KEY, JSON.stringify(usePlaygroundStore.getState().visitedQueries));
   }, [store.visitedQueries]);
 
   useEffect(() => {
+    const live = usePlaygroundStore.getState();
     localStorage.setItem(
       PROGRESS_STORAGE_KEY,
-      JSON.stringify({ points: store.points, correctAnswerQueries: store.correctAnswerQueries, streak: store.streak, bestStreak: store.bestStreak })
+      JSON.stringify({ points: live.points, correctAnswerQueries: live.correctAnswerQueries, streak: live.streak, bestStreak: live.bestStreak })
     );
   }, [store.points, store.correctAnswerQueries, store.streak, store.bestStreak]);
 

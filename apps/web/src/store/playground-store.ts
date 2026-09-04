@@ -593,7 +593,7 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
 
 export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   version: 1,
-  queryType: "project-point-to-plane",
+  queryType: "angles",
 
   // base inputs
   point: { x: 1, y: 2, z: 3 },

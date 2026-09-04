@@ -10,6 +10,7 @@ import { DifficultyBadge } from "@/components/DifficultyBadge";
 export function QuerySelector() {
   const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, points, streak } = usePlaygroundStore();
   const [mode, setMode] = useState<"path" | "browse">("path");
+  const [search, setSearch] = useState("");
   const selectQuery = (query: QueryType) => {
     saveCheckpoint();
     trackInteraction("query_changed", { query });
@@ -18,6 +19,14 @@ export function QuerySelector() {
   };
 
   const visitedCount = LEARNING_PATH.filter((query) => visitedQueries.includes(query)).length;
+
+  const trimmedSearch = search.trim().toLowerCase();
+  const searchResults = trimmedSearch
+    ? LEARNING_PATH.filter((query) => {
+        const meta = QUERY_META[query];
+        return `${meta.title} ${meta.shortTitle} ${meta.description}`.toLowerCase().includes(trimmedSearch);
+      })
+    : [];
 
   return (
     <>
@@ -42,10 +51,46 @@ export function QuerySelector() {
       </label>
 
       <div className="hidden xl:block">
-        <div className="mb-3 flex rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Navigation mode">
-          <button type="button" role="tab" aria-selected={mode === "path"} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-cyan-400/15 text-cyan-100" : "text-slate-500 hover:text-slate-300"}`}>Guided path</button>
-          <button type="button" role="tab" aria-selected={mode === "browse"} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-cyan-400/15 text-cyan-100" : "text-slate-500 hover:text-slate-300"}`}>Browse by category</button>
-        </div>
+        <label className="mb-3 block">
+          <span className="sr-only">Search chapters</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search chapters…"
+            className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
+          />
+        </label>
+
+        {trimmedSearch ? (
+          <nav aria-label="Search results" className="space-y-1">
+            {searchResults.length === 0 && (
+              <p className="px-2 py-1 text-xs text-slate-500">No chapters match &ldquo;{search.trim()}&rdquo;.</p>
+            )}
+            {searchResults.map((query) => {
+              const meta = QUERY_META[query];
+              const active = queryType === query;
+              return (
+                <button
+                  key={query}
+                  type="button"
+                  onClick={() => selectQuery(query)}
+                  aria-current={active ? "page" : undefined}
+                  className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-cyan-400/30 bg-cyan-400/10 text-white" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
+                >
+                  {meta.emoji && <span aria-hidden="true">{meta.emoji}</span>}
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{meta.shortTitle}</span>
+                  <DifficultyBadge difficulty={meta.difficulty} className="shrink-0" />
+                </button>
+              );
+            })}
+          </nav>
+        ) : (
+          <>
+            <div className="mb-3 flex rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Navigation mode">
+              <button type="button" role="tab" aria-selected={mode === "path"} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-cyan-400/15 text-cyan-100" : "text-slate-500 hover:text-slate-300"}`}>Guided path</button>
+              <button type="button" role="tab" aria-selected={mode === "browse"} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-cyan-400/15 text-cyan-100" : "text-slate-500 hover:text-slate-300"}`}>Browse by category</button>
+            </div>
 
         {mode === "path" && (
           <>
@@ -118,6 +163,8 @@ export function QuerySelector() {
               </div>
             ))}
           </nav>
+        )}
+          </>
         )}
       </div>
     </>
