@@ -183,6 +183,16 @@ export function ClientPageShell() {
           <div className="sticky top-6"><ResultsPanel /></div>
         </aside>
       </div>
+
+      <footer className="border-t border-white/5 bg-slate-950/45 px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-[1600px] text-xs leading-5 text-slate-500">
+          <p>
+            Free for students, teachers, schools, and personal or hobby use — no account, no paywall. Licensed under the{" "}
+            <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-700 underline-offset-2 hover:text-slate-300 hover:decoration-slate-500">PolyForm Noncommercial License 1.0.0</a>
+            {" "}— commercial use (building a paid product or service on top of this code) requires a separate license from the author.
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
