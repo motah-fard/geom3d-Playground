@@ -43,3 +43,18 @@ html[data-theme="light"] main {
 html[data-theme="light"] canvas {
   filter: invert(1) hue-rotate(180deg);
 }
+
+@keyframes confetti-burst {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-x), var(--confetti-y)) rotate(var(--confetti-rot)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  animation: confetti-burst 900ms cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}

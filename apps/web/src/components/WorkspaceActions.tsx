@@ -7,6 +7,7 @@ import { UsageInsights } from "@/components/UsageInsights";
 
 const STORAGE_KEY = "geom3d-playground-scenario-v1";
 const VISITED_STORAGE_KEY = "geom3d-visited-queries-v1";
+const PROGRESS_STORAGE_KEY = "geom3d-progress-v1";
 
 function encodeScenario(snapshot: ScenarioSnapshot) {
   const bytes = new TextEncoder().encode(JSON.stringify(snapshot));
@@ -76,6 +77,12 @@ export function WorkspaceActions() {
     } catch {
       // ignore malformed local storage
     }
+    try {
+      const savedProgress = localStorage.getItem(PROGRESS_STORAGE_KEY);
+      if (savedProgress) usePlaygroundStore.getState().hydrateProgress(JSON.parse(savedProgress));
+    } catch {
+      // ignore malformed local storage
+    }
     const encoded = new URL(window.location.href).searchParams.get("scenario");
     if (!encoded) return;
     try {
@@ -92,6 +99,13 @@ export function WorkspaceActions() {
   useEffect(() => {
     localStorage.setItem(VISITED_STORAGE_KEY, JSON.stringify(store.visitedQueries));
   }, [store.visitedQueries]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      PROGRESS_STORAGE_KEY,
+      JSON.stringify({ points: store.points, correctAnswerQueries: store.correctAnswerQueries, streak: store.streak, bestStreak: store.bestStreak })
+    );
+  }, [store.points, store.correctAnswerQueries, store.streak, store.bestStreak]);
 
   const showNotice = (message: string) => {
     setNotice(message);

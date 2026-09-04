@@ -2,12 +2,34 @@
 
 import { useState } from "react";
 import type { ComprehensionQuestion } from "@/lib/comprehension-questions";
+import { usePlaygroundStore } from "@/store/playground-store";
+import { Confetti } from "@/components/Confetti";
+import type { QueryType } from "@/types/geometry";
 
-function Quiz({ q }: { q: ComprehensionQuestion }) {
+function Quiz({ q, chapterKey }: { q: ComprehensionQuestion; chapterKey: QueryType }) {
   const [picked, setPicked] = useState<number | null>(null);
+  // Captured at the moment of picking, before awardCorrectAnswer mutates
+  // the store — reading correctAnswerQueries.includes(chapterKey) AFTER
+  // that call would always see the just-added entry and think this was
+  // never the first time.
+  const [wasFirstTimeCorrect, setWasFirstTimeCorrect] = useState(false);
+  const { awardCorrectAnswer, recordWrongAnswer, correctAnswerQueries, streak } = usePlaygroundStore();
+
+  const pick = (index: number) => {
+    setPicked(index);
+    if (index === q.correctIndex) {
+      setWasFirstTimeCorrect(!correctAnswerQueries.includes(chapterKey));
+      awardCorrectAnswer(chapterKey);
+    } else {
+      recordWrongAnswer();
+    }
+  };
+
+  const justCorrect = picked === q.correctIndex;
 
   return (
-    <div className="rounded-2xl border border-violet-400/20 bg-violet-400/[0.04] p-4">
+    <div className="relative rounded-2xl border border-violet-400/20 bg-violet-400/[0.04] p-4">
+      {justCorrect && wasFirstTimeCorrect && <Confetti seed={q.question.length + picked!} />}
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-300/70">Check your understanding</p>
       <p className="mt-2 text-sm font-semibold text-slate-100">{q.question}</p>
       <div className="mt-3 space-y-2">
@@ -27,7 +49,7 @@ function Quiz({ q }: { q: ComprehensionQuestion }) {
               key={index}
               type="button"
               disabled={showState}
-              onClick={() => setPicked(index)}
+              onClick={() => pick(index)}
               className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition disabled:cursor-default ${stateClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300`}
             >
               <span aria-hidden="true">{showState ? (isCorrect ? "✓" : isPicked ? "✗" : "○") : "○"}</span>
@@ -38,8 +60,8 @@ function Quiz({ q }: { q: ComprehensionQuestion }) {
       </div>
       {picked !== null && (
         <p className="mt-3 text-xs leading-5 text-slate-400">
-          <span className={`font-bold ${picked === q.correctIndex ? "text-emerald-300" : "text-rose-300"}`}>
-            {picked === q.correctIndex ? "Correct — " : "Not quite — "}
+          <span className={`font-bold ${justCorrect ? "text-emerald-300" : "text-rose-300"}`}>
+            {justCorrect ? (wasFirstTimeCorrect ? `Correct! +15 points${streak > 1 ? ` · 🔥 ${streak} in a row` : ""} — ` : "Correct — ") : "Not quite — "}
           </span>
           {q.explanation}
         </p>
@@ -48,8 +70,8 @@ function Quiz({ q }: { q: ComprehensionQuestion }) {
   );
 }
 
-export function ComprehensionCheck({ question, chapterKey }: { question: ComprehensionQuestion | undefined; chapterKey: string }) {
+export function ComprehensionCheck({ question, chapterKey }: { question: ComprehensionQuestion | undefined; chapterKey: QueryType }) {
   if (!question) return null;
   // Remounting on chapter change resets the picked answer without extra state wiring.
-  return <Quiz key={chapterKey} q={question} />;
+  return <Quiz key={chapterKey} q={question} chapterKey={chapterKey} />;
 }

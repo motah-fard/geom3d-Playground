@@ -342,6 +342,19 @@ export type PlaygroundState = {
   markVisited: (query: QueryType) => void;
   hydrateVisited: (queries: QueryType[]) => void;
 
+  // A light points/streak layer over the comprehension questions —
+  // local to the browser, persisted to localStorage, never sent
+  // anywhere. Points are awarded once per chapter (answering the same
+  // question right twice doesn't farm points); a wrong answer resets
+  // the current streak but never takes points away.
+  points: number;
+  correctAnswerQueries: QueryType[];
+  streak: number;
+  bestStreak: number;
+  awardCorrectAnswer: (query: QueryType) => void;
+  recordWrongAnswer: () => void;
+  hydrateProgress: (payload: { points: number; correctAnswerQueries: QueryType[]; streak: number; bestStreak: number }) => void;
+
   // setters
   setQueryType: (queryType: QueryType) => void;
 
@@ -684,6 +697,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   selectedObject: null,
   hoveredTerm: null,
   visitedQueries: [],
+  points: 0,
+  correctAnswerQueries: [],
+  streak: 0,
+  bestStreak: 0,
   unit: "units",
   precision: 3,
   snap: 0.1,
@@ -1144,6 +1161,22 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   markVisited: (query) =>
     set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),
   hydrateVisited: (queries) => set({ visitedQueries: queries }),
+
+  awardCorrectAnswer: (query) =>
+    set((state) => {
+      if (state.correctAnswerQueries.includes(query)) return state;
+      const streak = state.streak + 1;
+      return {
+        points: state.points + 15,
+        correctAnswerQueries: [...state.correctAnswerQueries, query],
+        streak,
+        bestStreak: Math.max(state.bestStreak, streak),
+      };
+    }),
+
+  recordWrongAnswer: () => set({ streak: 0 }),
+
+  hydrateProgress: (payload) => set(payload),
   setSelectedObject: (selectedObject) => set({ selectedObject }),
   setUnit: (unit) => set({ unit }),
   setPrecision: (precision) => set({ precision: Math.max(0, Math.min(8, precision)) }),

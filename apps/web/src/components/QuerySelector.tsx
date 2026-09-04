@@ -8,7 +8,7 @@ import { trackInteraction } from "@/lib/analytics";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 
 export function QuerySelector() {
-  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries } = usePlaygroundStore();
+  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, points, streak } = usePlaygroundStore();
   const [mode, setMode] = useState<"path" | "browse">("path");
   const selectQuery = (query: QueryType) => {
     saveCheckpoint();
@@ -57,6 +57,10 @@ export function QuerySelector() {
               <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
                 <div className="h-full rounded-full bg-cyan-400 transition-all" style={{ width: `${(visitedCount / LEARNING_PATH.length) * 100}%` }} />
               </div>
+              <div className="mt-2.5 flex items-center gap-3 text-xs font-bold">
+                <span className="inline-flex items-center gap-1 text-amber-300">⭐ {points} pts</span>
+                {streak > 0 && <span className="inline-flex items-center gap-1 text-orange-400">🔥 {streak} streak</span>}
+              </div>
             </div>
             <nav aria-label="Guided learning path" className="space-y-1">
               {LEARNING_PATH.map((query, index) => {
@@ -74,6 +78,7 @@ export function QuerySelector() {
                     <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${visited ? "bg-emerald-400/20 text-emerald-300" : "bg-slate-800 text-slate-500"}`}>
                       {visited ? "✓" : index + 1}
                     </span>
+                    {meta.emoji && <span aria-hidden="true">{meta.emoji}</span>}
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">{meta.shortTitle}</span>
                     <DifficultyBadge difficulty={meta.difficulty} className="shrink-0" />
                   </button>
