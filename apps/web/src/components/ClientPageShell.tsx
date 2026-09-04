@@ -44,6 +44,8 @@ import { GlossaryPanel } from "@/components/GlossaryPanel";
 import { BadgesPanel } from "@/components/BadgesPanel";
 import { IntroSection } from "@/components/IntroSection";
 import { GrowthFormGallery } from "@/components/GrowthFormGallery";
+import { ChapterMathView } from "@/components/ChapterMathView";
+import { ChapterCodeView } from "@/components/ChapterCodeView";
 import { NATURE_EXAMPLES } from "@/lib/nature-examples";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { ComprehensionCheck } from "@/components/ComprehensionCheck";
@@ -51,7 +53,7 @@ import { TryItChallenge } from "@/components/TryItChallenge";
 import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
 
 export function ClientPageShell() {
-  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint, correctAnswerQueries, showGrowthFormGallery } = usePlaygroundStore();
+  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint, correctAnswerQueries, showGrowthFormGallery, contentMode, setContentMode } = usePlaygroundStore();
   const meta = QUERY_META[queryType];
   const pathIndex = LEARNING_PATH.indexOf(queryType);
   const previousQuery = pathIndex > 0 ? LEARNING_PATH[pathIndex - 1] : null;
@@ -181,16 +183,37 @@ export function ClientPageShell() {
             </div>
           </div>
 
-          <SceneCanvas />
-          <div className="xl:hidden"><ResultsPanel /></div>
+          <div className="flex overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Chapter view">
+            {(["visual", "math", "code"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="tab"
+                aria-selected={contentMode === mode}
+                onClick={() => setContentMode(mode)}
+                className={`flex-1 rounded-lg px-3 py-1.5 capitalize transition ${contentMode === mode ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
 
-          <details open className="group rounded-2xl border border-slate-800 bg-slate-950/55">
-            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300">
-              <span>Geometry inputs</span>
-              <span className="text-slate-500 transition group-open:rotate-180" aria-hidden="true">⌄</span>
-            </summary>
-            <div className="border-t border-slate-800 p-4">{form}</div>
-          </details>
+          {contentMode === "visual" && (
+            <>
+              <SceneCanvas />
+              <div className="xl:hidden"><ResultsPanel /></div>
+
+              <details open className="group rounded-2xl border border-slate-800 bg-slate-950/55">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300">
+                  <span>Geometry inputs</span>
+                  <span className="text-slate-500 transition group-open:rotate-180" aria-hidden="true">⌄</span>
+                </summary>
+                <div className="border-t border-slate-800 p-4">{form}</div>
+              </details>
+            </>
+          )}
+          {contentMode === "math" && <ChapterMathView />}
+          {contentMode === "code" && <ChapterCodeView />}
 
           <TryItChallenge chapterKey={queryType} />
           <ComprehensionCheck question={COMPREHENSION_QUESTIONS[queryType]} chapterKey={queryType} />

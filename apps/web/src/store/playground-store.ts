@@ -345,6 +345,10 @@ export type PlaygroundState = {
   // & Form chapter; picking a card (or any other navigation) exits it.
   showGrowthFormGallery: boolean;
 
+  // Which of the three chapter views is showing: the live 3D scene, a
+  // dedicated derivation view, or the actual source code that scene calls.
+  contentMode: "visual" | "math" | "code";
+
   // The formula term currently hovered in the results panel, if any.
   // `targetId` matches a draggable point's `id` so it can glow in the
   // 3D scene with no per-scene wiring; `symbol`/`meaning`/`value` are
@@ -488,6 +492,7 @@ export type PlaygroundState = {
   setSceneViewMode: (mode: PlaygroundState["sceneViewMode"]) => void;
   setShowComparison: (show: boolean) => void;
   setShowGrowthFormGallery: (show: boolean) => void;
+  setContentMode: (mode: PlaygroundState["contentMode"]) => void;
   setHoveredTerm: (term: PlaygroundState["hoveredTerm"]) => void;
   setSelectedObject: (id: string | null) => void;
   setUnit: (unit: ScenarioSnapshot["unit"]) => void;
@@ -717,6 +722,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   sceneViewMode: "explore",
   showComparison: false,
   showGrowthFormGallery: false,
+  contentMode: "visual",
   hoveredTerm: null,
   visitedQueries: [],
   points: 0,
@@ -791,6 +797,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       sceneViewMode: "explore",
       showComparison: false,
       showGrowthFormGallery: false,
+      contentMode: "visual",
     }),
 
   setInputs: ({ point, planePoint, planeNormal }) =>
@@ -1185,6 +1192,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setSceneViewMode: (sceneViewMode) => set({ sceneViewMode }),
   setShowComparison: (showComparison) => set({ showComparison }),
   setShowGrowthFormGallery: (showGrowthFormGallery) => set({ showGrowthFormGallery }),
+  setContentMode: (contentMode) => set({ contentMode }),
   setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
   markVisited: (query) =>
     set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),

@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:geometry": "node --test src/lib/local-geometry.test.ts"
+    "test:geometry": "node --test src/lib/local-geometry.test.ts",
+    "generate:code-snippets": "node scripts/generate-code-snippets.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
