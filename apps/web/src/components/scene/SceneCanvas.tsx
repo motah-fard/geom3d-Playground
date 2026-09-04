@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Bounds, OrbitControls, useBounds } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { QUERY_META } from "@/lib/query-meta";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ElementRef } from "react";
 import dynamic from "next/dynamic";
 
 // Bounds fits its camera exactly once, synchronously on mount. If the
@@ -19,6 +19,25 @@ function BoundsResettler() {
     const raf = requestAnimationFrame(() => requestAnimationFrame(() => bounds.refresh().fit().clip()));
     return () => cancelAnimationFrame(raf);
   }, [bounds]);
+  return null;
+}
+
+// useBounds() only works inside <Bounds>, but the "Reset view" button lives
+// in the toolbar outside the Canvas entirely. This bridges the two: it
+// registers the imperative refit call onto a ref the toolbar button holds.
+// Bounds.fit() alone only adjusts distance along whatever direction the
+// camera currently faces — it does not undo an orbit drag. OrbitControls'
+// own reset() restores position/target/zoom to their values as of when it
+// mounted, undoing rotation; fit() afterward re-frames the current content
+// in case that original framing wasn't quite right for it.
+function BoundsResetRegistrar({ triggerRef }: { triggerRef: React.MutableRefObject<(() => void) | null> }) {
+  const bounds = useBounds();
+  useEffect(() => {
+    triggerRef.current = () => bounds.refresh().fit().clip();
+    return () => {
+      triggerRef.current = null;
+    };
+  }, [bounds, triggerRef]);
   return null;
 }
 
@@ -61,6 +80,8 @@ export function SceneCanvas() {
   const { queryType, stepMode, setStepMode, queryStatus, isDragging, setSelectedObject, sceneViewMode, setSceneViewMode } = store;
   const [view, setView] = useState<"perspective" | "top" | "front" | "side">("perspective");
   const [showTable, setShowTable] = useState(false);
+  const resetViewRef = useRef<(() => void) | null>(null);
+  const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
   const meta = QUERY_META[queryType];
   // Growth & Form chapters lean the canvas chrome subtly toward amber/emerald
   // instead of the default cool navy, so the book's most visually distinct
@@ -154,6 +175,16 @@ export function SceneCanvas() {
               Construction lines
             </label>
           )}
+          <button
+            type="button"
+            title="Reset view"
+            aria-label="Reset view"
+            onClick={() => {
+              controlsRef.current?.reset();
+              resetViewRef.current?.();
+            }}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+          >⌂</button>
           <button type="button" aria-pressed={view === "top"} onClick={() => setView("top")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Top</button>
           <button type="button" aria-pressed={view === "front"} onClick={() => setView("front")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Front</button>
           <button type="button" aria-pressed={view === "side"} onClick={() => setView("side")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Side</button>
@@ -173,11 +204,12 @@ export function SceneCanvas() {
           <directionalLight position={[5, 8, 5]} intensity={1.3} color="#fff4e0" />
           <directionalLight position={[-6, 3, -7]} intensity={0.6} color="#7dd3fc" />
           <directionalLight position={[0, -4, 2]} intensity={0.2} color="#8891A3" />
-          <OrbitControls makeDefault enabled={!isDragging} enableDamping dampingFactor={0.08} minDistance={3} maxDistance={24} />
+          <OrbitControls ref={controlsRef} makeDefault enabled={!isDragging} enableDamping dampingFactor={0.08} minDistance={3} maxDistance={24} />
           {showStructure && <gridHelper args={[40, 40, gridLineColor, "#202A3A"]} />}
           {showStructure && <axesHelper args={[4]} ref={(instance) => instance?.setColors("#FF6B7A", "#4DD4A8", "#5B8CFF")} />}
           <Bounds fit clip margin={1.35}>
             <BoundsResettler />
+            <BoundsResetRegistrar triggerRef={resetViewRef} />
             {queryType === "angles" && <AnglesScene />}
             {queryType === "pythagorean-theorem" && <PythagoreanScene />}
             {queryType === "right-triangle-trig" && <RightTriangleTrigScene />}
