@@ -336,6 +336,11 @@ export type PlaygroundState = {
   past: ScenarioSnapshot[];
   future: ScenarioSnapshot[];
 
+  // "Compare with previous" in ResultsPanel: also drives an in-scene ghost
+  // overlay of the previous checkpoint (state.past.at(-1)) for scenes that
+  // support one, at 15% opacity alongside the full-opacity current shape.
+  showComparison: boolean;
+
   // The formula term currently hovered in the results panel, if any.
   // `targetId` matches a draggable point's `id` so it can glow in the
   // 3D scene with no per-scene wiring; `symbol`/`meaning`/`value` are
@@ -477,6 +482,7 @@ export type PlaygroundState = {
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
   setIsDragging: (isDragging: boolean) => void;
   setSceneViewMode: (mode: PlaygroundState["sceneViewMode"]) => void;
+  setShowComparison: (show: boolean) => void;
   setHoveredTerm: (term: PlaygroundState["hoveredTerm"]) => void;
   setSelectedObject: (id: string | null) => void;
   setUnit: (unit: ScenarioSnapshot["unit"]) => void;
@@ -704,6 +710,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   isDragging: false,
   selectedObject: null,
   sceneViewMode: "explore",
+  showComparison: false,
   hoveredTerm: null,
   visitedQueries: [],
   points: 0,
@@ -776,6 +783,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
       queryStatus: "idle",
       sceneViewMode: "explore",
+      showComparison: false,
     }),
 
   setInputs: ({ point, planePoint, planeNormal }) =>
@@ -1168,6 +1176,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setQueryStatus: (queryStatus) => set({ queryStatus }),
   setIsDragging: (isDragging) => set({ isDragging }),
   setSceneViewMode: (sceneViewMode) => set({ sceneViewMode }),
+  setShowComparison: (showComparison) => set({ showComparison }),
   setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
   markVisited: (query) =>
     set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),

@@ -55,7 +55,7 @@ function Comparison({ previous }: { previous: ScenarioSnapshot }) {
 export function ResultsPanel() {
   const state = usePlaygroundStore();
   const [copied, setCopied] = useState(false);
-  const [showComparison, setShowComparison] = useState(false);
+  const { showComparison, setShowComparison } = state;
   const meta = QUERY_META[state.queryType];
 
   const activeResult =
@@ -473,7 +473,7 @@ export function ResultsPanel() {
             </div>
             {state.past.length > 0 && (
               <div>
-                <button type="button" aria-pressed={showComparison} onClick={() => setShowComparison((value) => !value)} className="text-xs font-semibold text-violet-300 hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">{showComparison ? "Hide comparison" : "Compare with previous"}</button>
+                <button type="button" aria-pressed={showComparison} onClick={() => setShowComparison(!showComparison)} className="text-xs font-semibold text-violet-300 hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">{showComparison ? "Hide comparison" : "Compare with previous"}</button>
                 {showComparison && <div className="mt-2"><Comparison previous={state.past[state.past.length - 1]} /></div>}
               </div>
             )}
