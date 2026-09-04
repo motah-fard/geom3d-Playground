@@ -8,7 +8,7 @@ import { trackInteraction } from "@/lib/analytics";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 
 export function QuerySelector() {
-  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, points, streak } = usePlaygroundStore();
+  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, correctAnswerQueries, points, streak } = usePlaygroundStore();
   const [mode, setMode] = useState<"path" | "browse">("path");
   const [search, setSearch] = useState("");
   const selectQuery = (query: QueryType) => {
@@ -19,6 +19,10 @@ export function QuerySelector() {
   };
 
   const visitedCount = LEARNING_PATH.filter((query) => visitedQueries.includes(query)).length;
+  // "Learned" (answered its comprehension check correctly at least once) is a
+  // stronger signal than merely "visited" — used to drive the guided path's
+  // three-state icons and the continue-learning shortcut.
+  const nextToLearn = LEARNING_PATH.find((query) => !correctAnswerQueries.includes(query));
 
   const trimmedSearch = search.trim().toLowerCase();
   const searchResults = trimmedSearch
@@ -106,12 +110,23 @@ export function QuerySelector() {
                 <span className="inline-flex items-center gap-1 text-amber-300">⭐ {points} pts</span>
                 {streak > 0 && <span className="inline-flex items-center gap-1 text-orange-400">🔥 {streak} streak</span>}
               </div>
+              {nextToLearn && (
+                <button
+                  type="button"
+                  onClick={() => selectQuery(nextToLearn)}
+                  className="mt-2.5 flex w-full items-center justify-between rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                >
+                  <span>Continue: {QUERY_META[nextToLearn].shortTitle}</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              )}
             </div>
             <nav aria-label="Guided learning path" className="space-y-1">
               {LEARNING_PATH.map((query, index) => {
                 const meta = QUERY_META[query];
                 const active = queryType === query;
-                const visited = visitedQueries.includes(query);
+                const learned = correctAnswerQueries.includes(query);
+                const inProgress = !learned && visitedQueries.includes(query);
                 return (
                   <button
                     key={query}
@@ -120,11 +135,17 @@ export function QuerySelector() {
                     aria-current={active ? "page" : undefined}
                     className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-primary/50 bg-primary/15 text-white shadow-[0_0_10px_-2px_var(--color-primary-glow)]" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
                   >
-                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${visited ? "bg-emerald-400/20 text-emerald-300" : "bg-slate-800 text-slate-500"}`}>
-                      {visited ? "✓" : index + 1}
+                    <span
+                      title={learned ? "Learned" : inProgress ? "In progress" : "Not started"}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${learned ? "bg-emerald-400/20 text-emerald-300" : inProgress ? "bg-amber-400/20 text-amber-300" : "bg-slate-800 text-slate-500"}`}
+                    >
+                      {index + 1}
                     </span>
                     {meta.emoji && <span aria-hidden="true">{meta.emoji}</span>}
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">{meta.shortTitle}</span>
+                    <span aria-hidden="true" className={learned ? "text-emerald-300" : inProgress ? "text-amber-300" : "text-slate-600"}>
+                      {learned ? "✓" : inProgress ? "◉" : "○"}
+                    </span>
                     <DifficultyBadge difficulty={meta.difficulty} className="shrink-0" />
                   </button>
                 );
@@ -135,13 +156,22 @@ export function QuerySelector() {
 
         {mode === "browse" && (
           <nav aria-label="Geometry queries" className="space-y-5">
-            {QUERY_GROUPS.map(({ category, queries }) => (
+            {QUERY_GROUPS.map(({ category, queries }) => {
+              const learnedCount = queries.filter((query) => correctAnswerQueries.includes(query)).length;
+              return (
               <div key={category}>
-                <h2 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{category}</h2>
+                <div className="mb-1.5 flex items-center justify-between px-2">
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{category}</h2>
+                  <span className="text-[10px] font-semibold text-slate-500">{learnedCount} / {queries.length}</span>
+                </div>
+                <div className="mb-2 h-1 overflow-hidden rounded-full bg-slate-800">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${(learnedCount / queries.length) * 100}%`, backgroundColor: QUERY_META[queries[0]].accent }} />
+                </div>
                 <div className="space-y-1">
                   {queries.map((query) => {
                     const meta = QUERY_META[query];
                     const active = queryType === query;
+                    const learned = correctAnswerQueries.includes(query);
                     return (
                       <button
                         key={query}
@@ -154,14 +184,16 @@ export function QuerySelector() {
                       >
                         <span className="flex items-center gap-2.5">
                           <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: meta.accent }} aria-hidden="true" />
-                          <span className="text-sm font-semibold">{meta.shortTitle}</span>
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{meta.shortTitle}</span>
+                          <span aria-hidden="true" className={learned ? "text-emerald-300" : "text-slate-600"}>{learned ? "✓" : "○"}</span>
                         </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </nav>
         )}
           </>
