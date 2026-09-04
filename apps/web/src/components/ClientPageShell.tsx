@@ -49,11 +49,12 @@ import { ComprehensionCheck } from "@/components/ComprehensionCheck";
 import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
 
 export function ClientPageShell() {
-  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint } = usePlaygroundStore();
+  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint, correctAnswerQueries } = usePlaygroundStore();
   const meta = QUERY_META[queryType];
   const pathIndex = LEARNING_PATH.indexOf(queryType);
   const previousQuery = pathIndex > 0 ? LEARNING_PATH[pathIndex - 1] : null;
   const nextQuery = pathIndex >= 0 && pathIndex < LEARNING_PATH.length - 1 ? LEARNING_PATH[pathIndex + 1] : null;
+  const missingPrerequisites = (meta.prerequisites ?? []).filter((prereq) => !correctAnswerQueries.includes(prereq));
   const goTo = (query: typeof queryType) => {
     saveCheckpoint();
     setQueryType(query);
@@ -149,6 +150,19 @@ export function ClientPageShell() {
                       {meta.category === "Project" || meta.category === "Intersect" || meta.category === "Measure" ? "Why it matters: " : "Seen in nature: "}
                     </span>
                     {NATURE_EXAMPLES[queryType]}
+                  </p>
+                )}
+                {missingPrerequisites.length > 0 && (
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
+                    Recommended first:{" "}
+                    {missingPrerequisites.map((prereq, i) => (
+                      <span key={prereq}>
+                        {i > 0 && ", "}
+                        <button type="button" onClick={() => goTo(prereq)} className="font-semibold text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                          {QUERY_META[prereq].shortTitle}
+                        </button>
+                      </span>
+                    ))}
                   </p>
                 )}
               </div>

@@ -11,6 +11,10 @@ export type QueryMeta = {
   accent: string;
   difficulty: Difficulty;
   emoji?: string;
+  // Chapters worth having learned first — surfaced as a "Recommended
+  // first" hint when opening this chapter before those are done. Only
+  // the Advanced-difficulty chapters have these; the rest stand alone.
+  prerequisites?: QueryType[];
 };
 
 export const QUERY_META: Record<QueryType, QueryMeta> = {
@@ -193,6 +197,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag T outward to widen each turn, or up to make it rise — S sets the base radius.",
     accent: "#F3B95F",
     difficulty: "Advanced",
+    prerequisites: ["log-spiral-growth"],
   },
   "square-cube-law": {
     category: "Growth & Form",
@@ -247,6 +252,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag F outward to subdivide the lattice further — Euler's formula V − E + F = 2 always holds.",
     accent: "#F3B95F",
     difficulty: "Advanced",
+    prerequisites: ["solids-3d"],
   },
   "whirling-squares": {
     category: "Growth & Form",
@@ -265,6 +271,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag A to change the waist radius and watch the rings and surface area respond.",
     accent: "#F3B95F",
     difficulty: "Advanced",
+    prerequisites: ["catenary-arch"],
   },
   "milk-coronet": {
     category: "Growth & Form",
@@ -283,6 +290,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag R to resize the round end, or r to resize the pointed end.",
     accent: "#F3B95F",
     difficulty: "Advanced",
+    prerequisites: ["circle-measures"],
   },
   "helicoid": {
     category: "Growth & Form",
@@ -292,6 +300,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag R to widen the ribbon, or P to change how tightly it twists.",
     accent: "#F3B95F",
     difficulty: "Advanced",
+    prerequisites: ["catenoid"],
   },
   "bee-cell": {
     category: "Growth & Form",
@@ -301,6 +310,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag X to change how far the three alternating corners are trimmed, and watch the total surface area find its minimum.",
     accent: "#F3B95F",
     difficulty: "Advanced",
+    prerequisites: ["cell-packing"],
   },
 };
 
