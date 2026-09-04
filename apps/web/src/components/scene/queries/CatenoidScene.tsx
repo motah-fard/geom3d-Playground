@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import * as THREE from "three";
 import { Html, Line, Sphere } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { BuildControls } from "../primitives/BuildControls";
+import { useBuildAnimation } from "@/hooks/useBuildAnimation";
 import type { Vec3 } from "@/types/geometry";
 import { CATENOID_HALF_HEIGHT, catenoidRadius, localCatenoid } from "@/lib/local-geometry";
 
@@ -50,9 +51,7 @@ function applyHeightGradient(geometry: THREE.BufferGeometry, halfHeight: number)
 export function CatenoidScene() {
   const { catenoidA, setCatenoidInput, setShouldAutoRun, objectLabels } = usePlaygroundStore();
   const [renderMode, setRenderMode] = useState<RenderMode>("surface");
-  const [building, setBuilding] = useState(false);
-  const [buildProgress, setBuildProgress] = useState(1);
-  const buildStart = useRef(0);
+  const { progress: buildProgress, setProgress: setBuildProgress, playing: building, play, pause, reset, speed, setSpeed } = useBuildAnimation(BUILD_DURATION_S);
 
   const aPoint = onAxis(catenoidA);
   const { a, rimRadius } = localCatenoid(aPoint);
@@ -66,24 +65,6 @@ export function CatenoidScene() {
   const sweep = Math.max(buildProgress, 0.0001) * Math.PI * 2;
   const geometry = new THREE.LatheGeometry(profile, 48, 0, sweep);
   applyHeightGradient(geometry, CATENOID_HALF_HEIGHT);
-
-  useFrame((state) => {
-    if (!building) return;
-    if (buildStart.current === 0) buildStart.current = state.clock.elapsedTime;
-    const elapsed = state.clock.elapsedTime - buildStart.current;
-    const t = Math.min(1, elapsed / BUILD_DURATION_S);
-    setBuildProgress(t);
-    if (t >= 1) {
-      setBuilding(false);
-      buildStart.current = 0;
-    }
-  });
-
-  const startBuild = () => {
-    buildStart.current = 0;
-    setBuildProgress(0);
-    setBuilding(true);
-  };
 
   const profilePoints: [number, number, number][] = profile.map((p) => [p.x, p.y, 0]);
   const showWireframe = renderMode === "mesh";
@@ -107,14 +88,16 @@ export function CatenoidScene() {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={startBuild}
-            disabled={building}
-            className="rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-left text-[10px] font-semibold text-slate-300 backdrop-blur transition hover:text-white disabled:opacity-50"
-          >
-            {building ? "Revolving…" : "▶ Build by revolution"}
-          </button>
+          <BuildControls
+            label="Build by revolution"
+            playing={building}
+            progress={buildProgress}
+            onPlayPause={() => (building ? pause() : play())}
+            onReset={reset}
+            onScrub={setBuildProgress}
+            speed={speed}
+            onSpeedChange={setSpeed}
+          />
         </div>
       </Html>
 

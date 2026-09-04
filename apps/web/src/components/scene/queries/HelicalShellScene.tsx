@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
 import * as THREE from "three";
 import { Html, Line } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { BuildControls } from "../primitives/BuildControls";
+import { useBuildAnimation } from "@/hooks/useBuildAnimation";
 import { toTuple, type Vec3 } from "@/types/geometry";
 import { helicalShellPoint, localHelicalShell } from "@/lib/local-geometry";
 
@@ -50,9 +50,7 @@ function buildTube(points: THREE.Vector3[]) {
 
 export function HelicalShellScene() {
   const { helixStart, helixTurn, setHelixInputs, setShouldAutoRun, objectLabels } = usePlaygroundStore();
-  const [growing, setGrowing] = useState(false);
-  const [growthProgress, setGrowthProgress] = useState(1);
-  const growthStart = useRef(0);
+  const { progress: growthProgress, setProgress: setGrowthProgress, playing: growing, play, pause, reset, speed, setSpeed } = useBuildAnimation(GROW_DURATION_S);
 
   const start = onAxis(helixStart);
   const turn = onAxisWithHeight(helixTurn);
@@ -69,36 +67,20 @@ export function HelicalShellScene() {
   const grownCount = Math.max(2, Math.round(growthProgress * fullPoints.length));
   const shellGeometry = buildTube(fullPoints.slice(0, grownCount));
 
-  useFrame((state) => {
-    if (!growing) return;
-    if (growthStart.current === 0) growthStart.current = state.clock.elapsedTime;
-    const elapsed = state.clock.elapsedTime - growthStart.current;
-    const t = Math.min(1, elapsed / GROW_DURATION_S);
-    setGrowthProgress(t);
-    if (t >= 1) {
-      setGrowing(false);
-      growthStart.current = 0;
-    }
-  });
-
-  const startGrowth = () => {
-    growthStart.current = 0;
-    setGrowthProgress(0);
-    setGrowing(true);
-  };
-
   return (
     <>
       <Html fullscreen style={{ pointerEvents: "none" }}>
         <div className="pointer-events-auto absolute left-3 top-3">
-          <button
-            type="button"
-            onClick={startGrowth}
-            disabled={growing}
-            className="rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300 backdrop-blur transition hover:text-white disabled:opacity-50"
-          >
-            {growing ? "Growing…" : "▶ Grow"}
-          </button>
+          <BuildControls
+            label="Grow"
+            playing={growing}
+            progress={growthProgress}
+            onPlayPause={() => (growing ? pause() : play())}
+            onReset={reset}
+            onScrub={setGrowthProgress}
+            speed={speed}
+            onSpeedChange={setSpeed}
+          />
         </div>
       </Html>
 

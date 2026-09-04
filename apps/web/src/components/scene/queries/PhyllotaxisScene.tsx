@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { Html, Line } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { BuildControls } from "../primitives/BuildControls";
+import { useBuildAnimation } from "@/hooks/useBuildAnimation";
 import { toTuple } from "@/types/geometry";
 import {
   GOLDEN_ANGLE_RAD,
@@ -23,12 +24,12 @@ const ANGLE_PRESETS: { label: string; deg: number }[] = [
 
 const DIAL_SAMPLES = 64;
 const SEEDS_PER_SECOND = 45;
+const GROW_DURATION_S = PHYLLOTAXIS_SEED_COUNT / SEEDS_PER_SECOND;
 
 export function PhyllotaxisScene() {
   const { phyllotaxisDivergence, setPhyllotaxisInput, setShouldAutoRun, objectLabels } = usePlaygroundStore();
-  const [seedCount, setSeedCount] = useState(PHYLLOTAXIS_SEED_COUNT);
-  const [growing, setGrowing] = useState(false);
-  const growthClock = useRef(0);
+  const { progress: growthProgress, setProgress: setGrowthProgress, playing: growing, play, pause, reset, speed, setSpeed } = useBuildAnimation(GROW_DURATION_S);
+  const seedCount = Math.round(growthProgress * PHYLLOTAXIS_SEED_COUNT);
 
   const { divergenceDeg } = localPhyllotaxis(phyllotaxisDivergence);
   const divergenceRad = divergenceDeg * (Math.PI / 180);
@@ -37,20 +38,6 @@ export function PhyllotaxisScene() {
     x: PHYLLOTAXIS_DIAL_RADIUS * Math.cos(divergenceRad),
     y: PHYLLOTAXIS_DIAL_RADIUS * Math.sin(divergenceRad),
     z: 0,
-  };
-
-  useFrame((_state, delta) => {
-    if (!growing) return;
-    growthClock.current += delta;
-    const next = Math.min(PHYLLOTAXIS_SEED_COUNT, Math.floor(growthClock.current * SEEDS_PER_SECOND));
-    setSeedCount(next);
-    if (next >= PHYLLOTAXIS_SEED_COUNT) setGrowing(false);
-  });
-
-  const startGrowth = () => {
-    growthClock.current = 0;
-    setSeedCount(0);
-    setGrowing(true);
   };
 
   const setDivergenceDeg = (deg: number) => {
@@ -98,27 +85,20 @@ export function PhyllotaxisScene() {
             🎲 Random
           </button>
         </div>
-        <div className="pointer-events-auto absolute bottom-14 left-3 right-3 flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-2 text-[10px] font-semibold text-slate-300 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => (growing ? setGrowing(false) : startGrowth())}
-            className="shrink-0 rounded-md px-2 py-1 text-slate-200 transition hover:bg-slate-800"
-          >
-            {growing ? "⏸" : "▶"}
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={PHYLLOTAXIS_SEED_COUNT}
-            value={seedCount}
-            onChange={(event) => {
-              setGrowing(false);
-              setSeedCount(Number(event.target.value));
-            }}
-            className="h-1 flex-1 accent-[#F3B95F]"
-            aria-label="Seeds grown"
-          />
-          <span className="w-16 shrink-0 text-right font-mono">{seedCount} / {PHYLLOTAXIS_SEED_COUNT}</span>
+        <div className="pointer-events-auto absolute bottom-14 left-3 right-3 flex items-center gap-2">
+          <div className="flex-1">
+            <BuildControls
+              label="Seeds grown"
+              playing={growing}
+              progress={growthProgress}
+              onPlayPause={() => (growing ? pause() : play())}
+              onReset={reset}
+              onScrub={setGrowthProgress}
+              speed={speed}
+              onSpeedChange={setSpeed}
+            />
+          </div>
+          <span className="shrink-0 rounded-lg border border-slate-800 bg-slate-950/80 px-2 py-2 font-mono text-[10px] font-semibold text-slate-300 backdrop-blur">{seedCount} / {PHYLLOTAXIS_SEED_COUNT}</span>
         </div>
       </Html>
 
