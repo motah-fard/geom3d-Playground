@@ -42,6 +42,13 @@ export function ClientPageShell() {
             <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-700 underline-offset-2 hover:text-slate-300 hover:decoration-slate-500">PolyForm Noncommercial License 1.0.0</a>
             {" "}— commercial use (building a paid product or service on top of this code) requires a separate license from the author.
           </p>
+          <p className="mt-2">
+            Built by{" "}
+            <a href="https://github.com/motah-fard" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-700 underline-offset-2 hover:text-slate-300 hover:decoration-slate-500">Motahareh Shafiei Fard (motywait)</a>
+            , powered by the open-source{" "}
+            <a href="https://github.com/motah-fard/geom3d" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-700 underline-offset-2 hover:text-slate-300 hover:decoration-slate-500">geom3d</a>
+            {" "}Go library.
+          </p>
         </div>
       </footer>
     </main>

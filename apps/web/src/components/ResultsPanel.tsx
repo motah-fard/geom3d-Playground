@@ -422,7 +422,16 @@ export function ResultsPanel() {
               <summary className="cursor-pointer list-none text-xs font-semibold text-slate-500 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Developer details <span aria-hidden="true">⌄</span></summary>
               <pre className="mt-3 max-h-64 overflow-auto rounded-xl bg-black/30 p-3 font-mono text-[11px] leading-5 text-slate-400">{JSON.stringify(activeResult, null, 2)}</pre>
               <button type="button" onClick={copy} className="mt-2 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">{copied ? "Copied ✓" : "Copy JSON"}</button>
-              <div className="mt-4 border-t border-slate-800 pt-3"><ApiInspector /></div>
+              {meta.poweredByGeom3d && (
+                <div className="mt-4 border-t border-slate-800 pt-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">Verified by the real API</p>
+                    <a href="https://pkg.go.dev/github.com/motah-fard/geom3d" target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-violet-300 hover:text-violet-200">Powered by geom3d ↗</a>
+                  </div>
+                  <p className="mb-2 text-[10px] leading-4 text-slate-600">This number isn&apos;t reimplemented in JavaScript — it&apos;s computed by the open-source <a href="https://github.com/motah-fard/geom3d" target="_blank" rel="noreferrer" className="text-violet-300 hover:text-violet-200">geom3d</a> Go library, called live through the API request/response below.</p>
+                  <ApiInspector />
+                </div>
+              )}
             </details>
           </div>
         )}

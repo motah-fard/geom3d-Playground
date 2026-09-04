@@ -21,6 +21,11 @@ export type QueryMeta = {
   // and 3D forms, a shared underlying law), not an attempt to link every
   // chapter to every other one.
   related?: QueryType[];
+  // True only for the handful of chapters whose result is actually computed
+  // by the real Go `geom3d` library (via services/api), not by this app's
+  // own client-side TypeScript reimplementation — gates the "Powered by
+  // geom3d" link in Developer details so it's never shown somewhere untrue.
+  poweredByGeom3d?: boolean;
 };
 
 export const QUERY_META: Record<QueryType, QueryMeta> = {
@@ -124,6 +129,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag P to explore. Shift-drag changes its height.",
     accent: "#B58CFF",
     difficulty: "Beginner",
+    poweredByGeom3d: true,
   },
   "intersect-ray-plane": {
     category: "Intersect",
@@ -133,6 +139,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag origin O, or orbit the scene from empty space.",
     accent: "#38BDF8",
     difficulty: "Beginner",
+    poweredByGeom3d: true,
   },
   "closest-point-segment": {
     category: "Measure",
@@ -142,6 +149,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag P, A, or B and watch the nearest point update.",
     accent: "#4DD4A8",
     difficulty: "Beginner",
+    poweredByGeom3d: true,
   },
   "segment-segment": {
     category: "Measure",
@@ -151,6 +159,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag any endpoint to explore intersecting and skew segments.",
     accent: "#4DD4A8",
     difficulty: "Intermediate",
+    poweredByGeom3d: true,
   },
   "intersect-ray-aabb": {
     category: "Intersect",
@@ -160,6 +169,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag origin O to move the ray relative to the box.",
     accent: "#38BDF8",
     difficulty: "Intermediate",
+    poweredByGeom3d: true,
   },
   "closest-point-aabb": {
     category: "Measure",
@@ -169,6 +179,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag P outside or through the box to compare distance.",
     accent: "#4DD4A8",
     difficulty: "Beginner",
+    poweredByGeom3d: true,
   },
   "cartesian-transform": {
     category: "Growth & Form",

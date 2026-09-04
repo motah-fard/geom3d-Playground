@@ -8,7 +8,7 @@ An interactive 3D geometry lab for practical queries and spatial reasoning.
 ## Current status
 
 Phases 1-3 of the roadmap below are implemented and running end-to-end
-(Next.js frontend, Go backend on `geom3d` v1.1.0):
+(Next.js frontend, Go backend on [`geom3d`](https://pkg.go.dev/github.com/motah-fard/geom3d) v1.1.2):
 
 * Point → plane projection
 * Ray → plane intersection
