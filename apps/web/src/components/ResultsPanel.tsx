@@ -35,11 +35,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch" | "beeCellRise";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch" | "beeCellRise" | "angleRayB" | "pythagoreanLegA" | "pythagoreanLegB" | "trigAngle" | "circleRadius" | "circleAngle" | "polygonSides" | "polygonRadius" | "transformTranslation" | "transformHandle";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : state.queryType === "bee-cell" ? ["beeCellRise"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : state.queryType === "bee-cell" ? ["beeCellRise"] : state.queryType === "angles" ? ["angleRayB"] : state.queryType === "pythagorean-theorem" ? ["pythagoreanLegA", "pythagoreanLegB"] : state.queryType === "right-triangle-trig" ? ["trigAngle"] : state.queryType === "circle-measures" ? ["circleRadius", "circleAngle"] : state.queryType === "regular-polygon" ? ["polygonSides", "polygonRadius"] : state.queryType === "transformations" ? ["transformTranslation", "transformHandle"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -80,6 +80,12 @@ export function ResultsPanel() {
     state.queryType === "egg-curve" ? state.eggCurveResult :
     state.queryType === "helicoid" ? state.helicoidResult :
     state.queryType === "bee-cell" ? state.beeCellResult :
+    state.queryType === "angles" ? state.angleResult :
+    state.queryType === "pythagorean-theorem" ? state.pythagoreanResult :
+    state.queryType === "right-triangle-trig" ? state.rightTriangleTrigResult :
+    state.queryType === "circle-measures" ? state.circleMeasuresResult :
+    state.queryType === "regular-polygon" ? state.regularPolygonResult :
+    state.queryType === "transformations" ? state.transformationsResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -139,7 +145,19 @@ export function ResultsPanel() {
                                           ? "area = V·[(R/2)√(R²+c²) + (c²/2)·ln((R+√(R²+c²))/c)]"
                                           : state.queryType === "bee-cell"
                                             ? "rhombus area = (√3/2)·√(1+4x²); total = 3H + 3(H−x) + 3·rhombus area"
-                                            : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                                            : state.queryType === "angles"
+                                              ? "angle = atan2(B.y, B.x); complement = 90° − angle; supplement = 180° − angle"
+                                              : state.queryType === "pythagorean-theorem"
+                                                ? "c = √(a² + b²)"
+                                                : state.queryType === "right-triangle-trig"
+                                                  ? "sin θ = opposite/hypotenuse; cos θ = adjacent/hypotenuse; tan θ = opposite/adjacent"
+                                                  : state.queryType === "circle-measures"
+                                                    ? "C = 2πr; A = πr²; arc length = rθ; sector area = (1/2)r²θ"
+                                                    : state.queryType === "regular-polygon"
+                                                      ? "perimeter = 2NR·sin(π/N); area = (1/2)NR²·sin(2π/N)"
+                                                      : state.queryType === "transformations"
+                                                        ? "P′ = R(θ)·(s·P) + T — scale by s, rotate by θ, then translate by T"
+                                                        : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -336,6 +354,69 @@ export function ResultsPanel() {
                 <Metric label="Total surface area" value={state.beeCellResult.totalSurfaceArea} suffix={`${state.unit}²`} />
                 <Metric label="Wax-minimizing angle" value={state.beeCellResult.optimalRidgeAngleDeg} suffix="°" />
                 <p className="text-xs leading-5 text-slate-500">Trim the corners too little or too much and the total area rises either way — the minimum sits at one exact rise, first found by Maclaurin with calculus, and real bees build within a fraction of a degree of it.</p>
+              </>
+            )}
+
+            {state.queryType === "angles" && state.angleResult && (
+              <>
+                <Metric label="Angle" value={state.angleResult.angleDeg} suffix="°" />
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Classification</p>
+                  <p className="mt-1 text-lg font-bold capitalize text-cyan-100">{state.angleResult.classification}</p>
+                </div>
+                {state.angleResult.complementDeg !== null && <Metric label="Complement (sums to 90°)" value={state.angleResult.complementDeg} suffix="°" />}
+                {state.angleResult.supplementDeg !== null && <Metric label="Supplement (sums to 180°)" value={state.angleResult.supplementDeg} suffix="°" />}
+                <p className="text-xs leading-5 text-slate-500">Acute is under 90°, obtuse is over 90° but under 180°, and reflex is over 180° — a reflex angle has no supplement, since 180° minus it would be negative.</p>
+              </>
+            )}
+
+            {state.queryType === "pythagorean-theorem" && state.pythagoreanResult && (
+              <>
+                <Metric label="Hypotenuse (c)" value={state.pythagoreanResult.hypotenuse} />
+                <Metric label="c² (= a² + b²)" value={state.pythagoreanResult.hypotenuse ** 2} />
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Triangle type</p>
+                  <p className="mt-1 text-lg font-bold capitalize text-cyan-100">{state.pythagoreanResult.triangleType}</p>
+                </div>
+                <p className="text-xs leading-5 text-slate-500">The square built on the hypotenuse always has exactly the combined area of the squares built on the two legs — true for every right triangle, not just this one.</p>
+              </>
+            )}
+
+            {state.queryType === "right-triangle-trig" && state.rightTriangleTrigResult && (
+              <>
+                <Metric label="sin θ" value={state.rightTriangleTrigResult.sin} suffix="" />
+                <Metric label="cos θ" value={state.rightTriangleTrigResult.cos} suffix="" />
+                <Metric label="tan θ" value={state.rightTriangleTrigResult.tan} suffix="" />
+                <p className="text-xs leading-5 text-slate-500">These are just ratios of side lengths — sin and cos always stay between −1 and 1, and tan grows without bound as θ approaches 90°.</p>
+              </>
+            )}
+
+            {state.queryType === "circle-measures" && state.circleMeasuresResult && (
+              <>
+                <Metric label="Circumference" value={state.circleMeasuresResult.circumference} />
+                <Metric label="Area" value={state.circleMeasuresResult.area} suffix={`${state.unit}²`} />
+                <Metric label="Arc length" value={state.circleMeasuresResult.arcLength} />
+                <Metric label="Sector area" value={state.circleMeasuresResult.sectorArea} suffix={`${state.unit}²`} />
+                <p className="text-xs leading-5 text-slate-500">A full 360° sweep recovers the whole circumference and area exactly — arc length and sector area are just that same circle, cut short.</p>
+              </>
+            )}
+
+            {state.queryType === "regular-polygon" && state.regularPolygonResult && (
+              <>
+                <Metric label="Area" value={state.regularPolygonResult.area} suffix={`${state.unit}²`} />
+                <Metric label="Perimeter" value={state.regularPolygonResult.perimeter} />
+                <Metric label="Interior angle" value={state.regularPolygonResult.interiorAngleDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">Add a side and the polygon looks a little rounder; keep adding sides and both its area and perimeter close in on the circumscribing circle&rsquo;s.</p>
+              </>
+            )}
+
+            {state.queryType === "transformations" && state.transformationsResult && (
+              <>
+                <Metric label="Rotation" value={state.transformationsResult.rotationDeg} suffix="°" />
+                <Metric label="Scale" value={state.transformationsResult.scale} suffix="×" />
+                <Metric label="Angle before" value={state.transformationsResult.sampleAngleBeforeDeg} suffix="°" />
+                <Metric label="Angle after" value={state.transformationsResult.sampleAngleAfterDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">Move it, spin it, resize it — the triangle&rsquo;s own angles never change. That&rsquo;s exactly what makes this a similarity transformation rather than a distortion.</p>
               </>
             )}
 

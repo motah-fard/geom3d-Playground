@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import type {
   AllometricGrowthResponse,
+  AngleResponse,
   BeeCellResponse,
   CartesianTransformResponse,
   CatenaryResponse,
   CatenoidResponse,
   CellPackingResponse,
+  CircleMeasuresResponse,
   ClosestPointAABBResponse,
   EggCurveResponse,
   GeodesicSphereResponse,
@@ -19,7 +21,11 @@ import type {
   MilkCoronetResponse,
   PhyllotaxisResponse,
   ProjectPointToPlaneResponse,
+  PythagoreanResponse,
   QueryType,
+  RegularPolygonResponse,
+  RightTriangleTrigResponse,
+  TransformationsResponse,
   Vec3,
   SegmentSegmentResponse,
   WhirlingSquaresResponse,
@@ -28,11 +34,13 @@ import {
   CATENARY_HALF_SPAN,
   DEFAULT_TRANSFORM_CORNERS,
   localAllometricGrowth,
+  localAngle,
   localBeeCell,
   localCartesianTransform,
   localCatenary,
   localCatenoid,
   localCellPacking,
+  localCircleMeasures,
   localClosestPointAABB,
   localClosestPointSegment,
   localEggCurve,
@@ -46,8 +54,12 @@ import {
   localMilkCoronet,
   localPhyllotaxis,
   localProjectPointToPlane,
+  localPythagorean,
+  localRegularPolygon,
+  localRightTriangleTrig,
   localSegmentSegment,
   localSquareCubeLaw,
+  localTransformations,
   localWhirlingSquares,
   PHYLLOTAXIS_DIAL_RADIUS,
   GOLDEN_ANGLE_RAD,
@@ -128,6 +140,16 @@ export type ScenarioSnapshot = {
   helicoidRadius: Vec3;
   helicoidPitch: Vec3;
   beeCellRise: Vec3;
+  angleRayB: Vec3;
+  pythagoreanLegA: Vec3;
+  pythagoreanLegB: Vec3;
+  trigAngle: Vec3;
+  circleRadius: Vec3;
+  circleAngle: Vec3;
+  polygonSides: Vec3;
+  polygonRadius: Vec3;
+  transformTranslation: Vec3;
+  transformHandle: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -219,6 +241,19 @@ export type PlaygroundState = {
   // bee-cell rise control
   beeCellRise: Vec3;
 
+  // Foundations: angles, the Pythagorean theorem, right-triangle trig,
+  // circles, regular polygons, and transformations.
+  angleRayB: Vec3;
+  pythagoreanLegA: Vec3;
+  pythagoreanLegB: Vec3;
+  trigAngle: Vec3;
+  circleRadius: Vec3;
+  circleAngle: Vec3;
+  polygonSides: Vec3;
+  polygonRadius: Vec3;
+  transformTranslation: Vec3;
+  transformHandle: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -242,6 +277,12 @@ export type PlaygroundState = {
   eggCurveResult: EggCurveResponse | null;
   helicoidResult: HelicoidResponse | null;
   beeCellResult: BeeCellResponse | null;
+  angleResult: AngleResponse | null;
+  pythagoreanResult: PythagoreanResponse | null;
+  rightTriangleTrigResult: RightTriangleTrigResponse | null;
+  circleMeasuresResult: CircleMeasuresResponse | null;
+  regularPolygonResult: RegularPolygonResponse | null;
+  transformationsResult: TransformationsResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -327,6 +368,12 @@ export type PlaygroundState = {
   setEggCurveInputs: (payload: { bigPoint: Vec3; smallPoint: Vec3 }) => void;
   setHelicoidInputs: (payload: { radiusPoint: Vec3; pitchPoint: Vec3 }) => void;
   setBeeCellInput: (risePoint: Vec3) => void;
+  setAngleInput: (rayB: Vec3) => void;
+  setPythagoreanInputs: (payload: { legAPoint: Vec3; legBPoint: Vec3 }) => void;
+  setRightTriangleTrigInput: (anglePoint: Vec3) => void;
+  setCircleMeasuresInputs: (payload: { radiusPoint: Vec3; anglePoint: Vec3 }) => void;
+  setRegularPolygonInputs: (payload: { sidesPoint: Vec3; radiusPoint: Vec3 }) => void;
+  setTransformationsInputs: (payload: { translationPoint: Vec3; handlePoint: Vec3 }) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -354,6 +401,12 @@ export type PlaygroundState = {
   setEggCurveResult: (result: EggCurveResponse | null) => void;
   setHelicoidResult: (result: HelicoidResponse | null) => void;
   setBeeCellResult: (result: BeeCellResponse | null) => void;
+  setAngleResult: (result: AngleResponse | null) => void;
+  setPythagoreanResult: (result: PythagoreanResponse | null) => void;
+  setRightTriangleTrigResult: (result: RightTriangleTrigResponse | null) => void;
+  setCircleMeasuresResult: (result: CircleMeasuresResponse | null) => void;
+  setRegularPolygonResult: (result: RegularPolygonResponse | null) => void;
+  setTransformationsResult: (result: TransformationsResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -401,6 +454,12 @@ const clearedResults = {
   eggCurveResult: null,
   helicoidResult: null,
   beeCellResult: null,
+  angleResult: null,
+  pythagoreanResult: null,
+  rightTriangleTrigResult: null,
+  circleMeasuresResult: null,
+  regularPolygonResult: null,
+  transformationsResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -446,6 +505,16 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     helicoidRadius: state.helicoidRadius,
     helicoidPitch: state.helicoidPitch,
     beeCellRise: state.beeCellRise,
+    angleRayB: state.angleRayB,
+    pythagoreanLegA: state.pythagoreanLegA,
+    pythagoreanLegB: state.pythagoreanLegB,
+    trigAngle: state.trigAngle,
+    circleRadius: state.circleRadius,
+    circleAngle: state.circleAngle,
+    polygonSides: state.polygonSides,
+    polygonRadius: state.polygonRadius,
+    transformTranslation: state.transformTranslation,
+    transformHandle: state.transformHandle,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -523,6 +592,22 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   beeCellRise: { x: BEE_CELL_OPTIMAL_RISE, y: 0, z: 0 },
 
+  angleRayB: { x: 1.414, y: 1.414, z: 0 },
+
+  pythagoreanLegA: { x: 3, y: 0, z: 0 },
+  pythagoreanLegB: { x: 4, y: 0, z: 0 },
+
+  trigAngle: { x: 1.638, y: 1.147, z: 0 },
+
+  circleRadius: { x: 2.5, y: 0, z: 0 },
+  circleAngle: { x: -0.5, y: 0.866, z: 0 },
+
+  polygonSides: { x: 6, y: 0, z: 0 },
+  polygonRadius: { x: 2, y: 0, z: 0 },
+
+  transformTranslation: { x: 1.5, y: 0.8, z: 0 },
+  transformHandle: { x: 2.078, y: 1.2, z: 0 },
+
   // results
   ...clearedResults,
 
@@ -572,6 +657,16 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     helicoidRadius: "R",
     helicoidPitch: "P",
     beeCellRise: "X",
+    angleRayB: "B",
+    pythagoreanLegA: "A",
+    pythagoreanLegB: "B",
+    trigAngle: "θ",
+    circleRadius: "R",
+    circleAngle: "θ",
+    polygonSides: "N",
+    polygonRadius: "R",
+    transformTranslation: "T",
+    transformHandle: "H",
   },
   past: [],
   future: [],
@@ -785,6 +880,58 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setAngleInput: (rayB) =>
+    set({
+      angleRayB: rayB,
+      angleResult: localAngle(rayB),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setPythagoreanInputs: ({ legAPoint, legBPoint }) =>
+    set({
+      pythagoreanLegA: legAPoint,
+      pythagoreanLegB: legBPoint,
+      pythagoreanResult: localPythagorean(legAPoint, legBPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setRightTriangleTrigInput: (anglePoint) =>
+    set({
+      trigAngle: anglePoint,
+      rightTriangleTrigResult: localRightTriangleTrig(anglePoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setCircleMeasuresInputs: ({ radiusPoint, anglePoint }) =>
+    set({
+      circleRadius: radiusPoint,
+      circleAngle: anglePoint,
+      circleMeasuresResult: localCircleMeasures(radiusPoint, anglePoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setRegularPolygonInputs: ({ sidesPoint, radiusPoint }) =>
+    set({
+      polygonSides: sidesPoint,
+      polygonRadius: radiusPoint,
+      regularPolygonResult: localRegularPolygon(sidesPoint, radiusPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setTransformationsInputs: ({ translationPoint, handlePoint }) =>
+    set({
+      transformTranslation: translationPoint,
+      transformHandle: handlePoint,
+      transformationsResult: localTransformations(translationPoint, handlePoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -850,6 +997,24 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setBeeCellResult: (result) =>
     set({ beeCellResult: result, error: null }),
+
+  setAngleResult: (result) =>
+    set({ angleResult: result, error: null }),
+
+  setPythagoreanResult: (result) =>
+    set({ pythagoreanResult: result, error: null }),
+
+  setRightTriangleTrigResult: (result) =>
+    set({ rightTriangleTrigResult: result, error: null }),
+
+  setCircleMeasuresResult: (result) =>
+    set({ circleMeasuresResult: result, error: null }),
+
+  setRegularPolygonResult: (result) =>
+    set({ regularPolygonResult: result, error: null }),
+
+  setTransformationsResult: (result) =>
+    set({ transformationsResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -1206,6 +1371,30 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
         queryStatus: "idle",
         ...clearedResults,
       });
+    }
+
+    if (type === "angles") {
+      set({ queryType: type, angleRayB: { x: 1.414, y: 1.414, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "pythagorean-theorem") {
+      set({ queryType: type, pythagoreanLegA: { x: 3, y: 0, z: 0 }, pythagoreanLegB: { x: 4, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "right-triangle-trig") {
+      set({ queryType: type, trigAngle: { x: 1.638, y: 1.147, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "circle-measures") {
+      set({ queryType: type, circleRadius: { x: 2.5, y: 0, z: 0 }, circleAngle: { x: -0.5, y: 0.866, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "regular-polygon") {
+      set({ queryType: type, polygonSides: { x: 6, y: 0, z: 0 }, polygonRadius: { x: 2, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "transformations") {
+      set({ queryType: type, transformTranslation: { x: 1.5, y: 0.8, z: 0 }, transformHandle: { x: 2.078, y: 1.2, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
     }
 
     if (type === "ray-box-miss") {

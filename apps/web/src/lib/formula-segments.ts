@@ -9,6 +9,7 @@ import {
   HELICOID_TURNS,
   LOGISTIC_TIME_CENTER,
   PHI,
+  RIGHT_TRIANGLE_TRIG_HYPOTENUSE,
 } from "@/lib/local-geometry";
 
 // A formula is a sequence of inert text and hoverable terms. A term with
@@ -35,6 +36,46 @@ const fmt = (v: number, state: PlaygroundState) => formatNumber(v, state.precisi
 type FormulaBuilder = (state: PlaygroundState) => FormulaSegment[];
 
 export const FORMULA_BUILDERS: Partial<Record<QueryType, FormulaBuilder>> = {
+  "angles": (s) => [
+    text("angle = atan2(B.y, B.x), swept counterclockwise from A. "),
+    term("A", "the fixed ray, always pointing along the positive X axis", "0°"),
+    text(", "),
+    term("B", "the second ray — drag it around the vertex to sweep the angle", s.angleResult ? `${fmt(s.angleResult.angleDeg, s)}°` : "—", "angleRayB"),
+  ],
+  "pythagorean-theorem": (s) => [
+    text("c = √(a² + b²). "),
+    term("a", "the length of leg A — drag A to resize it", s.pythagoreanResult ? fmt(s.pythagoreanResult.legA, s) : "—", "pythagoreanLegA"),
+    text(", "),
+    term("b", "the length of leg B — drag B to resize it", s.pythagoreanResult ? fmt(s.pythagoreanResult.legB, s) : "—", "pythagoreanLegB"),
+    text(", "),
+    term("c", "the hypotenuse, opposite the right angle", s.pythagoreanResult ? fmt(s.pythagoreanResult.hypotenuse, s) : "—"),
+  ],
+  "right-triangle-trig": (s) => [
+    text("sin θ = opposite/hypotenuse; cos θ = adjacent/hypotenuse; tan θ = sin θ/cos θ. "),
+    term("θ", "the angle being measured — drag θ to change it, clamped between 1° and 89°", s.rightTriangleTrigResult ? `${fmt(s.rightTriangleTrigResult.angleDeg, s)}°` : "—", "trigAngle"),
+    text(", "),
+    term("hypotenuse", "the triangle's fixed longest side, opposite the right angle", String(RIGHT_TRIANGLE_TRIG_HYPOTENUSE)),
+  ],
+  "circle-measures": (s) => [
+    text("C = 2πr; A = πr²; arc length = rθ; sector area = (1/2)r²θ. "),
+    term("r", "the circle's radius — drag R to resize it", s.circleMeasuresResult ? fmt(s.circleMeasuresResult.radius, s) : "—", "circleRadius"),
+    text(", "),
+    term("θ", "the central angle, in radians — drag the angle handle to sweep it", s.circleMeasuresResult ? `${fmt(s.circleMeasuresResult.centralAngleDeg, s)}°` : "—", "circleAngle"),
+  ],
+  "regular-polygon": (s) => [
+    text("perimeter = 2NR·sin(π/N); area = (1/2)NR²·sin(2π/N). "),
+    term("N", "the number of sides — drag N to add or remove sides", s.regularPolygonResult ? String(s.regularPolygonResult.sides) : "—", "polygonSides"),
+    text(", "),
+    term("R", "the circumradius — the distance from the center to each vertex", s.regularPolygonResult ? fmt(s.regularPolygonResult.circumradius, s) : "—", "polygonRadius"),
+  ],
+  "transformations": (s) => [
+    text("P′ = R(θ)·(s·P) + T — scale by s, rotate by θ, then translate by T. "),
+    term("T", "the translation vector — drag T to move the whole triangle", s.transformationsResult ? `(${fmt(s.transformationsResult.translationX, s)}, ${fmt(s.transformationsResult.translationY, s)})` : "—", "transformTranslation"),
+    text(", "),
+    term("θ", "the rotation angle — drag the handle around the origin to change it", s.transformationsResult ? `${fmt(s.transformationsResult.rotationDeg, s)}°` : "—", "transformHandle"),
+    text(", "),
+    term("s", "the scale factor — drag the handle closer or farther from the origin to change it", s.transformationsResult ? `${fmt(s.transformationsResult.scale, s)}×` : "—", "transformHandle"),
+  ],
   "project-point-to-plane": (s) => [
     text("d = |(P − Q) · n̂| = "),
     term("d", "the perpendicular distance from P to the plane", s.projectPointResult ? fmt(s.projectPointResult.distance, s) : "—"),

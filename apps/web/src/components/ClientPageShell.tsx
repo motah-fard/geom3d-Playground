@@ -1,6 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { AnglesForm } from "@/components/AnglesForm";
+import { PythagoreanForm } from "@/components/PythagoreanForm";
+import { RightTriangleTrigForm } from "@/components/RightTriangleTrigForm";
+import { CircleMeasuresForm } from "@/components/CircleMeasuresForm";
+import { RegularPolygonForm } from "@/components/RegularPolygonForm";
+import { TransformationsForm } from "@/components/TransformationsForm";
 import { IntersectRayPlaneForm } from "@/components/IntersectRayPlaneForm";
 import { ProjectPointToPlaneForm } from "@/components/ProjectPointToPlaneForm";
 import { ClosestPointSegmentForm } from "@/components/ClosestPointSegmentForm";
@@ -40,6 +46,12 @@ export function ClientPageShell() {
 
   const form = (
     <>
+      {queryType === "angles" && <AnglesForm />}
+      {queryType === "pythagorean-theorem" && <PythagoreanForm />}
+      {queryType === "right-triangle-trig" && <RightTriangleTrigForm />}
+      {queryType === "circle-measures" && <CircleMeasuresForm />}
+      {queryType === "regular-polygon" && <RegularPolygonForm />}
+      {queryType === "transformations" && <TransformationsForm />}
       {queryType === "project-point-to-plane" && <ProjectPointToPlaneForm />}
       {queryType === "intersect-ray-plane" && <IntersectRayPlaneForm />}
       {queryType === "closest-point-segment" && <ClosestPointSegmentForm />}

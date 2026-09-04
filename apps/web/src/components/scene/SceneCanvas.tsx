@@ -5,6 +5,12 @@ import { Bounds, OrbitControls } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { QUERY_META } from "@/lib/query-meta";
 import { useState } from "react";
+import { AnglesScene } from "@/components/scene/queries/AnglesScene";
+import { PythagoreanScene } from "@/components/scene/queries/PythagoreanScene";
+import { RightTriangleTrigScene } from "@/components/scene/queries/RightTriangleTrigScene";
+import { CircleMeasuresScene } from "@/components/scene/queries/CircleMeasuresScene";
+import { RegularPolygonScene } from "@/components/scene/queries/RegularPolygonScene";
+import { TransformationsScene } from "@/components/scene/queries/TransformationsScene";
 import { PointToPlaneScene } from "@/components/scene/queries/PointToPlaneScene";
 import { IntersectRayPlaneScene } from "@/components/scene/queries/IntersectRayPlaneScene";
 import { ClosestPointSegmentScene } from "@/components/scene/queries/ClosestPointSegmentScene";
@@ -73,7 +79,19 @@ export function SceneCanvas() {
                                       ? [{ id: "helicoidRadius", role: "Ribbon radius", value: store.helicoidRadius }, { id: "helicoidPitch", role: "Pitch point", value: store.helicoidPitch }]
                                       : queryType === "bee-cell"
                                         ? [{ id: "beeCellRise", role: "Trim / apex rise", value: store.beeCellRise }]
-                                        : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
+                                        : queryType === "angles"
+                                          ? [{ id: "angleRayB", role: "Ray B direction", value: store.angleRayB }]
+                                          : queryType === "pythagorean-theorem"
+                                            ? [{ id: "pythagoreanLegA", role: "Leg A", value: store.pythagoreanLegA }, { id: "pythagoreanLegB", role: "Leg B", value: store.pythagoreanLegB }]
+                                            : queryType === "right-triangle-trig"
+                                              ? [{ id: "trigAngle", role: "Angle direction", value: store.trigAngle }]
+                                              : queryType === "circle-measures"
+                                                ? [{ id: "circleRadius", role: "Radius", value: store.circleRadius }, { id: "circleAngle", role: "Central angle direction", value: store.circleAngle }]
+                                                : queryType === "regular-polygon"
+                                                  ? [{ id: "polygonSides", role: "Side count", value: store.polygonSides }, { id: "polygonRadius", role: "Circumradius", value: store.polygonRadius }]
+                                                  : queryType === "transformations"
+                                                    ? [{ id: "transformTranslation", role: "Translation", value: store.transformTranslation }, { id: "transformHandle", role: "Rotate + scale handle", value: store.transformHandle }]
+                                                    : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#09131c] shadow-2xl shadow-black/20">
@@ -110,6 +128,12 @@ export function SceneCanvas() {
           <gridHelper args={[40, 40, "#28465a", "#142a38"]} />
           <axesHelper args={[4]} />
           <Bounds fit clip margin={1.35}>
+            {queryType === "angles" && <AnglesScene />}
+            {queryType === "pythagorean-theorem" && <PythagoreanScene />}
+            {queryType === "right-triangle-trig" && <RightTriangleTrigScene />}
+            {queryType === "circle-measures" && <CircleMeasuresScene />}
+            {queryType === "regular-polygon" && <RegularPolygonScene />}
+            {queryType === "transformations" && <TransformationsScene />}
             {queryType === "project-point-to-plane" && <PointToPlaneScene />}
             {queryType === "intersect-ray-plane" && <IntersectRayPlaneScene />}
             {queryType === "closest-point-segment" && <ClosestPointSegmentScene />}

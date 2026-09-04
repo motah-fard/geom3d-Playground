@@ -35,6 +35,64 @@ export type AABB = {
 };
 
 // =======================
+// Foundations — the core K-12/intro geometry curriculum: angles,
+// the Pythagorean theorem, right-triangle trigonometry, circles,
+// regular polygons, and rigid/similarity transformations.
+// =======================
+
+export type AngleClassification = "acute" | "right" | "obtuse" | "straight" | "reflex";
+
+export type AngleResponse = {
+  angleDeg: number;
+  classification: AngleClassification;
+  complementDeg: number | null;
+  supplementDeg: number | null;
+};
+
+export type PythagoreanResponse = {
+  legA: number;
+  legB: number;
+  hypotenuse: number;
+  triangleType: "isosceles" | "scalene";
+};
+
+export type RightTriangleTrigResponse = {
+  angleDeg: number;
+  sin: number;
+  cos: number;
+  tan: number;
+  opposite: number;
+  adjacent: number;
+  hypotenuse: number;
+};
+
+export type CircleMeasuresResponse = {
+  radius: number;
+  circumference: number;
+  area: number;
+  centralAngleDeg: number;
+  arcLength: number;
+  sectorArea: number;
+};
+
+export type RegularPolygonResponse = {
+  sides: number;
+  circumradius: number;
+  area: number;
+  perimeter: number;
+  interiorAngleDeg: number;
+};
+
+export type TransformationsResponse = {
+  translationX: number;
+  translationY: number;
+  rotationDeg: number;
+  scale: number;
+  sampleAngleBeforeDeg: number;
+  sampleAngleAfterDeg: number;
+};
+
+// =======================
 // Requests
 // =======================
 
@@ -340,6 +398,12 @@ export type BeeCellResponse = {
 // than inline in the store) so it can be imported anywhere a properly
 // typed QueryType is needed instead of casting through `any`.
 export type QueryType =
+  | "angles"
+  | "pythagorean-theorem"
+  | "right-triangle-trig"
+  | "circle-measures"
+  | "regular-polygon"
+  | "transformations"
   | "project-point-to-plane"
   | "intersect-ray-plane"
   | "closest-point-segment"

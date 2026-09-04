@@ -49,6 +49,12 @@ export function WorkspaceActions() {
     if (store.queryType === "egg-curve") return ["eggBig", "eggSmall"];
     if (store.queryType === "helicoid") return ["helicoidRadius", "helicoidPitch"];
     if (store.queryType === "bee-cell") return ["beeCellRise"];
+    if (store.queryType === "angles") return ["angleRayB"];
+    if (store.queryType === "pythagorean-theorem") return ["pythagoreanLegA", "pythagoreanLegB"];
+    if (store.queryType === "right-triangle-trig") return ["trigAngle"];
+    if (store.queryType === "circle-measures") return ["circleRadius", "circleAngle"];
+    if (store.queryType === "regular-polygon") return ["polygonSides", "polygonRadius"];
+    if (store.queryType === "transformations") return ["transformTranslation", "transformHandle"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

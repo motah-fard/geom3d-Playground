@@ -4,6 +4,12 @@ import type { QueryType } from "@/types/geometry";
 // "you might see this in nature" hand-waving. Several are the exact
 // examples Thompson himself used.
 export const NATURE_EXAMPLES: Partial<Record<QueryType, string>> = {
+  "angles": "A ship's navigator sighting a bearing, a carpenter checking a corner with a speed square, or a branch splitting away from a tree trunk — every one of them is just two rays and the angle swept between them.",
+  "pythagorean-theorem": "A construction crew squaring a foundation with a 3-4-5 triangle of string, or a phone's screen size (measured corner to corner) computed from its width and height — the same theorem either way.",
+  "right-triangle-trig": "Measuring a tree's height from its shadow and the sun's angle, or a pilot computing a plane's climb angle from ground speed and rate of ascent — both just read sin, cos, or tan off a right triangle.",
+  "circle-measures": "A wheel's circumference determining how far one rotation carries a car, or a pizza slice's area (a sector) scaling with the angle it's cut at — literally the same arithmetic behind both.",
+  "regular-polygon": "A stop sign's octagon, a soccer ball's pentagons and hexagons, or a snowflake's six-fold symmetry — regular polygons are the default shape wherever a structure needs to tile, pack, or rotate evenly.",
+  "transformations": "A wallpaper or quilt pattern repeating across a surface, or a video game sprite that moves, spins, and resizes on screen — every frame is the same shape put through a translate-rotate-scale transformation.",
   "cartesian-transform": "Thompson's own signature method: warping a coordinate grid drawn on one species (a porcupine fish, a human skull) until it fits a related species (a sunfish, a chimpanzee skull) — turning \"how are these related\" into a single continuous deformation.",
   "log-spiral-growth": "A nautilus shell, a ram's horn, a cat's claw, or an elephant's tusk — any structure that grows only by adding material at one open margin traces this exact curve, always crossing every radius at the same angle.",
   "cell-packing": "Froth in a glass of beer, cork cells under Robert Hooke's 17th-century microscope (the first living \"cells\" ever named), or dragonfly wing venation — cells that grow from separate centers until they touch settle into this hexagonal equilibrium.",

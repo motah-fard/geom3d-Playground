@@ -1,11 +1,14 @@
 import type {
   AllometricGrowthResponse,
+  AngleClassification,
+  AngleResponse,
   BeeCellResponse,
   CartesianTransformCorners,
   CartesianTransformResponse,
   CatenaryResponse,
   CatenoidResponse,
   CellPackingResponse,
+  CircleMeasuresResponse,
   ClosestPointAABBRequest,
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
@@ -25,8 +28,12 @@ import type {
   PhyllotaxisResponse,
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
+  PythagoreanResponse,
+  RegularPolygonResponse,
+  RightTriangleTrigResponse,
   SegmentSegmentRequest,
   SegmentSegmentResponse,
+  TransformationsResponse,
   Vec3,
   WhirlingSquaresResponse,
 } from "@/types/geometry";
@@ -38,6 +45,173 @@ const scale = (v: Vec3, amount: number): Vec3 => ({ x: v.x * amount, y: v.y * am
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 const length = (v: Vec3) => Math.hypot(v.x, v.y, v.z);
 const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+
+// =======================
+// Foundations — Angles. One ray fixed along the positive X axis, one
+// ray (B) draggable freely around the vertex; the swept angle is
+// measured counterclockwise from the fixed ray, in [0°, 360°), so
+// reflex angles are just as representable as acute ones.
+// =======================
+
+const ANGLE_EPSILON_DEG = 1e-6;
+
+export function localAngle(rayB: Vec3): AngleResponse {
+  let angleDeg = Math.atan2(rayB.y, rayB.x) * (180 / Math.PI);
+  if (angleDeg < 0) angleDeg += 360;
+
+  const classification: AngleClassification =
+    Math.abs(angleDeg - 90) < ANGLE_EPSILON_DEG ? "right" :
+    Math.abs(angleDeg - 180) < ANGLE_EPSILON_DEG ? "straight" :
+    angleDeg < 90 ? "acute" :
+    angleDeg < 180 ? "obtuse" : "reflex";
+
+  const complementDeg = angleDeg <= 90 ? 90 - angleDeg : null;
+  const supplementDeg = angleDeg <= 180 ? 180 - angleDeg : null;
+
+  return { angleDeg, classification, complementDeg, supplementDeg };
+}
+
+// =======================
+// Foundations — The Pythagorean theorem. A right angle is fixed at the
+// origin; the two legs run along the axes, so the hypotenuse and its
+// square follow directly from a² + b² = c².
+// =======================
+
+export function localPythagorean(legAPoint: Vec3, legBPoint: Vec3): PythagoreanResponse {
+  const legA = Math.max(Math.hypot(legAPoint.x, legAPoint.y), EPSILON);
+  const legB = Math.max(Math.hypot(legBPoint.x, legBPoint.y), EPSILON);
+  const hypotenuse = Math.sqrt(legA * legA + legB * legB);
+  const triangleType = Math.abs(legA - legB) < 1e-6 ? "isosceles" : "scalene";
+  return { legA, legB, hypotenuse, triangleType };
+}
+
+// =======================
+// Foundations — Right-triangle trigonometry. A fixed hypotenuse of
+// length H, swept through an angle θ ∈ (0°, 90°): sin, cos, and tan
+// are just the resulting opposite, adjacent, and their ratios.
+// =======================
+
+export const RIGHT_TRIANGLE_TRIG_HYPOTENUSE = 3;
+
+export function localRightTriangleTrig(anglePoint: Vec3): RightTriangleTrigResponse {
+  const rawDeg = Math.atan2(Math.abs(anglePoint.y), Math.max(anglePoint.x, EPSILON)) * (180 / Math.PI);
+  const angleDeg = Math.max(1, Math.min(89, rawDeg));
+  const angleRad = angleDeg * (Math.PI / 180);
+  const hypotenuse = RIGHT_TRIANGLE_TRIG_HYPOTENUSE;
+  const sinValue = Math.sin(angleRad);
+  const cosValue = Math.cos(angleRad);
+  const tanValue = Math.tan(angleRad);
+  return {
+    angleDeg,
+    sin: sinValue,
+    cos: cosValue,
+    tan: tanValue,
+    opposite: hypotenuse * sinValue,
+    adjacent: hypotenuse * cosValue,
+    hypotenuse,
+  };
+}
+
+// =======================
+// Foundations — Circles. Circumference and area from the radius;
+// arc length and sector area from a central angle swept out of it.
+// =======================
+
+export function localCircleMeasures(radiusPoint: Vec3, anglePoint: Vec3): CircleMeasuresResponse {
+  const radius = Math.max(Math.hypot(radiusPoint.x, radiusPoint.y), EPSILON);
+  let centralAngleDeg = Math.atan2(anglePoint.y, anglePoint.x) * (180 / Math.PI);
+  if (centralAngleDeg <= 0) centralAngleDeg += 360;
+  const centralAngleRad = centralAngleDeg * (Math.PI / 180);
+  return {
+    radius,
+    circumference: 2 * Math.PI * radius,
+    area: Math.PI * radius * radius,
+    centralAngleDeg,
+    arcLength: radius * centralAngleRad,
+    sectorArea: 0.5 * radius * radius * centralAngleRad,
+  };
+}
+
+// =======================
+// Foundations — Regular polygons. A polygon of N sides inscribed in a
+// circle of radius R: its exact perimeter and area, its interior
+// angle, and — as N grows — its convergence toward that same circle's
+// own circumference and area.
+// =======================
+
+export const REGULAR_POLYGON_MIN_SIDES = 3;
+export const REGULAR_POLYGON_MAX_SIDES = 20;
+
+export function regularPolygonVertex(index: number, sides: number, circumradius: number): Vec3 {
+  const angle = (2 * Math.PI * index) / sides;
+  return { x: circumradius * Math.cos(angle), y: circumradius * Math.sin(angle), z: 0 };
+}
+
+export function localRegularPolygon(sidesPoint: Vec3, radiusPoint: Vec3): RegularPolygonResponse {
+  const rawSides = Math.max(Math.hypot(sidesPoint.x, sidesPoint.y), REGULAR_POLYGON_MIN_SIDES);
+  const sides = Math.max(REGULAR_POLYGON_MIN_SIDES, Math.min(REGULAR_POLYGON_MAX_SIDES, Math.round(rawSides)));
+  const circumradius = Math.max(Math.hypot(radiusPoint.x, radiusPoint.y), EPSILON);
+  const perimeter = sides * 2 * circumradius * Math.sin(Math.PI / sides);
+  const area = 0.5 * sides * circumradius * circumradius * Math.sin((2 * Math.PI) / sides);
+  const interiorAngleDeg = ((sides - 2) * 180) / sides;
+  return { sides, circumradius, area, perimeter, interiorAngleDeg };
+}
+
+// =======================
+// Foundations — Transformations. A fixed reference triangle is
+// translated, rotated, and uniformly scaled all at once — a similarity
+// transformation, which moves and resizes a shape while leaving every
+// one of its angles exactly unchanged.
+// =======================
+
+export const TRANSFORM_BASE_TRIANGLE: [Vec3, Vec3, Vec3] = [
+  { x: 0, y: 0, z: 0 },
+  { x: 1.6, y: 0, z: 0 },
+  { x: 0.4, y: 1.1, z: 0 },
+];
+
+export const TRANSFORM_HANDLE_REFERENCE_RADIUS = 2;
+
+export function transformTrianglePoint(
+  point: Vec3,
+  translation: { x: number; y: number },
+  rotationRad: number,
+  scale: number,
+): Vec3 {
+  const scaledX = point.x * scale;
+  const scaledY = point.y * scale;
+  const rotatedX = scaledX * Math.cos(rotationRad) - scaledY * Math.sin(rotationRad);
+  const rotatedY = scaledX * Math.sin(rotationRad) + scaledY * Math.cos(rotationRad);
+  return { x: rotatedX + translation.x, y: rotatedY + translation.y, z: 0 };
+}
+
+function angleAtVertexDeg(prev: Vec3, vertex: Vec3, next: Vec3): number {
+  const toPrev = { x: prev.x - vertex.x, y: prev.y - vertex.y };
+  const toNext = { x: next.x - vertex.x, y: next.y - vertex.y };
+  const dotProduct = toPrev.x * toNext.x + toPrev.y * toNext.y;
+  const magnitude = Math.hypot(toPrev.x, toPrev.y) * Math.hypot(toNext.x, toNext.y);
+  return Math.acos(Math.max(-1, Math.min(1, dotProduct / magnitude))) * (180 / Math.PI);
+}
+
+export function localTransformations(translationPoint: Vec3, handlePoint: Vec3): TransformationsResponse {
+  const translation = { x: translationPoint.x, y: translationPoint.y };
+  const scale = Math.max(Math.hypot(handlePoint.x, handlePoint.y) / TRANSFORM_HANDLE_REFERENCE_RADIUS, EPSILON);
+  const rotationRad = Math.atan2(handlePoint.y, handlePoint.x);
+
+  const [base0, base1, base2] = TRANSFORM_BASE_TRIANGLE;
+  const after0 = transformTrianglePoint(base0, translation, rotationRad, scale);
+  const after1 = transformTrianglePoint(base1, translation, rotationRad, scale);
+  const after2 = transformTrianglePoint(base2, translation, rotationRad, scale);
+
+  return {
+    translationX: translation.x,
+    translationY: translation.y,
+    rotationDeg: rotationRad * (180 / Math.PI),
+    scale,
+    sampleAngleBeforeDeg: angleAtVertexDeg(base1, base0, base2),
+    sampleAngleAfterDeg: angleAtVertexDeg(after1, after0, after2),
+  };
+}
 
 export function localProjectPointToPlane(input: ProjectPointToPlaneRequest): ProjectPointToPlaneResponse {
   const magnitude = length(input.plane.normal);

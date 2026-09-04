@@ -18,9 +18,11 @@ import {
   GOLDEN_ANGLE_RAD,
   HELICOID_TURNS,
   localAllometricGrowth,
+  localAngle,
   localBeeCell,
   localCatenary,
   localCatenoid,
+  localCircleMeasures,
   localClosestPointAABB,
   localClosestPointSegment,
   localEggCurve,
@@ -34,11 +36,22 @@ import {
   localLogSpiral,
   localMilkCoronet,
   localPhyllotaxis,
+  localPythagorean,
+  localRegularPolygon,
+  localRightTriangleTrig,
   localSquareCubeLaw,
+  localTransformations,
   localWhirlingSquares,
   logisticPoint,
   MILK_CORONET_MAX_POINTS,
   PHI,
+  polygonArea,
+  polygonPerimeter,
+  REGULAR_POLYGON_MAX_SIDES,
+  regularPolygonVertex,
+  RIGHT_TRIANGLE_TRIG_HYPOTENUSE,
+  TRANSFORM_BASE_TRIANGLE,
+  transformTrianglePoint,
   helicalShellPoint,
   localProjectPointToPlane,
   localSegmentSegment,
@@ -472,4 +485,144 @@ test("at the optimal rise, the ridge-to-axis angle is exactly arccos(1/3) ≈ 70
   const expectedDeg = Math.acos(1 / 3) * (180 / Math.PI);
   assert.ok(Math.abs(result.ridgeAngleDeg - expectedDeg) < 1e-6);
   assert.ok(Math.abs(expectedDeg - 70.5288) < 1e-3);
+});
+
+test("angles are classified correctly at and around every boundary, with complement and supplement only where they're defined", () => {
+  const acute = localAngle({ x: 1, y: 1, z: 0 }); // 45 degrees
+  assert.equal(acute.classification, "acute");
+  assert.ok(Math.abs(acute.angleDeg - 45) < 1e-9);
+  assert.ok(Math.abs((acute.complementDeg ?? NaN) - 45) < 1e-9);
+  assert.ok(Math.abs((acute.supplementDeg ?? NaN) - 135) < 1e-9);
+
+  const right = localAngle({ x: 0, y: 1, z: 0 }); // 90 degrees
+  assert.equal(right.classification, "right");
+  assert.equal(right.complementDeg, 0);
+
+  const obtuse = localAngle({ x: -1, y: 1, z: 0 }); // 135 degrees
+  assert.equal(obtuse.classification, "obtuse");
+  assert.equal(obtuse.complementDeg, null);
+  assert.ok(Math.abs((obtuse.supplementDeg ?? NaN) - 45) < 1e-9);
+
+  const straight = localAngle({ x: -1, y: 0, z: 0 }); // 180 degrees
+  assert.equal(straight.classification, "straight");
+  assert.equal(straight.supplementDeg, 0);
+
+  const reflex = localAngle({ x: 0, y: -1, z: 0 }); // 270 degrees
+  assert.equal(reflex.classification, "reflex");
+  assert.equal(reflex.complementDeg, null);
+  assert.equal(reflex.supplementDeg, null);
+});
+
+test("a reflex angle's own measure differs from the unsigned (non-reflex) angle between the same two rays", () => {
+  // 270 degrees swept counterclockwise from the fixed ray, but the
+  // UNDIRECTED angle between the two rays (via the dot product, which
+  // can't tell which way you swept) is only 90 degrees -- exactly why a
+  // reflex angle needs its own directed convention.
+  const rayB = { x: 0, y: -1, z: 0 };
+  const reflex = localAngle(rayB);
+  assert.ok(Math.abs(reflex.angleDeg - 270) < 1e-9);
+  const undirectedDeg = Math.acos(rayB.x / Math.hypot(rayB.x, rayB.y)) * (180 / Math.PI);
+  assert.ok(Math.abs(undirectedDeg - 90) < 1e-9);
+  assert.notEqual(Math.round(reflex.angleDeg), Math.round(undirectedDeg));
+});
+
+test("the Pythagorean theorem holds exactly for a classic 3-4-5 triangle and is cross-checked by the law of cosines at 90°", () => {
+  const result = localPythagorean({ x: 3, y: 0, z: 0 }, { x: 4, y: 0, z: 0 });
+  assert.ok(Math.abs(result.hypotenuse - 5) < 1e-9);
+  assert.equal(result.triangleType, "scalene");
+
+  for (const [a, b] of [[1, 1], [5, 12], [2.5, 6.5]] as const) {
+    const r = localPythagorean({ x: a, y: 0, z: 0 }, { x: b, y: 0, z: 0 });
+    // law of cosines: c^2 = a^2 + b^2 - 2ab*cos(90 degrees), independent
+    // of the a^2+b^2 formula the implementation actually uses.
+    const viaLawOfCosines = Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(Math.PI / 2));
+    assert.ok(Math.abs(r.hypotenuse - viaLawOfCosines) < 1e-9);
+  }
+  assert.equal(localPythagorean({ x: 2, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }).triangleType, "isosceles");
+});
+
+test("right-triangle trig satisfies the Pythagorean identity and tan = sin/cos independently of how each is computed", () => {
+  for (const [x, y] of [[1, 0.3], [0.5, 2], [2, 2]] as const) {
+    const result = localRightTriangleTrig({ x, y, z: 0 });
+    assert.ok(Math.abs(result.sin * result.sin + result.cos * result.cos - 1) < 1e-9);
+    assert.ok(Math.abs(result.tan - result.sin / result.cos) < 1e-9);
+    // opposite^2 + adjacent^2 == hypotenuse^2, the Pythagorean theorem
+    // applied to this same triangle, independent of the sin/cos used.
+    assert.ok(Math.abs(result.opposite ** 2 + result.adjacent ** 2 - result.hypotenuse ** 2) < 1e-9);
+    assert.equal(result.hypotenuse, RIGHT_TRIANGLE_TRIG_HYPOTENUSE);
+  }
+});
+
+test("a circle's circumference and area are approached by an inscribed regular polygon's perimeter and area as its side count grows", () => {
+  const radius = 2.5;
+  const circle = localCircleMeasures({ x: radius, y: 0, z: 0 }, { x: 1, y: 1, z: 0 });
+  for (const sides of [12, 48, 200]) {
+    const vertices = Array.from({ length: sides }, (_, i) => regularPolygonVertex(i, sides, radius));
+    const perimeter = polygonPerimeter(vertices);
+    const area = polygonArea(vertices);
+    const perimeterError = Math.abs(perimeter - circle.circumference) / circle.circumference;
+    const areaError = Math.abs(area - circle.area) / circle.area;
+    assert.ok(perimeterError < 20 / (sides * sides), `sides=${sides}: perimeter error ${perimeterError}`);
+    assert.ok(areaError < 20 / (sides * sides), `sides=${sides}: area error ${areaError}`);
+  }
+});
+
+test("a circular sector's area matches a fine fan-of-triangles numerical approximation, independent of the (1/2)r^2*theta formula", () => {
+  const radius = 1.8;
+  for (const [x, y] of [[1, 0.6], [-1, 1], [0.2, -1]] as const) {
+    const circle = localCircleMeasures({ x: radius, y: 0, z: 0 }, { x, y, z: 0 });
+    const theta = circle.centralAngleDeg * (Math.PI / 180);
+    const steps = 20000;
+    let numericalArea = 0;
+    for (let i = 0; i < steps; i++) {
+      const d = theta / steps;
+      // area of a thin triangle fan slice: (1/2)*r^2*sin(d) -- exact for
+      // a triangle, not an approximation of one, so this is a genuinely
+      // different (if still convergent) computation from r^2*theta/2.
+      numericalArea += 0.5 * radius * radius * Math.sin(d);
+    }
+    assert.ok(Math.abs(numericalArea - circle.sectorArea) / circle.sectorArea < 1e-6);
+  }
+});
+
+test("a regular polygon's area and perimeter match direct shoelace/edge-sum measurements of its own vertices", () => {
+  for (const sides of [3, 6, 9, 15]) {
+    const circumradius = 1.7;
+    const result = localRegularPolygon({ x: sides, y: 0, z: 0 }, { x: circumradius, y: 0, z: 0 });
+    const vertices = Array.from({ length: sides }, (_, i) => regularPolygonVertex(i, sides, circumradius));
+    assert.ok(Math.abs(result.area - polygonArea(vertices)) < 1e-9);
+    assert.ok(Math.abs(result.perimeter - polygonPerimeter(vertices)) < 1e-9);
+    // interior angle sum of any simple polygon is (n-2)*180.
+    assert.ok(Math.abs(result.interiorAngleDeg * sides - (sides - 2) * 180) < 1e-9);
+  }
+  // as sides -> max, both measurements should approach the circumscribed circle's.
+  const many = localRegularPolygon({ x: REGULAR_POLYGON_MAX_SIDES, y: 0, z: 0 }, { x: 1, y: 0, z: 0 });
+  assert.ok(Math.abs(many.area - Math.PI) / Math.PI < 0.02);
+  assert.ok(Math.abs(many.perimeter - 2 * Math.PI) / (2 * Math.PI) < 0.02);
+});
+
+test("a similarity transformation (translate + rotate + scale) preserves every angle of the triangle exactly", () => {
+  for (const [tx, ty, rotDeg, scale] of [[0, 0, 0, 1], [2, -1.5, 40, 1.8], [-3, 4, 200, 0.4]] as const) {
+    const handle = { x: scale * 2 * Math.cos(rotDeg * (Math.PI / 180)), y: scale * 2 * Math.sin(rotDeg * (Math.PI / 180)), z: 0 };
+    const result = localTransformations({ x: tx, y: ty, z: 0 }, handle);
+    assert.ok(Math.abs(result.sampleAngleBeforeDeg - result.sampleAngleAfterDeg) < 1e-6, `rotDeg=${rotDeg}: before=${result.sampleAngleBeforeDeg} after=${result.sampleAngleAfterDeg}`);
+  }
+});
+
+test("a translate-only transform shifts every vertex by exactly the translation, and a scale-only transform multiplies every side length by exactly the scale factor", () => {
+  const translateOnly = TRANSFORM_BASE_TRIANGLE.map((p) => transformTrianglePoint(p, { x: 5, y: -2 }, 0, 1));
+  TRANSFORM_BASE_TRIANGLE.forEach((p, i) => {
+    assert.ok(Math.abs(translateOnly[i].x - (p.x + 5)) < 1e-9);
+    assert.ok(Math.abs(translateOnly[i].y - (p.y - 2)) < 1e-9);
+  });
+
+  const scale = 2.3;
+  const scaledOnly = TRANSFORM_BASE_TRIANGLE.map((p) => transformTrianglePoint(p, { x: 0, y: 0 }, 0, scale));
+  const sideLength = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(b.x - a.x, b.y - a.y);
+  for (let i = 0; i < 3; i++) {
+    const next = (i + 1) % 3;
+    const before = sideLength(TRANSFORM_BASE_TRIANGLE[i], TRANSFORM_BASE_TRIANGLE[next]);
+    const after = sideLength(scaledOnly[i], scaledOnly[next]);
+    assert.ok(Math.abs(after / before - scale) < 1e-9);
+  }
 });
