@@ -154,46 +154,15 @@ export function SceneCanvas() {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#09131c] shadow-2xl shadow-black/20">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/70 px-3 py-2.5">
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="relative flex h-2 w-2">
-            {queryStatus === "running" && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-300 opacity-60" />}
-            <span className={`relative inline-flex h-2 w-2 rounded-full ${queryStatus === "running" ? "bg-amber-300" : "bg-emerald-400"}`} />
-          </span>
-          <span>{queryStatus === "running" ? "Updating geometry…" : meta.instruction}</span>
-        </div>
-        <div className="flex items-center gap-1" aria-label="Viewport controls">
-          {isGrowthForm && (
-            <div className="mr-2 flex rounded-lg border border-slate-800 bg-slate-950/60 p-0.5 text-xs font-semibold" role="tablist" aria-label="Viewport detail">
-              <button type="button" role="tab" aria-selected={sceneViewMode === "explore"} onClick={() => setSceneViewMode("explore")} className={`rounded-md px-2.5 py-1 transition ${sceneViewMode === "explore" ? "bg-primary/20 text-white" : "text-slate-500 hover:text-slate-300"}`}>Explore</button>
-              <button type="button" role="tab" aria-selected={sceneViewMode === "analyze"} onClick={() => setSceneViewMode("analyze")} className={`rounded-md px-2.5 py-1 transition ${sceneViewMode === "analyze" ? "bg-primary/20 text-white" : "text-slate-500 hover:text-slate-300"}`}>Analyze</button>
-            </div>
-          )}
-          {queryType === "project-point-to-plane" && (
-            <label className="mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:bg-slate-800">
-              <input type="checkbox" checked={stepMode} onChange={(event) => setStepMode(event.target.checked)} className="accent-cyan-300" />
-              Construction lines
-            </label>
-          )}
-          <button
-            type="button"
-            title="Reset view"
-            aria-label="Reset view"
-            onClick={() => {
-              controlsRef.current?.reset();
-              resetViewRef.current?.();
-            }}
-            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-          >⌂</button>
-          <button type="button" aria-pressed={view === "top"} onClick={() => setView("top")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Top</button>
-          <button type="button" aria-pressed={view === "front"} onClick={() => setView("front")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Front</button>
-          <button type="button" aria-pressed={view === "side"} onClick={() => setView("side")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Side</button>
-          <button type="button" aria-pressed={view === "perspective"} onClick={() => setView("perspective")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Perspective</button>
-          <button type="button" aria-pressed={showTable} onClick={() => setShowTable((value) => !value)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Table</button>
-        </div>
+      <div className="flex items-center gap-2 border-b border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-400">
+        <span className="relative flex h-2 w-2 shrink-0">
+          {queryStatus === "running" && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-300 opacity-60" />}
+          <span className={`relative inline-flex h-2 w-2 rounded-full ${queryStatus === "running" ? "bg-amber-300" : "bg-emerald-400"}`} />
+        </span>
+        <span className="truncate">{queryStatus === "running" ? "Updating geometry…" : meta.instruction}</span>
       </div>
 
-      <div className="relative h-[440px] w-full sm:h-[560px]" role="application" aria-label={`Interactive 3D viewport for ${meta.title}. ${meta.instruction}`}>
+      <div className="relative h-[560px] w-full sm:h-[720px]" role="application" aria-label={`Interactive 3D viewport for ${meta.title}. ${meta.instruction}`}>
         <Canvas key={`${queryType}-${view}`} orthographic={view !== "perspective"} camera={view === "perspective" ? { position: cameraPosition, fov: 48 } : { position: cameraPosition, zoom: 58, near: 0.1, far: 1000 }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }} onPointerMissed={() => setSelectedObject(null)}>
           <color attach="background" args={[canvasBackground]} />
           <fog attach="fog" args={[canvasBackground, 14, 32]} />
@@ -250,6 +219,40 @@ export function SceneCanvas() {
         </div>
         <p className="sr-only">Coordinates are also available in the geometry inputs. The numeric result below is the accessible alternative to this scene.</p>
       </div>
+
+      <div className="flex flex-wrap items-center gap-1 border-t border-slate-800 bg-slate-950/70 px-3 py-2" aria-label="Viewport controls">
+        <button
+          type="button"
+          title="Reset view"
+          aria-label="Reset view"
+          onClick={() => {
+            controlsRef.current?.reset();
+            resetViewRef.current?.();
+          }}
+          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        >⌂ Reset</button>
+        <span className="mx-1 h-5 w-px shrink-0 bg-slate-800" aria-hidden="true" />
+        <button type="button" aria-pressed={view === "top"} onClick={() => setView("top")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Top</button>
+        <button type="button" aria-pressed={view === "front"} onClick={() => setView("front")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Front</button>
+        <button type="button" aria-pressed={view === "side"} onClick={() => setView("side")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Side</button>
+        <button type="button" aria-pressed={view === "perspective"} onClick={() => setView("perspective")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Perspective</button>
+        <button type="button" aria-pressed={showTable} onClick={() => setShowTable((value) => !value)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Table</button>
+
+        {queryType === "project-point-to-plane" && (
+          <label className="ml-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:bg-slate-800">
+            <input type="checkbox" checked={stepMode} onChange={(event) => setStepMode(event.target.checked)} className="accent-cyan-300" />
+            Construction lines
+          </label>
+        )}
+
+        {isGrowthForm && (
+          <div className="ml-auto flex rounded-lg border border-slate-800 bg-slate-950/60 p-0.5 text-xs font-semibold" role="tablist" aria-label="Viewport detail">
+            <button type="button" role="tab" aria-selected={sceneViewMode === "explore"} onClick={() => setSceneViewMode("explore")} className={`rounded-md px-2.5 py-1 transition ${sceneViewMode === "explore" ? "bg-primary/20 text-white" : "text-slate-500 hover:text-slate-300"}`}>◉ Explore</button>
+            <button type="button" role="tab" aria-selected={sceneViewMode === "analyze"} onClick={() => setSceneViewMode("analyze")} className={`rounded-md px-2.5 py-1 transition ${sceneViewMode === "analyze" ? "bg-primary/20 text-white" : "text-slate-500 hover:text-slate-300"}`}>⚙ Analyze</button>
+          </div>
+        )}
+      </div>
+
       {showTable && (
         <div className="overflow-x-auto border-t border-slate-800 bg-slate-950/80 p-3">
           <table className="w-full text-left text-xs">
