@@ -111,12 +111,12 @@ export function CatenoidScene() {
       )}
 
       {showConstruction && (
-        <>
+        <group rotation={[-Math.PI / 2, 0, 0]}>
           {/* the generating catenary, held in place at phi = 0 */}
           <Line points={profilePoints} color="#F4F7FB" lineWidth={2} />
           {/* the symmetry axis it revolves around */}
           <Line points={[[0, -CATENOID_HALF_HEIGHT - 0.6, 0], [0, CATENOID_HALF_HEIGHT + 0.6, 0]]} color="#64748B" lineWidth={1} dashed dashSize={0.15} gapSize={0.1} />
-        </>
+        </group>
       )}
 
       {/* the two rings the film spans */}
