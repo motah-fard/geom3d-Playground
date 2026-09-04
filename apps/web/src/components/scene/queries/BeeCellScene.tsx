@@ -6,6 +6,7 @@ import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
 import type { Vec3 } from "@/types/geometry";
 import {
+  BEE_CELL_HEXAGON_SIDE,
   BEE_CELL_WALL_HEIGHT,
   beeCellApex,
   beeCellRimVertex,
@@ -15,6 +16,15 @@ import {
 function onAxis(p: Vec3): Vec3 {
   return { x: Math.max(Math.hypot(p.x, p.y), 1e-6), y: 0, z: 0 };
 }
+
+// The 6 neighboring cells a real honeycomb packs this one against — each
+// hexagon's own center sits one apothem-and-a-half away from the last, in
+// the direction perpendicular to the shared edge between them.
+const NEIGHBOR_OFFSETS: [number, number][] = Array.from({ length: 6 }, (_, k) => {
+  const angle = (Math.PI / 6) + (Math.PI / 3) * k;
+  const distance = BEE_CELL_HEXAGON_SIDE * Math.sqrt(3);
+  return [distance * Math.cos(angle), distance * Math.sin(angle)];
+});
 
 function push(positions: number[], p: Vec3) {
   positions.push(p.x, p.y, p.z);
@@ -81,6 +91,13 @@ export function BeeCellScene() {
 
   return (
     <>
+      {/* the surrounding honeycomb — same cell, packed edge to edge, for context */}
+      {NEIGHBOR_OFFSETS.map(([nx, ny], i) => (
+        <mesh key={i} geometry={geometry} position={[nx, ny, 0]}>
+          <meshStandardMaterial color="#fde047" transparent opacity={0.16} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+      ))}
+
       <mesh geometry={geometry}>
         <meshStandardMaterial color="#fde047" transparent opacity={0.82} side={THREE.DoubleSide} />
       </mesh>
