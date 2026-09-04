@@ -178,18 +178,25 @@ export function WorkspaceActions() {
     }, "image/png");
   };
 
-  const actionClass = "rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35";
+  const actionClass = "shrink-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35";
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-2 border-b border-white/5 px-4 py-3 sm:px-6" aria-label="Workspace actions">
-      <button type="button" onClick={store.undo} disabled={!store.past.length} className={actionClass}>↶ Undo</button>
-      <button type="button" onClick={store.redo} disabled={!store.future.length} className={actionClass}>↷ Redo</button>
-      <span className="mx-1 h-6 w-px bg-slate-800" aria-hidden="true" />
-      <button type="button" onClick={save} className={actionClass}>Save</button>
-      <button type="button" onClick={load} className={actionClass}>Load</button>
-      <button type="button" onClick={share} className={actionClass}>Share link</button>
-      <button type="button" onClick={exportJson} className={actionClass}>Export JSON</button>
-      <button type="button" onClick={exportPng} className={actionClass}>Export PNG</button>
-      <details className="relative ml-auto">
+    // The button strip scrolls horizontally on narrow screens instead of
+    // wrapping into several rows, which used to push all page content below
+    // the fold before a visitor saw anything. "Workspace settings" stays
+    // outside that scroll container so its dropdown never gets clipped by
+    // the strip's overflow.
+    <div className="mx-auto flex max-w-[1600px] items-center gap-2 border-b border-white/5 px-4 py-3 sm:px-6" aria-label="Workspace actions">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible">
+        <button type="button" onClick={store.undo} disabled={!store.past.length} className={actionClass}>↶ Undo</button>
+        <button type="button" onClick={store.redo} disabled={!store.future.length} className={actionClass}>↷ Redo</button>
+        <span className="mx-1 h-6 w-px shrink-0 bg-slate-800" aria-hidden="true" />
+        <button type="button" onClick={save} className={actionClass}>Save</button>
+        <button type="button" onClick={load} className={actionClass}>Load</button>
+        <button type="button" onClick={share} className={actionClass}>Share link</button>
+        <button type="button" onClick={exportJson} className={actionClass}>Export JSON</button>
+        <button type="button" onClick={exportPng} className={actionClass}>Export PNG</button>
+      </div>
+      <details className="relative shrink-0">
         <summary className={`${actionClass} cursor-pointer list-none`}>Workspace settings</summary>
         <div className="absolute right-0 z-30 mt-2 w-[min(340px,calc(100vw-2rem))] space-y-4 rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-2xl">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

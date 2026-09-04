@@ -1,8 +1,22 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 export function IntroSection() {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    // Collapsed by default only on narrow screens: on mobile this essay
+    // otherwise pushes the chapter selector (and everything else) below the
+    // fold before a visitor sees any interactive content. Desktop keeps the
+    // original open-by-default framing.
+    if (detailsRef.current && window.matchMedia("(max-width: 639px)").matches) {
+      detailsRef.current.open = false;
+    }
+  }, []);
+
   return (
-    <details open className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 group">
+    <details ref={detailsRef} open className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 group">
       <summary className="cursor-pointer list-none rounded-2xl border border-amber-300/15 bg-gradient-to-br from-amber-300/[0.06] via-slate-950/40 to-slate-950/40 px-5 py-4 group-open:rounded-b-none group-open:border-b-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
