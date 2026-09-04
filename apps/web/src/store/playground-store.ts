@@ -341,6 +341,10 @@ export type PlaygroundState = {
   // support one, at 15% opacity alongside the full-opacity current shape.
   showComparison: boolean;
 
+  // Replaces the main chapter view with a visual card grid of every Growth
+  // & Form chapter; picking a card (or any other navigation) exits it.
+  showGrowthFormGallery: boolean;
+
   // The formula term currently hovered in the results panel, if any.
   // `targetId` matches a draggable point's `id` so it can glow in the
   // 3D scene with no per-scene wiring; `symbol`/`meaning`/`value` are
@@ -483,6 +487,7 @@ export type PlaygroundState = {
   setIsDragging: (isDragging: boolean) => void;
   setSceneViewMode: (mode: PlaygroundState["sceneViewMode"]) => void;
   setShowComparison: (show: boolean) => void;
+  setShowGrowthFormGallery: (show: boolean) => void;
   setHoveredTerm: (term: PlaygroundState["hoveredTerm"]) => void;
   setSelectedObject: (id: string | null) => void;
   setUnit: (unit: ScenarioSnapshot["unit"]) => void;
@@ -711,6 +716,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   selectedObject: null,
   sceneViewMode: "explore",
   showComparison: false,
+  showGrowthFormGallery: false,
   hoveredTerm: null,
   visitedQueries: [],
   points: 0,
@@ -784,6 +790,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       queryStatus: "idle",
       sceneViewMode: "explore",
       showComparison: false,
+      showGrowthFormGallery: false,
     }),
 
   setInputs: ({ point, planePoint, planeNormal }) =>
@@ -1177,6 +1184,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setIsDragging: (isDragging) => set({ isDragging }),
   setSceneViewMode: (sceneViewMode) => set({ sceneViewMode }),
   setShowComparison: (showComparison) => set({ showComparison }),
+  setShowGrowthFormGallery: (showGrowthFormGallery) => set({ showGrowthFormGallery }),
   setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
   markVisited: (query) =>
     set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),

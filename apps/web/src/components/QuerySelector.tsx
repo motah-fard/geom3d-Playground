@@ -8,7 +8,7 @@ import { trackInteraction } from "@/lib/analytics";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 
 export function QuerySelector() {
-  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, correctAnswerQueries, points, streak } = usePlaygroundStore();
+  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, correctAnswerQueries, points, streak, setShowGrowthFormGallery } = usePlaygroundStore();
   const [mode, setMode] = useState<"path" | "browse">("path");
   const [search, setSearch] = useState("");
   const selectQuery = (query: QueryType) => {
@@ -91,6 +91,15 @@ export function QuerySelector() {
           </nav>
         ) : (
           <>
+            <button
+              type="button"
+              onClick={() => setShowGrowthFormGallery(true)}
+              className="mb-3 flex w-full items-center justify-between rounded-xl border border-amber-300/20 bg-amber-300/[0.06] px-3 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            >
+              <span>🌿 Growth &amp; Form gallery</span>
+              <span aria-hidden="true">→</span>
+            </button>
+
             <div className="mb-3 flex rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Navigation mode">
               <button type="button" role="tab" aria-selected={mode === "path"} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}>Guided path</button>
               <button type="button" role="tab" aria-selected={mode === "browse"} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}>Browse by category</button>
@@ -161,7 +170,17 @@ export function QuerySelector() {
               return (
               <div key={category}>
                 <div className="mb-1.5 flex items-center justify-between px-2">
-                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{category}</h2>
+                  {category === "Growth & Form" ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowGrowthFormGallery(true)}
+                      className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 underline decoration-slate-700 underline-offset-2 transition hover:text-amber-300 hover:decoration-amber-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    >
+                      🌿 {category} — gallery view
+                    </button>
+                  ) : (
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{category}</h2>
+                  )}
                   <span className="text-[10px] font-semibold text-slate-500">{learnedCount} / {queries.length}</span>
                 </div>
                 <div className="mb-2 h-1 overflow-hidden rounded-full bg-slate-800">

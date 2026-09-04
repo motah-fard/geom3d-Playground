@@ -43,13 +43,14 @@ import { ScenarioGallery } from "@/components/ScenarioGallery";
 import { GlossaryPanel } from "@/components/GlossaryPanel";
 import { BadgesPanel } from "@/components/BadgesPanel";
 import { IntroSection } from "@/components/IntroSection";
+import { GrowthFormGallery } from "@/components/GrowthFormGallery";
 import { NATURE_EXAMPLES } from "@/lib/nature-examples";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { ComprehensionCheck } from "@/components/ComprehensionCheck";
 import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
 
 export function ClientPageShell() {
-  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint, correctAnswerQueries } = usePlaygroundStore();
+  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint, correctAnswerQueries, showGrowthFormGallery } = usePlaygroundStore();
   const meta = QUERY_META[queryType];
   const pathIndex = LEARNING_PATH.indexOf(queryType);
   const previousQuery = pathIndex > 0 ? LEARNING_PATH[pathIndex - 1] : null;
@@ -131,7 +132,11 @@ export function ClientPageShell() {
           <BadgesPanel />
         </aside>
 
-        <section className="min-w-0 space-y-4" aria-labelledby="query-title">
+        <section className="min-w-0 space-y-4" aria-labelledby={showGrowthFormGallery ? "growth-form-gallery-title" : "query-title"}>
+          {showGrowthFormGallery ? (
+            <GrowthFormGallery />
+          ) : (
+          <>
           <div className="rounded-2xl -mx-1 px-1 py-2" style={{ background: `radial-gradient(ellipse at top left, ${meta.accent}14, transparent 70%)` }}>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -204,9 +209,11 @@ export function ClientPageShell() {
               ) : <span />}
             </nav>
           )}
+          </>
+          )}
         </section>
 
-        <aside className="hidden xl:block" aria-label="Query results">
+        <aside className={showGrowthFormGallery ? "hidden" : "hidden xl:block"} aria-label="Query results">
           <div className="sticky top-6"><ResultsPanel /></div>
         </aside>
       </div>
