@@ -23,14 +23,14 @@ export function SegmentSegmentScene() {
       {/* 🔵 Segment A */}
       <Line
         points={[toTuple(segmentA1), toTuple(segmentA2)]}
-        color="blue"
+        color="#5B8CFF"
         lineWidth={2}
       />
 
       {/* 🔷 Segment B */}
       <Line
         points={[toTuple(segmentB1), toTuple(segmentB2)]}
-        color="cyan"
+        color="#29C7E8"
         lineWidth={2}
       />
 
@@ -41,14 +41,14 @@ export function SegmentSegmentScene() {
             args={[0.25, 32, 32]}
             position={toTuple(segmentSegmentResult.pointA)}
           >
-            <meshStandardMaterial color="green" />
+            <meshStandardMaterial color="#FF7AC8" />
           </Sphere>
 
           <Sphere
             args={[0.25, 32, 32]}
             position={toTuple(segmentSegmentResult.pointB)}
           >
-            <meshStandardMaterial color="yellow" />
+            <meshStandardMaterial color="#FF7AC8" />
           </Sphere>
 
           <MeasurementLine start={segmentSegmentResult.pointA} end={segmentSegmentResult.pointB} />
@@ -56,7 +56,7 @@ export function SegmentSegmentScene() {
       )}
       <DraggablePoint
         position={segmentA1}
-        color="blue"
+        color="#5B8CFF"
         id="segmentA1"
         label={objectLabels.segmentA1}
         onChange={(p) => {
@@ -71,7 +71,7 @@ export function SegmentSegmentScene() {
       />
       <DraggablePoint
         position={segmentA2}
-        color="blue"
+        color="#5B8CFF"
         id="segmentA2"
         label={objectLabels.segmentA2}
         onChange={(p) => {
@@ -86,7 +86,7 @@ export function SegmentSegmentScene() {
       />
       <DraggablePoint
         position={segmentB1}
-        color="cyan"
+        color="#29C7E8"
         id="segmentB1"
         label={objectLabels.segmentB1}
         onChange={(p) => {
@@ -101,7 +101,7 @@ export function SegmentSegmentScene() {
       />
       <DraggablePoint
         position={segmentB2}
-        color="cyan"
+        color="#29C7E8"
         id="segmentB2"
         label={objectLabels.segmentB2}
         onChange={(p) => {

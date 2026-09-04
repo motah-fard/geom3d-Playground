@@ -47,7 +47,7 @@ export function HelicalShellScene() {
 
       <DraggablePoint
         position={start}
-        color="hotpink"
+        color="#FFD166"
         id="helixStart"
         label={objectLabels.helixStart}
         onChange={(p) => {
@@ -57,7 +57,7 @@ export function HelicalShellScene() {
       />
       <DraggablePoint
         position={turn}
-        color="cyan"
+        color="#29C7E8"
         id="helixTurn"
         label={objectLabels.helixTurn}
         onChange={(p) => {

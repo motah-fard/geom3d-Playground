@@ -21,7 +21,7 @@ export function GeodesicSphereScene() {
 
       <DraggablePoint
         position={handlePosition}
-        color="hotpink"
+        color="#FFD166"
         id="geodesicDetail"
         label={objectLabels.geodesicDetail}
         onChange={(p) => {

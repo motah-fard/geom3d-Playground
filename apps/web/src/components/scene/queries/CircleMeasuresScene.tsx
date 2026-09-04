@@ -42,7 +42,7 @@ export function CircleMeasuresScene() {
 
       <DraggablePoint
         position={radiusPoint}
-        color="hotpink"
+        color="#FFD166"
         id="circleRadius"
         label={objectLabels.circleRadius}
         onChange={(p) => {
@@ -52,7 +52,7 @@ export function CircleMeasuresScene() {
       />
       <DraggablePoint
         position={anglePointRendered}
-        color="cyan"
+        color="#29C7E8"
         id="circleAngle"
         label={objectLabels.circleAngle}
         onChange={(p) => {

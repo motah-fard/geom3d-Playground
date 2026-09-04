@@ -34,7 +34,7 @@ export function ClosestPointAABBScene() {
     <>
       <DraggablePoint
         position={point}
-        color="hotpink"
+        color="#FFD166"
         id="point"
         label={objectLabels.point}
         onChange={(p) => {
@@ -51,7 +51,7 @@ export function ClosestPointAABBScene() {
       {closestPointAABBResult && (
         <>
           <Sphere args={[0.2, 32, 32]} position={toTuple(closestPointAABBResult.point)}>
-            <meshStandardMaterial color="green" />
+            <meshStandardMaterial color="#FF7AC8" />
           </Sphere>
 
           <MeasurementLine start={point} end={closestPointAABBResult.point} />

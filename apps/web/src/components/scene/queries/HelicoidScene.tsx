@@ -84,7 +84,7 @@ export function HelicoidScene() {
 
       <DraggablePoint
         position={radiusPoint}
-        color="hotpink"
+        color="#FFD166"
         id="helicoidRadius"
         label={objectLabels.helicoidRadius}
         onChange={(p) => {
@@ -94,7 +94,7 @@ export function HelicoidScene() {
       />
       <DraggablePoint
         position={pitchPoint}
-        color="cyan"
+        color="#29C7E8"
         id="helicoidPitch"
         label={objectLabels.helicoidPitch}
         onChange={(p) => {

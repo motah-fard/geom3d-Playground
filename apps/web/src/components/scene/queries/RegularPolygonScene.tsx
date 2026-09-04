@@ -43,7 +43,7 @@ export function RegularPolygonScene() {
 
       <DraggablePoint
         position={radiusPoint}
-        color="hotpink"
+        color="#FFD166"
         id="polygonRadius"
         label={objectLabels.polygonRadius}
         onChange={(p) => {
@@ -53,7 +53,7 @@ export function RegularPolygonScene() {
       />
       <DraggablePoint
         position={sidesPoint}
-        color="cyan"
+        color="#29C7E8"
         id="polygonSides"
         label={objectLabels.polygonSides}
         onChange={(p) => {

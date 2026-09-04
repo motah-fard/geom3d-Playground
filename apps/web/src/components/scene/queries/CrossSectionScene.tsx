@@ -73,7 +73,7 @@ export function CrossSectionScene() {
 
       <DraggablePoint
         position={tiltHandlePos}
-        color="hotpink"
+        color="#FFD166"
         id="crossSectionTilt"
         label={objectLabels.crossSectionTilt}
         onChange={(p) => {
@@ -83,7 +83,7 @@ export function CrossSectionScene() {
       />
       <DraggablePoint
         position={offsetHandlePos}
-        color="cyan"
+        color="#29C7E8"
         id="crossSectionOffset"
         label={objectLabels.crossSectionOffset}
         onChange={(p) => {

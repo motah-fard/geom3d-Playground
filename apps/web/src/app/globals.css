@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #071018;
-  --foreground: #e5eef7;
+  --background: #090D14;
+  --foreground: #F4F7FB;
   color-scheme: dark;
 }
 
@@ -13,6 +13,80 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Dark scientific canvas + restrained indigo brand + colorful mathematical
+ * objects. The base neutrals (slate) and the handful of accent hues already
+ * used throughout the app (cyan/amber/emerald/violet/sky) are redefined here
+ * so the whole UI picks up the new palette without touching every component.
+ * Category-specific and 3D-object colors get their own named tokens below.
+ */
+@theme {
+  /* Surface layers, darkest to lightest: page, sidebar, card, hover. */
+  --color-slate-950: #090D14;
+  --color-slate-900: #0D121C;
+  --color-slate-800: #131A27;
+  --color-slate-700: #202A3A;
+  --color-slate-600: #3A4658;
+  --color-slate-500: #687386;
+  --color-slate-400: #8891A3;
+  --color-slate-300: #A5B0C2;
+  --color-slate-200: #C7CFDC;
+  --color-slate-100: #F4F7FB;
+
+  /* Ambient interactive accent ("Geometry"): buttons, focus rings, generic
+     chrome that isn't tinted by a specific chapter category. */
+  --color-cyan-900: #0A3542;
+  --color-cyan-400: #29C7E8;
+  --color-cyan-300: #5CD5EE;
+  --color-cyan-200: #90E2F3;
+  --color-cyan-100: #C4F0F9;
+
+  /* Highlight / Growth & Form category accent. */
+  --color-amber-400: #EDA83D;
+  --color-amber-300: #F3B95F;
+  --color-amber-200: #F8D4A0;
+  --color-amber-100: #FBE3C0;
+
+  /* Nature/Form accent, also the "Measure" category color. */
+  --color-emerald-400: #4DD4A8;
+  --color-emerald-300: #6FDEB8;
+  --color-emerald-200: #9EE9CE;
+  --color-emerald-100: #C8F3E4;
+
+  /* Advanced material / "Project" category accent. */
+  --color-violet-400: #B58CFF;
+  --color-violet-300: #C3A8FF;
+  --color-violet-200: #D5C1FF;
+  --color-violet-100: #E8DCFF;
+
+  /* "Intersect" category accent. */
+  --color-sky-400: #38BDF8;
+  --color-sky-300: #6BCFFA;
+
+  /* Fixed selection indigo, independent of category color. */
+  --color-primary: #5B6EF5;
+  --color-primary-glow: #818CF8;
+
+  /* Category accents, keyed to match query-meta.ts categories. */
+  --color-cat-foundations: #5B6EF5;
+  --color-cat-project: #B58CFF;
+  --color-cat-intersect: #38BDF8;
+  --color-cat-measure: #4DD4A8;
+  --color-cat-growth: #F3B95F;
+
+  /* 3D visualization palette: bright, semantic colors for math objects,
+     kept separate from the restrained UI chrome above. */
+  --color-axis-x: #FF6B7A;
+  --color-axis-y: #4DD4A8;
+  --color-axis-z: #5B8CFF;
+  --color-obj-point: #FFD166;
+  --color-obj-vector: #29C7E8;
+  --color-obj-plane: #7C83FF;
+  --color-obj-intersection: #FF7AC8;
+  --color-obj-construction: #64748B;
+  --color-obj-grid: #202A3A;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -21,7 +95,7 @@ body {
 }
 
 button, select, input { font: inherit; }
-::selection { background: rgba(34, 211, 238, 0.28); }
+::selection { background: rgba(41, 199, 232, 0.28); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -24,7 +24,7 @@ export function TransformationsScene() {
 
       <DraggablePoint
         position={{ x: translationX, y: translationY, z: 0 }}
-        color="hotpink"
+        color="#FFD166"
         id="transformTranslation"
         label={objectLabels.transformTranslation}
         onChange={(p) => {
@@ -34,7 +34,7 @@ export function TransformationsScene() {
       />
       <DraggablePoint
         position={transformHandle}
-        color="cyan"
+        color="#29C7E8"
         id="transformHandle"
         label={objectLabels.transformHandle}
         onChange={(p) => {

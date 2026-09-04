@@ -22,7 +22,7 @@ export function ClosestPointSegmentScene() {
       {/* 🔴 draggable point */}
       <DraggablePoint
         position={point}
-        color="hotpink"
+        color="#FFD166"
         id="point"
         label={objectLabels.point}
         onChange={(p) => {
@@ -38,7 +38,7 @@ export function ClosestPointSegmentScene() {
       {/* 🔵 segment endpoints */}
       <DraggablePoint
         position={segmentA}
-        color="blue"
+        color="#5B8CFF"
         id="segmentA"
         label={objectLabels.segmentA}
         onChange={(p) => {
@@ -53,7 +53,7 @@ export function ClosestPointSegmentScene() {
 
       <DraggablePoint
         position={segmentB}
-        color="blue"
+        color="#5B8CFF"
         id="segmentB"
         label={objectLabels.segmentB}
         onChange={(p) => {
@@ -69,7 +69,7 @@ export function ClosestPointSegmentScene() {
       {/* 🔵 segment line */}
       <Line
         points={[toTuple(segmentA), toTuple(segmentB)]}
-        color="blue"
+        color="#5B8CFF"
         lineWidth={2}
       />
 
@@ -77,7 +77,7 @@ export function ClosestPointSegmentScene() {
       {segmentResult?.point && (
         <>
           <Sphere args={[0.25, 32, 32]} position={toTuple(segmentResult.point)}>
-            <meshStandardMaterial color="green" depthTest depthWrite />
+            <meshStandardMaterial color="#FF7AC8" depthTest depthWrite />
           </Sphere>
 
           <MeasurementLine start={segmentResult.point} end={point} />

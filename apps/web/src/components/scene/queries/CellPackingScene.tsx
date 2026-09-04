@@ -43,7 +43,7 @@ export function CellPackingScene() {
 
       <DraggablePoint
         position={cellCenter}
-        color="hotpink"
+        color="#FFD166"
         id="cellCenter"
         label={objectLabels.cellCenter}
         onChange={(p) => {

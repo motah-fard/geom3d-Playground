@@ -51,7 +51,7 @@ export function PythagoreanScene() {
 
       <DraggablePoint
         position={legAPoint}
-        color="hotpink"
+        color="#FFD166"
         id="pythagoreanLegA"
         label={objectLabels.pythagoreanLegA}
         onChange={(p) => {
@@ -61,7 +61,7 @@ export function PythagoreanScene() {
       />
       <DraggablePoint
         position={legBPoint}
-        color="cyan"
+        color="#29C7E8"
         id="pythagoreanLegB"
         label={objectLabels.pythagoreanLegB}
         onChange={(p) => {

@@ -38,7 +38,7 @@ export function CatenaryScene() {
 
       <DraggablePoint
         position={aPoint}
-        color="hotpink"
+        color="#FFD166"
         id="catenaryA"
         label={objectLabels.catenaryA}
         onChange={(p) => {

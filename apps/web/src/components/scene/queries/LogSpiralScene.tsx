@@ -40,7 +40,7 @@ export function LogSpiralScene() {
 
       <DraggablePoint
         position={start}
-        color="hotpink"
+        color="#FFD166"
         id="spiralStart"
         label={objectLabels.spiralStart}
         onChange={(p) => {
@@ -50,7 +50,7 @@ export function LogSpiralScene() {
       />
       <DraggablePoint
         position={turn}
-        color="cyan"
+        color="#29C7E8"
         id="spiralTurn"
         label={objectLabels.spiralTurn}
         onChange={(p) => {

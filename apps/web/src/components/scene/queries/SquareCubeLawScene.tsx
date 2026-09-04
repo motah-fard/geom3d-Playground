@@ -20,7 +20,7 @@ export function SquareCubeLawScene() {
 
       <DraggablePoint
         position={{ x: radius, y: 0, z: 0 }}
-        color="hotpink"
+        color="#FFD166"
         id="magnitudePoint"
         label={objectLabels.magnitudePoint}
         onChange={(p) => {

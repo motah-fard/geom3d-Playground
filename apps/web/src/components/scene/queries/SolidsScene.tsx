@@ -53,7 +53,7 @@ export function SolidsScene() {
 
       <DraggablePoint
         position={dimAPoint}
-        color="hotpink"
+        color="#FFD166"
         id="solidDimA"
         label={objectLabels.solidDimA}
         onChange={(p) => {
@@ -64,7 +64,7 @@ export function SolidsScene() {
       {(solidType === "box" || solidType === "cylinder" || solidType === "cone" || solidType === "pyramid") && (
         <DraggablePoint
           position={dimBPoint}
-          color="cyan"
+          color="#29C7E8"
           id="solidDimB"
           label={objectLabels.solidDimB}
           onChange={(p) => {
@@ -76,7 +76,7 @@ export function SolidsScene() {
       {solidType === "box" && (
         <DraggablePoint
           position={dimCPoint}
-          color="lime"
+          color="#4DD4A8"
           id="solidDimC"
           label={objectLabels.solidDimC}
           onChange={(p) => {

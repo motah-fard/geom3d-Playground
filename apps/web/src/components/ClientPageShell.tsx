@@ -131,11 +131,11 @@ export function ClientPageShell() {
         </aside>
 
         <section className="min-w-0 space-y-4" aria-labelledby="query-title">
-          <div className={`px-1 ${meta.category === "Foundations" ? "rounded-2xl -mx-1 px-1 py-2" : ""}`} style={meta.category === "Foundations" ? { background: `radial-gradient(ellipse at top left, ${meta.accent}14, transparent 70%)` } : undefined}>
+          <div className="rounded-2xl -mx-1 px-1 py-2" style={{ background: `radial-gradient(ellipse at top left, ${meta.accent}14, transparent 70%)` }}>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/80">{meta.category}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: meta.accent }}>{meta.category}</p>
                   <DifficultyBadge difficulty={meta.difficulty} />
                 </div>
                 <h2 id="query-title" className="mt-1 flex items-center gap-2.5 text-2xl font-bold tracking-tight text-white sm:text-3xl">

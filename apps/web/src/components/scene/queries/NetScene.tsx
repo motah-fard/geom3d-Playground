@@ -50,7 +50,7 @@ export function NetScene() {
 
       <DraggablePoint
         position={handlePosition(foldFraction)}
-        color="hotpink"
+        color="#FFD166"
         id="netFold"
         label={objectLabels.netFold}
         onChange={(p) => {

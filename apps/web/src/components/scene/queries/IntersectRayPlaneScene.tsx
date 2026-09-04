@@ -45,7 +45,7 @@ export function IntersectRayPlaneScene() {
       {/* 🔴 draggable ray origin */}
       <DraggablePoint
         position={rayOrigin}
-        color="hotpink"
+        color="#FFD166"
         id="rayOrigin"
         label={objectLabels.rayOrigin}
         onChange={(p) => {
@@ -72,7 +72,7 @@ export function IntersectRayPlaneScene() {
           side={THREE.DoubleSide}
         />
       </mesh>
-      <VectorArrow origin={planePoint} direction={planeNormal} length={2.5} color="#c084fc" />
+      <VectorArrow origin={planePoint} direction={planeNormal} length={2.5} color="#7C83FF" />
 
       {/* 🟢 intersection (ONLY if hit) */}
       {rayPlaneResult?.hit && (
@@ -81,7 +81,7 @@ export function IntersectRayPlaneScene() {
             args={[0.25, 32, 32]}
             position={toTuple(rayPlaneResult.point)}
           >
-            <meshStandardMaterial color="blue" depthTest depthWrite />
+            <meshStandardMaterial color="#FF7AC8" depthTest depthWrite />
           </Sphere>
 
           {/* 🟠 line from origin to intersection */}

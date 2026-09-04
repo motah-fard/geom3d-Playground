@@ -10,7 +10,7 @@ import { usePlaygroundStore } from "@/store/playground-store";
 export function DraggablePoint({
   position,
   onChange,
-  color = "hotpink",
+  color = "#FFD166",
   label,
   id,
 }: {

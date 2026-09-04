@@ -47,6 +47,12 @@ export function SceneCanvas() {
   const [view, setView] = useState<"perspective" | "top" | "front" | "side">("perspective");
   const [showTable, setShowTable] = useState(false);
   const meta = QUERY_META[queryType];
+  // Growth & Form chapters lean the canvas chrome subtly toward amber/emerald
+  // instead of the default cool navy, so the book's most visually distinct
+  // material reads differently at a glance without a different UI.
+  const isGrowthForm = meta.category === "Growth & Form";
+  const canvasBackground = isGrowthForm ? "#12140f" : "#09131c";
+  const gridLineColor = isGrowthForm ? "#3a3520" : "#28465a";
   const cameraPosition: [number, number, number] = view === "top" ? [0, 10, 0.001] : view === "front" ? [0, 0, 10] : view === "side" ? [10, 0, 0] : [6, 5, 6];
   const sceneObjects = queryType === "project-point-to-plane" || queryType === "closest-point-aabb"
     ? [{ id: "point", role: "Point", value: store.point }]
@@ -133,13 +139,13 @@ export function SceneCanvas() {
 
       <div className="relative h-[440px] w-full sm:h-[560px]" role="application" aria-label={`Interactive 3D viewport for ${meta.title}. ${meta.instruction}`}>
         <Canvas key={`${queryType}-${view}`} orthographic={view !== "perspective"} camera={view === "perspective" ? { position: cameraPosition, fov: 48 } : { position: cameraPosition, zoom: 58, near: 0.1, far: 1000 }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }} onPointerMissed={() => setSelectedObject(null)}>
-          <color attach="background" args={["#09131c"]} />
-          <fog attach="fog" args={["#09131c", 14, 32]} />
+          <color attach="background" args={[canvasBackground]} />
+          <fog attach="fog" args={[canvasBackground, 14, 32]} />
           <ambientLight intensity={0.8} />
           <directionalLight position={[5, 8, 5]} intensity={1.4} />
           <OrbitControls makeDefault enabled={!isDragging} enableDamping dampingFactor={0.08} minDistance={3} maxDistance={24} />
-          <gridHelper args={[40, 40, "#28465a", "#142a38"]} />
-          <axesHelper args={[4]} />
+          <gridHelper args={[40, 40, gridLineColor, "#202A3A"]} />
+          <axesHelper args={[4]} ref={(instance) => instance?.setColors("#FF6B7A", "#4DD4A8", "#5B8CFF")} />
           <Bounds fit clip margin={1.35}>
             {queryType === "angles" && <AnglesScene />}
             {queryType === "pythagorean-theorem" && <PythagoreanScene />}
@@ -175,9 +181,9 @@ export function SceneCanvas() {
           </Bounds>
         </Canvas>
         <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-lg border border-white/10 bg-slate-950/80 px-2.5 py-2 text-[10px] text-slate-300 backdrop-blur">
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-pink-400" /> draggable input</span>
-          <span className="flex items-center gap-1.5"><i className="h-0.5 w-3 bg-blue-400" /> geometry</span>
-          <span className="flex items-center gap-1.5"><i className="h-0.5 w-3 bg-orange-400" /> measured path</span>
+          <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full" style={{ backgroundColor: "#FFD166" }} /> draggable input</span>
+          <span className="flex items-center gap-1.5"><i className="h-0.5 w-3" style={{ backgroundColor: "#29C7E8" }} /> geometry</span>
+          <span className="flex items-center gap-1.5"><i className="h-0.5 w-3" style={{ backgroundColor: "#FF7AC8" }} /> measured path</span>
         </div>
         <p className="sr-only">Coordinates are also available in the geometry inputs. The numeric result below is the accessible alternative to this scene.</p>
       </div>

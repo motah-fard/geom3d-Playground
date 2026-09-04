@@ -78,7 +78,7 @@ export function MilkCoronetScene() {
 
       <DraggablePoint
         position={radiusPoint}
-        color="hotpink"
+        color="#FFD166"
         id="milkRadius"
         label={objectLabels.milkRadius}
         onChange={(p) => {
@@ -88,7 +88,7 @@ export function MilkCoronetScene() {
       />
       <DraggablePoint
         position={countPoint}
-        color="cyan"
+        color="#29C7E8"
         id="milkCount"
         label={objectLabels.milkCount}
         onChange={(p) => {

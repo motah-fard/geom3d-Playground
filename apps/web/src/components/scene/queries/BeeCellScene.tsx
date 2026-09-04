@@ -94,7 +94,7 @@ export function BeeCellScene() {
 
       <DraggablePoint
         position={risePoint}
-        color="hotpink"
+        color="#FFD166"
         id="beeCellRise"
         label={objectLabels.beeCellRise}
         onChange={(p) => {

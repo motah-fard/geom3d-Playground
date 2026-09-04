@@ -58,7 +58,7 @@ export function CatenoidScene() {
 
       <DraggablePoint
         position={aPoint}
-        color="hotpink"
+        color="#FFD166"
         id="catenoidA"
         label={objectLabels.catenoidA}
         onChange={(p) => {

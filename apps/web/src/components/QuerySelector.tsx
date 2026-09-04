@@ -76,7 +76,7 @@ export function QuerySelector() {
                   type="button"
                   onClick={() => selectQuery(query)}
                   aria-current={active ? "page" : undefined}
-                  className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-cyan-400/30 bg-cyan-400/10 text-white" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
+                  className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-primary/50 bg-primary/15 text-white shadow-[0_0_10px_-2px_var(--color-primary-glow)]" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
                 >
                   {meta.emoji && <span aria-hidden="true">{meta.emoji}</span>}
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold">{meta.shortTitle}</span>
@@ -88,8 +88,8 @@ export function QuerySelector() {
         ) : (
           <>
             <div className="mb-3 flex rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Navigation mode">
-              <button type="button" role="tab" aria-selected={mode === "path"} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-cyan-400/15 text-cyan-100" : "text-slate-500 hover:text-slate-300"}`}>Guided path</button>
-              <button type="button" role="tab" aria-selected={mode === "browse"} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-cyan-400/15 text-cyan-100" : "text-slate-500 hover:text-slate-300"}`}>Browse by category</button>
+              <button type="button" role="tab" aria-selected={mode === "path"} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}>Guided path</button>
+              <button type="button" role="tab" aria-selected={mode === "browse"} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}>Browse by category</button>
             </div>
 
         {mode === "path" && (
@@ -118,7 +118,7 @@ export function QuerySelector() {
                     type="button"
                     onClick={() => selectQuery(query)}
                     aria-current={active ? "page" : undefined}
-                    className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-cyan-400/30 bg-cyan-400/10 text-white" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
+                    className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-primary/50 bg-primary/15 text-white shadow-[0_0_10px_-2px_var(--color-primary-glow)]" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
                   >
                     <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${visited ? "bg-emerald-400/20 text-emerald-300" : "bg-slate-800 text-slate-500"}`}>
                       {visited ? "✓" : index + 1}
@@ -150,7 +150,7 @@ export function QuerySelector() {
                           selectQuery(query);
                         }}
                         aria-current={active ? "page" : undefined}
-                        className={`group w-full rounded-xl border px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-cyan-400/30 bg-cyan-400/10 text-white" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
+                        className={`group w-full rounded-xl border px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${active ? "border-primary/50 bg-primary/15 text-white shadow-[0_0_10px_-2px_var(--color-primary-glow)]" : "border-transparent text-slate-400 hover:border-slate-700 hover:bg-slate-800/60 hover:text-slate-100"}`}
                       >
                         <span className="flex items-center gap-2.5">
                           <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: meta.accent }} aria-hidden="true" />

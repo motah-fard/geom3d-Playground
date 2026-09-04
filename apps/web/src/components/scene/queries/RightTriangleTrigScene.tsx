@@ -30,7 +30,7 @@ export function RightTriangleTrigScene() {
 
       <DraggablePoint
         position={handlePosition}
-        color="hotpink"
+        color="#FFD166"
         id="trigAngle"
         label={objectLabels.trigAngle}
         onChange={(p) => {

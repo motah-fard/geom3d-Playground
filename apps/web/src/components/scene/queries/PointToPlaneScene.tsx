@@ -44,7 +44,7 @@ export function PointToPlaneScene() {
       {/* 🔴 draggable point */}
       <DraggablePoint
         position={point}
-        color="hotpink"
+        color="#FFD166"
         id="point"
         label={objectLabels.point}
         onChange={(p) => {
@@ -67,7 +67,7 @@ export function PointToPlaneScene() {
           side={THREE.DoubleSide}
         />
       </mesh>
-      <VectorArrow origin={planePoint} direction={planeNormal} length={2.5} color="#c084fc" />
+      <VectorArrow origin={planePoint} direction={planeNormal} length={2.5} color="#7C83FF" />
 
       {/* 🟢 projected point + 🟠 distance */}
       {projectPointResult && projectPointResult.projectedPoint && (
@@ -77,7 +77,7 @@ export function PointToPlaneScene() {
             position={toTuple(projectPointResult.projectedPoint)} // ✅ FIXED
           >
             <meshStandardMaterial
-              color="cyan"
+              color="#29C7E8"
               emissive="cyan"
               emissiveIntensity={0.5}
             />

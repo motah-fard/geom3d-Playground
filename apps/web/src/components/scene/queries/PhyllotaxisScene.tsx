@@ -58,7 +58,7 @@ export function PhyllotaxisScene() {
 
       <DraggablePoint
         position={dialPosition}
-        color="hotpink"
+        color="#FFD166"
         id="phyllotaxisDivergence"
         label={objectLabels.phyllotaxisDivergence}
         onChange={(p) => {

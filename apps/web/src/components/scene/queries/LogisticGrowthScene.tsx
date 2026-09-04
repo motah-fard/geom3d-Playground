@@ -49,7 +49,7 @@ export function LogisticGrowthScene() {
 
       <DraggablePoint
         position={rPoint}
-        color="hotpink"
+        color="#FFD166"
         id="logisticR"
         label={objectLabels.logisticR}
         onChange={(p) => {
@@ -59,7 +59,7 @@ export function LogisticGrowthScene() {
       />
       <DraggablePoint
         position={kPoint}
-        color="cyan"
+        color="#29C7E8"
         id="logisticK"
         label={objectLabels.logisticK}
         onChange={(p) => {

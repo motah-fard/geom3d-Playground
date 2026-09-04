@@ -45,7 +45,7 @@ export function AllometricGrowthScene() {
 
       <DraggablePoint
         position={sizePoint}
-        color="hotpink"
+        color="#FFD166"
         id="allometrySize"
         label={objectLabels.allometrySize}
         onChange={(p) => {
@@ -55,7 +55,7 @@ export function AllometricGrowthScene() {
       />
       <DraggablePoint
         position={exponentPoint}
-        color="cyan"
+        color="#29C7E8"
         id="allometryExponent"
         label={objectLabels.allometryExponent}
         onChange={(p) => {

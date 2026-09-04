@@ -44,7 +44,7 @@ export function AnglesScene() {
 
       <DraggablePoint
         position={rayB}
-        color="hotpink"
+        color="#FFD166"
         id="angleRayB"
         label={objectLabels.angleRayB}
         onChange={(p) => {

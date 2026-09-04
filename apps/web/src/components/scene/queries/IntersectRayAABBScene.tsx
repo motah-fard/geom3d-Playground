@@ -36,7 +36,7 @@ export function IntersectRayAABBScene() {
     <>
       <DraggablePoint
         position={rayOrigin}
-        color="hotpink"
+        color="#FFD166"
         id="rayOrigin"
         label={objectLabels.rayOrigin}
         onChange={(p) => {
@@ -55,7 +55,7 @@ export function IntersectRayAABBScene() {
       {rayAABBResult?.hit && (
         <>
           <Sphere args={[0.2, 32, 32]} position={toTuple(rayAABBResult.point)}>
-            <meshStandardMaterial color="blue" />
+            <meshStandardMaterial color="#FF7AC8" />
           </Sphere>
 
           <MeasurementLine start={rayOrigin} end={rayAABBResult.point} label="entry" />

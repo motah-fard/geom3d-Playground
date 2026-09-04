@@ -65,10 +65,10 @@ export function CartesianTransformScene() {
       </Sphere>
 
       {/* draggable corners */}
-      <DraggablePoint position={transformP00} color="hotpink" id="transformP00" label={objectLabels.transformP00} onChange={updateCorner("p00")} />
-      <DraggablePoint position={transformP10} color="hotpink" id="transformP10" label={objectLabels.transformP10} onChange={updateCorner("p10")} />
-      <DraggablePoint position={transformP01} color="hotpink" id="transformP01" label={objectLabels.transformP01} onChange={updateCorner("p01")} />
-      <DraggablePoint position={transformP11} color="hotpink" id="transformP11" label={objectLabels.transformP11} onChange={updateCorner("p11")} />
+      <DraggablePoint position={transformP00} color="#FFD166" id="transformP00" label={objectLabels.transformP00} onChange={updateCorner("p00")} />
+      <DraggablePoint position={transformP10} color="#FFD166" id="transformP10" label={objectLabels.transformP10} onChange={updateCorner("p10")} />
+      <DraggablePoint position={transformP01} color="#FFD166" id="transformP01" label={objectLabels.transformP01} onChange={updateCorner("p01")} />
+      <DraggablePoint position={transformP11} color="#FFD166" id="transformP11" label={objectLabels.transformP11} onChange={updateCorner("p11")} />
     </>
   );
 }

@@ -84,7 +84,7 @@ export function WhirlingSquaresScene() {
 
       <DraggablePoint
         position={countPoint}
-        color="hotpink"
+        color="#FFD166"
         id="whirlingCount"
         label={objectLabels.whirlingCount}
         onChange={(p) => {

@@ -36,7 +36,7 @@ export function EggCurveScene() {
 
       <DraggablePoint
         position={bigMarker}
-        color="hotpink"
+        color="#FFD166"
         id="eggBig"
         label={objectLabels.eggBig}
         onChange={(p) => {
@@ -46,7 +46,7 @@ export function EggCurveScene() {
       />
       <DraggablePoint
         position={smallMarker}
-        color="cyan"
+        color="#29C7E8"
         id="eggSmall"
         label={objectLabels.eggSmall}
         onChange={(p) => {
