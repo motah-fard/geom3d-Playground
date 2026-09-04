@@ -47,6 +47,7 @@ import { GrowthFormGallery } from "@/components/GrowthFormGallery";
 import { NATURE_EXAMPLES } from "@/lib/nature-examples";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { ComprehensionCheck } from "@/components/ComprehensionCheck";
+import { TryItChallenge } from "@/components/TryItChallenge";
 import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
 
 export function ClientPageShell() {
@@ -191,6 +192,7 @@ export function ClientPageShell() {
             <div className="border-t border-slate-800 p-4">{form}</div>
           </details>
 
+          <TryItChallenge chapterKey={queryType} />
           <ComprehensionCheck question={COMPREHENSION_QUESTIONS[queryType]} chapterKey={queryType} />
 
           {(previousQuery || nextQuery) && (
