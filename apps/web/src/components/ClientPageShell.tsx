@@ -144,8 +144,10 @@ export function ClientPageShell() {
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{meta.description}</p>
                 {NATURE_EXAMPLES[queryType] && (
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-200/80">
-                    <span className="font-semibold text-emerald-300">Seen in nature: </span>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                    <span className="font-semibold" style={{ color: meta.accent }}>
+                      {meta.category === "Project" || meta.category === "Intersect" || meta.category === "Measure" ? "Why it matters: " : "Seen in nature: "}
+                    </span>
                     {NATURE_EXAMPLES[queryType]}
                   </p>
                 )}

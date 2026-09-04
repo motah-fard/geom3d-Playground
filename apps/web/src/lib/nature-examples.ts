@@ -2,8 +2,17 @@ import type { QueryType } from "@/types/geometry";
 
 // Specific, real instances of each chapter's mathematics — not generic
 // "you might see this in nature" hand-waving. Several are the exact
-// examples Thompson himself used.
+// examples Thompson himself used. The Project/Intersect/Measure chapters
+// below are computational-geometry primitives with no natural-world
+// occurrence to point to; ClientPageShell labels those "Why it matters"
+// instead of "Seen in nature" based on category, reusing this same map.
 export const NATURE_EXAMPLES: Partial<Record<QueryType, string>> = {
+  "project-point-to-plane": "Every real-time shadow you've seen in a game is this exact calculation: projecting a 3D point straight onto a lit surface to find where its shadow falls, or a physics engine measuring exactly how far an object has sunk into a floor it's colliding with.",
+  "intersect-ray-plane": "The single most common query in interactive 3D software: turn a mouse click into a ray from the camera through the screen, then find where that ray hits the ground or a wall — this is how you place an object, aim a weapon, or select a tile in nearly every 3D game and CAD tool.",
+  "intersect-ray-aabb": "The first, cheapest test a ray tracer or game engine runs before checking anything else: does this ray even come near the object's bounding box? Billions of these run every second in modern rendering and collision systems, filtering out almost everything before the expensive per-triangle math ever runs.",
+  "closest-point-segment": "A navigation-mesh agent snapping onto the nearest point of its planned route, or a physics engine treating a rope, limb, or capsule-shaped collider as a line segment with thickness — both need exactly this calculation to know how close something is to a line, not just a point.",
+  "closest-point-aabb": "A physics engine resolving a ball bouncing off the corner of a crate, or a game AI finding the nearest safe spot just outside a no-go zone — clamping a point to the nearest location on or in a box is one of the most-called functions in any 3D physics library.",
+  "segment-segment": "Robotics arms and animation riggers checking whether two limbs are about to collide, or a game checking whether two moving weapons or wires have crossed — anywhere two line-like objects move independently, this is the check that catches them touching.",
   "solids-3d": "A Minecraft block (cube), a soda can (cylinder), a basketball (sphere), a party hat (cone), and a tissue box (rectangular prism) — the six solids are the actual shape of half the objects in your room right now.",
   "cross-sections": "Slice a carrot straight across and you get a circle; slice it at an angle and you get an ellipse. Skate-park ramps and satellite dishes are shaped from a parabola for the exact same reason a steep enough cone-slice makes one — and it's the same math NASA uses to describe every planet's orbit around the sun.",
   "nets": "Cereal boxes, shipping boxes, dice, and paper party hats all start life as a flat, printed net that gets folded and glued into the 3D shape you actually hold — flat-pack furniture instructions are just a much bigger version of the same idea.",
