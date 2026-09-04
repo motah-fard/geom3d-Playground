@@ -837,6 +837,22 @@ export function localCatenary(aPoint: Vec3, halfSpan: number): CatenaryResponse 
   return { a, sag, arcLength };
 }
 
+// Inverts sag(a) = a*(cosh(halfSpan/a) - 1) for a, so dragging an endpoint
+// to a target sag (rather than dragging the abstract "a" parameter itself)
+// can drive the same underlying model. sag(a) is strictly decreasing in a
+// (a taut chain sags less), so bisection always converges.
+export function catenaryAFromSag(targetSag: number, halfSpan: number): number {
+  const sagOf = (a: number) => a * (Math.cosh(halfSpan / a) - 1);
+  let lo = 1e-3;
+  let hi = 500;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (sagOf(mid) > Math.max(targetSag, EPSILON)) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 // =======================
 // Allometric growth (On Growth and Form, Ch. IV, "On the Rate of Growth")
 //

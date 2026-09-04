@@ -8,6 +8,7 @@ import {
   localCartesianTransform,
   localCellPacking,
   buildWhirlingSquares,
+  catenaryAFromSag,
   catenoidRadius,
   BEE_CELL_MAX_RISE,
   BEE_CELL_MIN_RISE,
@@ -206,6 +207,14 @@ test("a taut catenary (large a) sags far less than a slack one (small a) over th
   const taut = localCatenary({ x: 1000, y: 0, z: 0 }, 1);
   const slack = localCatenary({ x: 0.5, y: 0, z: 0 }, 1);
   assert.ok(taut.sag < slack.sag);
+});
+
+test("catenaryAFromSag inverts localCatenary's sag exactly, for dragging an endpoint to a target sag", () => {
+  for (const [a, halfSpan] of [[1, 1], [0.5, 2], [3, 0.7], [12, 1.5]] as const) {
+    const { sag } = localCatenary({ x: a, y: 0, z: 0 }, halfSpan);
+    const recovered = catenaryAFromSag(sag, halfSpan);
+    assert.ok(Math.abs(recovered - a) / a < 1e-6, `a=${a} halfSpan=${halfSpan} recovered=${recovered}`);
+  }
 });
 
 test("allometric growth is isometric (y = x) exactly when k = 1", () => {

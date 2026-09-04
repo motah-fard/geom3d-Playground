@@ -1,11 +1,26 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Bounds, OrbitControls } from "@react-three/drei";
+import { Bounds, OrbitControls, useBounds } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { QUERY_META } from "@/lib/query-meta";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+
+// Bounds fits its camera exactly once, synchronously on mount. If the
+// canvas's container is still settling its layout at that exact instant
+// (observed in practice right after switching chapters, when surrounding
+// text reflows at the same time), that one fit can end up wrong — and
+// nothing ever retries it, leaving the viewport blank. This refits once
+// more a couple of frames later, after layout has definitely settled.
+function BoundsResettler() {
+  const bounds = useBounds();
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => bounds.refresh().fit().clip()));
+    return () => cancelAnimationFrame(raf);
+  }, [bounds]);
+  return null;
+}
 
 // Each chapter's scene is its own chunk, fetched only when that chapter is
 // opened, instead of all 31 scenes shipping in the initial bundle.
@@ -162,6 +177,7 @@ export function SceneCanvas() {
           {showStructure && <gridHelper args={[40, 40, gridLineColor, "#202A3A"]} />}
           {showStructure && <axesHelper args={[4]} ref={(instance) => instance?.setColors("#FF6B7A", "#4DD4A8", "#5B8CFF")} />}
           <Bounds fit clip margin={1.35}>
+            <BoundsResettler />
             {queryType === "angles" && <AnglesScene />}
             {queryType === "pythagorean-theorem" && <PythagoreanScene />}
             {queryType === "right-triangle-trig" && <RightTriangleTrigScene />}
