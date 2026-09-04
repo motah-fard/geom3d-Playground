@@ -1,6 +1,9 @@
 "use client";
 
-import { Line } from "@react-three/drei";
+import { useRef, useState } from "react";
+import * as THREE from "three";
+import { Html, Line } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
 import { toTuple, type Vec3 } from "@/types/geometry";
@@ -8,6 +11,11 @@ import { helicalShellPoint, localHelicalShell } from "@/lib/local-geometry";
 
 const TURNS = 5;
 const SAMPLES_PER_TURN = 48;
+const TOTAL_SAMPLES = TURNS * SAMPLES_PER_TURN;
+const GROW_DURATION_S = 2.5;
+const TUBE_RADIUS = 0.12;
+const START_COLOR = new THREE.Color("#F3B95F");
+const END_COLOR = new THREE.Color("#FF6B7A");
 
 // S only ever moves along the positive X axis at the base (z = 0) — only
 // its distance from the axis is meaningful.
@@ -22,23 +30,86 @@ function onAxisWithHeight(p: Vec3): Vec3 {
   return { x: Math.max(Math.hypot(p.x, p.y), 1e-6), y: 0, z: p.z };
 }
 
+function buildTube(points: THREE.Vector3[]) {
+  if (points.length < 2) return null;
+  const curve = new THREE.CatmullRomCurve3(points);
+  const geometry = new THREE.TubeGeometry(curve, Math.max(points.length, 8), TUBE_RADIUS, 10, false);
+  const position = geometry.attributes.position;
+  const colors = new Float32Array(position.count * 3);
+  const c = new THREE.Color();
+  for (let i = 0; i < position.count; i++) {
+    const t = Math.min(1, i / position.count);
+    c.copy(START_COLOR).lerp(END_COLOR, t);
+    colors[i * 3] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return geometry;
+}
+
 export function HelicalShellScene() {
   const { helixStart, helixTurn, setHelixInputs, setShouldAutoRun, objectLabels } = usePlaygroundStore();
+  const [growing, setGrowing] = useState(false);
+  const [growthProgress, setGrowthProgress] = useState(1);
+  const growthStart = useRef(0);
 
   const start = onAxis(helixStart);
   const turn = onAxisWithHeight(helixTurn);
   const { a, b, c } = localHelicalShell({ start, turn });
 
-  const curve: [number, number, number][] = [];
-  const totalSamples = TURNS * SAMPLES_PER_TURN;
-  for (let i = 0; i <= totalSamples; i++) {
+  const fullPoints: THREE.Vector3[] = [];
+  for (let i = 0; i <= TOTAL_SAMPLES; i++) {
     const theta = (i / SAMPLES_PER_TURN) * (2 * Math.PI);
-    curve.push(toTuple(helicalShellPoint(theta, a, b, c)));
+    const p = helicalShellPoint(theta, a, b, c);
+    fullPoints.push(new THREE.Vector3(p.x, p.y, p.z));
   }
+  const curve: [number, number, number][] = fullPoints.map((p) => [p.x, p.y, p.z]);
+
+  const grownCount = Math.max(2, Math.round(growthProgress * fullPoints.length));
+  const shellGeometry = buildTube(fullPoints.slice(0, grownCount));
+
+  useFrame((state) => {
+    if (!growing) return;
+    if (growthStart.current === 0) growthStart.current = state.clock.elapsedTime;
+    const elapsed = state.clock.elapsedTime - growthStart.current;
+    const t = Math.min(1, elapsed / GROW_DURATION_S);
+    setGrowthProgress(t);
+    if (t >= 1) {
+      setGrowing(false);
+      growthStart.current = 0;
+    }
+  });
+
+  const startGrowth = () => {
+    growthStart.current = 0;
+    setGrowthProgress(0);
+    setGrowing(true);
+  };
 
   return (
     <>
-      <Line points={curve} color="orange" lineWidth={2.5} />
+      <Html fullscreen style={{ pointerEvents: "none" }}>
+        <div className="pointer-events-auto absolute left-3 top-3">
+          <button
+            type="button"
+            onClick={startGrowth}
+            disabled={growing}
+            className="rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300 backdrop-blur transition hover:text-white disabled:opacity-50"
+          >
+            {growing ? "Growing…" : "▶ Grow"}
+          </button>
+        </div>
+      </Html>
+
+      {/* faint ghost of the fully-grown shell, visible as a target shape while growing */}
+      {growing && <Line points={curve} color="#F3B95F" lineWidth={1} transparent opacity={0.15} />}
+
+      {shellGeometry && (
+        <mesh geometry={shellGeometry}>
+          <meshStandardMaterial vertexColors roughness={0.35} metalness={0.05} side={THREE.DoubleSide} />
+        </mesh>
+      )}
 
       {/* radius guide for S, and radius + rise guides for T */}
       <Line points={[[0, 0, 0], toTuple(start)]} color="#475569" lineWidth={1} dashed dashSize={0.1} gapSize={0.08} />
