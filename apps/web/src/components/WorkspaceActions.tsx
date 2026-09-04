@@ -56,6 +56,9 @@ export function WorkspaceActions() {
     if (store.queryType === "circle-measures") return ["circleRadius", "circleAngle"];
     if (store.queryType === "regular-polygon") return ["polygonSides", "polygonRadius"];
     if (store.queryType === "transformations") return ["transformTranslation", "transformHandle"];
+    if (store.queryType === "solids-3d") return ["solidDimA", "solidDimB", "solidDimC"];
+    if (store.queryType === "cross-sections") return ["crossSectionTilt", "crossSectionOffset"];
+    if (store.queryType === "nets") return ["netFold"];
     return ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   }, [store.queryType]);
 

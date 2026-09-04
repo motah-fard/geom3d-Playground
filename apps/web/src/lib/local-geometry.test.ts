@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import type { Vec3 } from "../types/geometry.ts";
 import {
   CELL_RING_SITES,
   DEFAULT_TRANSFORM_CORNERS,
@@ -55,6 +56,14 @@ import {
   helicalShellPoint,
   localProjectPointToPlane,
   localSegmentSegment,
+  classifyConic,
+  crossSectionCurvePoints,
+  foldCubeNet,
+  localCrossSection,
+  localNet,
+  localSolid,
+  netCubeFaces,
+  NET_CUBE_SIDE,
 } from "./local-geometry.ts";
 
 test("projects a point onto a plane", () => {
@@ -625,4 +634,242 @@ test("a translate-only transform shifts every vertex by exactly the translation,
     const after = sideLength(scaledOnly[i], scaledOnly[next]);
     assert.ok(Math.abs(after / before - scale) < 1e-9);
   }
+});
+
+function faceArea(vertices: { x: number; y: number; z: number }[]): number {
+  // sum of triangle-fan areas via cross product, works for any planar polygon
+  let total = 0;
+  for (let i = 1; i < vertices.length - 1; i++) {
+    total += vecLength(vecCross(vecSub(vertices[i], vertices[0]), vecSub(vertices[i + 1], vertices[0]))) / 2;
+  }
+  return total;
+}
+
+test("a box/cube's surface area matches the sum of its six real rectangular faces' areas", () => {
+  for (const [a, b, c] of [[1, 1, 1], [1.5, 0.8, 2.2]] as const) {
+    const solidType = a === b && b === c ? "cube" : "box";
+    const result = localSolid(solidType, a, b, c);
+    const hx = a / 2, hy = b / 2, hz = c / 2;
+    const corner = (sx: number, sy: number, sz: number) => ({ x: sx * hx, y: sy * hy, z: sz * hz });
+    const faces = [
+      [corner(-1, -1, -1), corner(1, -1, -1), corner(1, 1, -1), corner(-1, 1, -1)], // bottom
+      [corner(-1, -1, 1), corner(1, -1, 1), corner(1, 1, 1), corner(-1, 1, 1)], // top
+      [corner(-1, -1, -1), corner(1, -1, -1), corner(1, -1, 1), corner(-1, -1, 1)], // front
+      [corner(-1, 1, -1), corner(1, 1, -1), corner(1, 1, 1), corner(-1, 1, 1)], // back
+      [corner(-1, -1, -1), corner(-1, 1, -1), corner(-1, 1, 1), corner(-1, -1, 1)], // left
+      [corner(1, -1, -1), corner(1, 1, -1), corner(1, 1, 1), corner(1, -1, 1)], // right
+    ];
+    const summedArea = faces.reduce((sum, face) => sum + faceArea(face), 0);
+    assert.ok(Math.abs(summedArea - result.surfaceArea) < 1e-9, `${solidType}: summed=${summedArea} formula=${result.surfaceArea}`);
+  }
+});
+
+test("a cylinder's volume and surface area match fine numerical integration, independent of the closed-form formulas", () => {
+  for (const [r, h] of [[1, 2], [0.7, 1.6]] as const) {
+    const result = localSolid("cylinder", r, h, 0);
+    const steps = 100000;
+    let volume = 0;
+    let lateralArea = 0;
+    const dz = h / steps;
+    for (let i = 0; i < steps; i++) {
+      volume += Math.PI * r * r * dz; // constant-radius disk stack
+      lateralArea += 2 * Math.PI * r * dz; // constant-radius ring stack
+    }
+    const surfaceArea = lateralArea + 2 * Math.PI * r * r;
+    assert.ok(Math.abs(volume - result.volume) / result.volume < 1e-6);
+    assert.ok(Math.abs(surfaceArea - result.surfaceArea) / result.surfaceArea < 1e-6);
+  }
+});
+
+test("a cone's volume and lateral surface area match fine numerical integration of a linearly tapering radius", () => {
+  for (const [r, h] of [[1, 2], [1.3, 0.9]] as const) {
+    const result = localSolid("cone", r, h, 0);
+    const steps = 200000;
+    const dz = h / steps;
+    let volume = 0;
+    let lateralArea = 0;
+    const dr_dz = r / h;
+    for (let i = 0; i < steps; i++) {
+      const z = (i + 0.5) * dz;
+      const radius = (r * z) / h;
+      volume += Math.PI * radius * radius * dz;
+      lateralArea += 2 * Math.PI * radius * Math.sqrt(1 + dr_dz * dr_dz) * dz;
+    }
+    const surfaceArea = lateralArea + Math.PI * r * r;
+    assert.ok(Math.abs(volume - result.volume) / result.volume < 1e-4);
+    assert.ok(Math.abs(surfaceArea - result.surfaceArea) / result.surfaceArea < 1e-4);
+    assert.ok(Math.abs((result.slantHeight ?? NaN) - Math.hypot(r, h)) < 1e-9);
+  }
+});
+
+test("a square pyramid's volume matches numerical integration of its shrinking cross-section, and its lateral face area matches a real 3D triangle", () => {
+  for (const [a, h] of [[1.2, 2], [2, 1]] as const) {
+    const result = localSolid("pyramid", a, h, 0);
+    const steps = 200000;
+    const dz = h / steps;
+    let volume = 0;
+    for (let i = 0; i < steps; i++) {
+      const z = (i + 0.5) * dz;
+      const side = (a * z) / h; // 0 at apex, a at the base
+      volume += side * side * dz;
+    }
+    assert.ok(Math.abs(volume - result.volume) / result.volume < 1e-4);
+
+    const apex = { x: 0, y: 0, z: h };
+    const corner1 = { x: a / 2, y: -a / 2, z: 0 };
+    const corner2 = { x: a / 2, y: a / 2, z: 0 };
+    const lateralFaceArea = faceArea([corner1, corner2, apex]);
+    const totalSurface = a * a + 4 * lateralFaceArea;
+    assert.ok(Math.abs(totalSurface - result.surfaceArea) < 1e-9);
+  }
+});
+
+test("a sphere's volume and surface area agree between the solids chapter and the independently-written square-cube-law chapter", () => {
+  for (const r of [0.6, 1, 2.3]) {
+    const solid = localSolid("sphere", r, 0, 0);
+    const squareCube = localSquareCubeLaw({ x: r, y: 0, z: 0 });
+    assert.ok(Math.abs(solid.volume - squareCube.volume) < 1e-9);
+    assert.ok(Math.abs(solid.surfaceArea - squareCube.surfaceArea) < 1e-9);
+  }
+});
+
+test("a cross-section's conic type is classified correctly at each side of the cone's own half-angle, and a perpendicular cut is circular", () => {
+  const coneHalfAngleDeg = 30;
+  const critical = 90 - coneHalfAngleDeg; // the plane tilt parallel to the cone's slant
+
+  const circle = classifyConic(coneHalfAngleDeg, 0);
+  assert.equal(circle.conicType, "circle");
+  assert.ok(circle.discriminant < 0);
+
+  const ellipse = classifyConic(coneHalfAngleDeg, critical - 10);
+  assert.equal(ellipse.conicType, "ellipse");
+  assert.ok(ellipse.discriminant < 0);
+
+  const parabola = classifyConic(coneHalfAngleDeg, critical);
+  assert.equal(parabola.conicType, "parabola");
+  assert.ok(Math.abs(parabola.discriminant) < 1e-6);
+
+  const hyperbola = classifyConic(coneHalfAngleDeg, critical + 10);
+  assert.equal(hyperbola.conicType, "hyperbola");
+  assert.ok(hyperbola.discriminant > 0);
+});
+
+test("localCrossSection's point-based tilt and offset agree with the angle and magnitude they encode", () => {
+  const coneHalfAngleDeg = 30;
+  const tiltDeg = 40;
+  const tiltPoint = { x: Math.cos(tiltDeg * (Math.PI / 180)), y: Math.sin(tiltDeg * (Math.PI / 180)), z: 0 };
+  const offsetPoint = { x: 2.5, y: 0, z: 0 };
+  const result = localCrossSection(coneHalfAngleDeg, tiltPoint, offsetPoint);
+  assert.ok(Math.abs(result.planeTiltDeg - tiltDeg) < 1e-6);
+  assert.ok(Math.abs(result.planeOffset - 2.5) < 1e-9);
+  // The wrapper's classification must agree with classifyConic given
+  // the exact angle it just decoded from the point.
+  const direct = classifyConic(coneHalfAngleDeg, result.planeTiltDeg);
+  assert.equal(result.conicType, direct.conicType);
+  assert.ok(Math.abs(result.discriminant - direct.discriminant) < 1e-9);
+
+  // The offset is floored at 0.4 regardless of how close to the apex
+  // the control point is dragged.
+  const nearApex = localCrossSection(coneHalfAngleDeg, tiltPoint, { x: 0.01, y: 0, z: 0 });
+  assert.equal(nearApex.planeOffset, 0.4);
+});
+
+test("a circular cross-section's sampled points are genuinely equidistant from the cone's own axis, at a constant height", () => {
+  const coneHalfAngleDeg = 25;
+  const planeOffset = 3;
+  const branches = crossSectionCurvePoints(coneHalfAngleDeg, 0, planeOffset, 2, 200);
+  const allPoints = branches.flat();
+  assert.ok(allPoints.length > 10);
+  for (const p of allPoints) {
+    assert.ok(Math.abs(p.z - planeOffset) < 1e-9); // flat cut: constant height
+    const radius = Math.hypot(p.x, p.y);
+    const expectedRadius = planeOffset * Math.tan(coneHalfAngleDeg * (Math.PI / 180));
+    assert.ok(Math.abs(radius - expectedRadius) < 1e-6);
+  }
+});
+
+test("an ellipse cross-section's curve stays bounded, while a hyperbola's has disconnected branches reaching the sampled edge", () => {
+  const coneHalfAngleDeg = 30;
+  const critical = 90 - coneHalfAngleDeg;
+
+  const ellipseBranches = crossSectionCurvePoints(coneHalfAngleDeg, critical - 15, 2, 10, 400);
+  const ellipseYs = ellipseBranches.flat().map((p) => p.y);
+  assert.ok(Math.max(...ellipseYs.map(Math.abs)) < 9.9, "ellipse should not reach the sampling boundary");
+
+  const hyperbolaBranches = crossSectionCurvePoints(coneHalfAngleDeg, critical + 15, 2, 10, 400);
+  assert.ok(hyperbolaBranches.length >= 2, "a hyperbola should keep at least two separate polylines (one per lobe)");
+  const hyperbolaYs = hyperbolaBranches.flat().map((p) => p.y);
+  assert.ok(Math.max(...hyperbolaYs.map(Math.abs)) > 9.5, "hyperbola should reach near the sampling boundary (it's unbounded)");
+  // The two lobes of a hyperbola section genuinely cross into both nappes
+  // of the double cone -- one lobe's z is positive, the other's negative.
+  // A truncate-at-z=0 bug (checked in against exactly this) would delete
+  // one lobe entirely and leave every remaining point on the same side.
+  const hyperbolaZs = hyperbolaBranches.flat().map((p) => p.z);
+  assert.ok(hyperbolaZs.some((z) => z > 0.5), "hyperbola should have points in the z>0 nappe");
+  assert.ok(hyperbolaZs.some((z) => z < -0.5), "hyperbola should have points in the z<0 nappe too");
+});
+
+test("a cube's net matches the flat layout exactly when unfolded (t=0), and every hinge stays joined (no tearing) at every fold amount", () => {
+  const s = 1.4;
+  const flatFaces = netCubeFaces(s);
+  const folded0 = foldCubeNet(s, 0);
+  for (const key of ["base", "north", "south", "east", "west", "top"] as const) {
+    flatFaces[key].vertices.forEach(([x, y], i) => {
+      assert.ok(Math.abs(folded0[key][i].x - x) < 1e-9);
+      assert.ok(Math.abs(folded0[key][i].y - y) < 1e-9);
+      assert.ok(Math.abs(folded0[key][i].z - 0) < 1e-9);
+    });
+  }
+
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    const folded = foldCubeNet(s, t);
+    // base-north shared edge: base's top two corners == north's first two.
+    assert.ok(vecLength(vecSub(folded.base[3], folded.north[0])) < 1e-9);
+    assert.ok(vecLength(vecSub(folded.base[2], folded.north[1])) < 1e-9);
+    // base-south shared edge
+    assert.ok(vecLength(vecSub(folded.base[0], folded.south[0])) < 1e-9);
+    assert.ok(vecLength(vecSub(folded.base[1], folded.south[1])) < 1e-9);
+    // base-east shared edge
+    assert.ok(vecLength(vecSub(folded.base[1], folded.east[0])) < 1e-9);
+    assert.ok(vecLength(vecSub(folded.base[2], folded.east[1])) < 1e-9);
+    // base-west shared edge
+    assert.ok(vecLength(vecSub(folded.base[0], folded.west[0])) < 1e-9);
+    assert.ok(vecLength(vecSub(folded.base[3], folded.west[1])) < 1e-9);
+    // north-top shared edge (the compound hinge)
+    assert.ok(vecLength(vecSub(folded.north[3], folded.top[0])) < 1e-9);
+    assert.ok(vecLength(vecSub(folded.north[2], folded.top[1])) < 1e-9);
+  }
+});
+
+test("a cube's net, fully folded (t=1), reproduces the exact corners of a real cube of the same side length", () => {
+  const s = 1.4;
+  const h = s / 2;
+  const folded = foldCubeNet(s, 1);
+  // The 8 corners of an actual axis-aligned cube of side s.
+  const expectedCorners: Vec3[] = [];
+  for (const sx of [-h, h]) for (const sy of [-h, h]) for (const sz of [0, s]) expectedCorners.push({ x: sx, y: sy, z: sz });
+  const matchesACorner = (p: Vec3) => expectedCorners.some((c) => vecLength(vecSub(p, c)) < 1e-9);
+
+  for (const key of ["base", "north", "south", "east", "west", "top"] as const) {
+    for (const p of folded[key]) {
+      assert.ok(matchesACorner(p), `${key} vertex not a real cube corner: ${JSON.stringify(p)}`);
+    }
+  }
+  // Every face should also be planar and the right size at t=1 — spot
+  // check the top face sits exactly at height s.
+  for (const p of folded.top) assert.ok(Math.abs(p.z - s) < 1e-9);
+});
+
+test("the net's fold fraction is exposed and clamped to [0, 1] by localNet", () => {
+  assert.equal(localNet({ x: 0.5, y: 0, z: 0 }).foldFraction, 0.5);
+  assert.equal(localNet({ x: -1, y: 0, z: 0 }).foldFraction, 0);
+  assert.equal(localNet({ x: 2, y: 0, z: 0 }).foldFraction, 1);
+  assert.equal(localNet({ x: 0, y: 0, z: 0 }).side, NET_CUBE_SIDE);
+});
+
+test("solid dimensions are clamped to a sane range regardless of how far a control point is dragged", () => {
+  const huge = localSolid("cube", 1000, 0, 0);
+  assert.ok(huge.dimA <= 3);
+  const tiny = localSolid("sphere", -50, 0, 0);
+  assert.ok(tiny.dimA >= 0.3);
 });

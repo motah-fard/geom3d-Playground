@@ -93,6 +93,55 @@ export type TransformationsResponse = {
 };
 
 // =======================
+// 3D solids — volume and surface area of the standard set every
+// intro-geometry curriculum covers: cube, rectangular prism, cylinder,
+// cone, sphere, and square pyramid. `dimA`/`dimB`/`dimC` are generic
+// (their meaning depends on `solidType`) so every solid shares one
+// response shape and one set of draggable inputs.
+// =======================
+
+export type SolidType = "cube" | "box" | "cylinder" | "cone" | "sphere" | "pyramid";
+
+export type SolidsResponse = {
+  solidType: SolidType;
+  dimA: number;
+  dimB: number;
+  dimC: number;
+  volume: number;
+  surfaceArea: number;
+  slantHeight: number | null;
+};
+
+// =======================
+// Cross-sections — the classical conic sections, produced by slicing a
+// double cone with a plane at a variable tilt. The tilt angle relative
+// to the cone's own half-angle determines whether the cut is a circle,
+// ellipse, parabola, or hyperbola.
+// =======================
+
+export type ConicType = "circle" | "ellipse" | "parabola" | "hyperbola";
+
+export type CrossSectionResponse = {
+  coneHalfAngleDeg: number;
+  planeTiltDeg: number;
+  planeOffset: number;
+  conicType: ConicType;
+  discriminant: number;
+};
+
+// =======================
+// Nets — a cube's net (six squares hinged together) folding
+// continuously from flat into the solid it forms.
+// =======================
+
+export type NetResponse = {
+  side: number;
+  foldFraction: number;
+  isFlat: boolean;
+  isFolded: boolean;
+};
+
+// =======================
 // Requests
 // =======================
 
@@ -404,6 +453,9 @@ export type QueryType =
   | "circle-measures"
   | "regular-polygon"
   | "transformations"
+  | "solids-3d"
+  | "cross-sections"
+  | "nets"
   | "project-point-to-plane"
   | "intersect-ray-plane"
   | "closest-point-segment"

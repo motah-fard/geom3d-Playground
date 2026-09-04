@@ -7,6 +7,9 @@ import { RightTriangleTrigForm } from "@/components/RightTriangleTrigForm";
 import { CircleMeasuresForm } from "@/components/CircleMeasuresForm";
 import { RegularPolygonForm } from "@/components/RegularPolygonForm";
 import { TransformationsForm } from "@/components/TransformationsForm";
+import { SolidsForm } from "@/components/SolidsForm";
+import { CrossSectionForm } from "@/components/CrossSectionForm";
+import { NetForm } from "@/components/NetForm";
 import { IntersectRayPlaneForm } from "@/components/IntersectRayPlaneForm";
 import { ProjectPointToPlaneForm } from "@/components/ProjectPointToPlaneForm";
 import { ClosestPointSegmentForm } from "@/components/ClosestPointSegmentForm";
@@ -64,6 +67,9 @@ export function ClientPageShell() {
       {queryType === "circle-measures" && <CircleMeasuresForm />}
       {queryType === "regular-polygon" && <RegularPolygonForm />}
       {queryType === "transformations" && <TransformationsForm />}
+      {queryType === "solids-3d" && <SolidsForm />}
+      {queryType === "cross-sections" && <CrossSectionForm />}
+      {queryType === "nets" && <NetForm />}
       {queryType === "project-point-to-plane" && <ProjectPointToPlaneForm />}
       {queryType === "intersect-ray-plane" && <IntersectRayPlaneForm />}
       {queryType === "closest-point-segment" && <ClosestPointSegmentForm />}

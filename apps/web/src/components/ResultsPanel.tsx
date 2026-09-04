@@ -35,11 +35,11 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
   );
 }
 
-type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch" | "beeCellRise" | "angleRayB" | "pythagoreanLegA" | "pythagoreanLegB" | "trigAngle" | "circleRadius" | "circleAngle" | "polygonSides" | "polygonRadius" | "transformTranslation" | "transformHandle";
+type VectorKey = "point" | "rayOrigin" | "segmentA" | "segmentB" | "segmentA1" | "segmentA2" | "segmentB1" | "segmentB2" | "transformP00" | "transformP10" | "transformP01" | "transformP11" | "spiralStart" | "spiralTurn" | "cellCenter" | "helixStart" | "helixTurn" | "magnitudePoint" | "catenaryA" | "allometrySize" | "allometryExponent" | "phyllotaxisDivergence" | "logisticR" | "logisticK" | "geodesicDetail" | "whirlingCount" | "catenoidA" | "milkRadius" | "milkCount" | "eggBig" | "eggSmall" | "helicoidRadius" | "helicoidPitch" | "beeCellRise" | "angleRayB" | "pythagoreanLegA" | "pythagoreanLegB" | "trigAngle" | "circleRadius" | "circleAngle" | "polygonSides" | "polygonRadius" | "transformTranslation" | "transformHandle" | "solidDimA" | "solidDimB" | "solidDimC" | "crossSectionTilt" | "crossSectionOffset" | "netFold";
 
 function Comparison({ previous }: { previous: ScenarioSnapshot }) {
   const state = usePlaygroundStore();
-  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : state.queryType === "bee-cell" ? ["beeCellRise"] : state.queryType === "angles" ? ["angleRayB"] : state.queryType === "pythagorean-theorem" ? ["pythagoreanLegA", "pythagoreanLegB"] : state.queryType === "right-triangle-trig" ? ["trigAngle"] : state.queryType === "circle-measures" ? ["circleRadius", "circleAngle"] : state.queryType === "regular-polygon" ? ["polygonSides", "polygonRadius"] : state.queryType === "transformations" ? ["transformTranslation", "transformHandle"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
+  const fields: VectorKey[] = state.queryType === "project-point-to-plane" || state.queryType === "closest-point-aabb" ? ["point"] : state.queryType === "intersect-ray-plane" || state.queryType === "intersect-ray-aabb" ? ["rayOrigin"] : state.queryType === "closest-point-segment" ? ["point", "segmentA", "segmentB"] : state.queryType === "cartesian-transform" ? ["transformP00", "transformP10", "transformP01", "transformP11"] : state.queryType === "log-spiral-growth" ? ["spiralStart", "spiralTurn"] : state.queryType === "cell-packing" ? ["cellCenter"] : state.queryType === "helical-shell-growth" ? ["helixStart", "helixTurn"] : state.queryType === "square-cube-law" ? ["magnitudePoint"] : state.queryType === "catenary-arch" ? ["catenaryA"] : state.queryType === "allometric-growth" ? ["allometrySize", "allometryExponent"] : state.queryType === "phyllotaxis" ? ["phyllotaxisDivergence"] : state.queryType === "logistic-growth" ? ["logisticR", "logisticK"] : state.queryType === "geodesic-sphere" ? ["geodesicDetail"] : state.queryType === "whirling-squares" ? ["whirlingCount"] : state.queryType === "catenoid" ? ["catenoidA"] : state.queryType === "milk-coronet" ? ["milkRadius", "milkCount"] : state.queryType === "egg-curve" ? ["eggBig", "eggSmall"] : state.queryType === "helicoid" ? ["helicoidRadius", "helicoidPitch"] : state.queryType === "bee-cell" ? ["beeCellRise"] : state.queryType === "angles" ? ["angleRayB"] : state.queryType === "pythagorean-theorem" ? ["pythagoreanLegA", "pythagoreanLegB"] : state.queryType === "right-triangle-trig" ? ["trigAngle"] : state.queryType === "circle-measures" ? ["circleRadius", "circleAngle"] : state.queryType === "regular-polygon" ? ["polygonSides", "polygonRadius"] : state.queryType === "transformations" ? ["transformTranslation", "transformHandle"] : state.queryType === "solids-3d" ? ["solidDimA", "solidDimB", "solidDimC"] : state.queryType === "cross-sections" ? ["crossSectionTilt", "crossSectionOffset"] : state.queryType === "nets" ? ["netFold"] : ["segmentA1", "segmentA2", "segmentB1", "segmentB2"];
   return (
     <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200/60">Change from previous state</p>
@@ -86,6 +86,9 @@ export function ResultsPanel() {
     state.queryType === "circle-measures" ? state.circleMeasuresResult :
     state.queryType === "regular-polygon" ? state.regularPolygonResult :
     state.queryType === "transformations" ? state.transformationsResult :
+    state.queryType === "solids-3d" ? state.solidsResult :
+    state.queryType === "cross-sections" ? state.crossSectionResult :
+    state.queryType === "nets" ? state.netResult :
     state.closestPointAABBResult;
 
   const copy = async () => {
@@ -157,7 +160,13 @@ export function ResultsPanel() {
                                                       ? "perimeter = 2NR·sin(π/N); area = (1/2)NR²·sin(2π/N)"
                                                       : state.queryType === "transformations"
                                                         ? "P′ = R(θ)·(s·P) + T — scale by s, rotate by θ, then translate by T"
-                                                        : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
+                                                        : state.queryType === "solids-3d"
+                                                          ? "volume and surface area depend on the chosen solid — see the hoverable terms below"
+                                                          : state.queryType === "cross-sections"
+                                                            ? "x² + (1 − tan²α·m²)y² − 2tan²α·m·c·y − tan²α·c² = 0, m = tan(tilt)"
+                                                            : state.queryType === "nets"
+                                                              ? "fold angle = t·90°, t ∈ [0, 1]"
+                                                              : "C = clamp(P, boxMin, boxMax); distance = ‖P − C‖";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
@@ -417,6 +426,37 @@ export function ResultsPanel() {
                 <Metric label="Angle before" value={state.transformationsResult.sampleAngleBeforeDeg} suffix="°" />
                 <Metric label="Angle after" value={state.transformationsResult.sampleAngleAfterDeg} suffix="°" />
                 <p className="text-xs leading-5 text-slate-500">Move it, spin it, resize it — the triangle&rsquo;s own angles never change. That&rsquo;s exactly what makes this a similarity transformation rather than a distortion.</p>
+              </>
+            )}
+
+            {state.queryType === "solids-3d" && state.solidsResult && (
+              <>
+                <Metric label="Volume" value={state.solidsResult.volume} suffix={`${state.unit}³`} />
+                <Metric label="Surface area" value={state.solidsResult.surfaceArea} suffix={`${state.unit}²`} />
+                {state.solidsResult.slantHeight !== null && <Metric label="Slant height" value={state.solidsResult.slantHeight} />}
+                <p className="text-xs leading-5 text-slate-500">Volume measures how much space the solid fills; surface area measures how much material it would take to wrap it completely.</p>
+              </>
+            )}
+
+            {state.queryType === "cross-sections" && state.crossSectionResult && (
+              <>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Conic type</p>
+                  <p className="mt-1 text-lg font-bold capitalize text-cyan-100">{state.crossSectionResult.conicType}</p>
+                </div>
+                <Metric label="Plane tilt" value={state.crossSectionResult.planeTiltDeg} suffix="°" />
+                <p className="text-xs leading-5 text-slate-500">A tilt of 0° cuts straight across for a circle; increasing it stretches that into an ellipse, then exactly at the cone&rsquo;s own half-angle it opens into a parabola, and beyond that, a hyperbola.</p>
+              </>
+            )}
+
+            {state.queryType === "nets" && state.netResult && (
+              <>
+                <Metric label="Fold amount" value={state.netResult.foldFraction} suffix="" />
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">State</p>
+                  <p className="mt-1 text-lg font-bold text-cyan-100">{state.netResult.isFlat ? "Flat net" : state.netResult.isFolded ? "Closed cube" : "Folding…"}</p>
+                </div>
+                <p className="text-xs leading-5 text-slate-500">Every one of the six squares is still the exact same size throughout — folding never stretches or shrinks a face, it only rotates it.</p>
               </>
             )}
 

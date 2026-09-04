@@ -4,6 +4,9 @@ import type { QueryType } from "@/types/geometry";
 // "you might see this in nature" hand-waving. Several are the exact
 // examples Thompson himself used.
 export const NATURE_EXAMPLES: Partial<Record<QueryType, string>> = {
+  "solids-3d": "A can of soup (cylinder), an ice cream cone, a basketball (sphere), a tent (pyramid or prism), and a tissue box (rectangular prism) — the six solids are the actual shape of half the objects on a kitchen counter.",
+  "cross-sections": "Slice a carrot straight across and you get a circle; slice it at an angle and you get an ellipse — the same principle that lets astronomers describe every planet's orbit as one of these four curves.",
+  "nets": "Cereal boxes, shipping boxes, and dice all start life as a flat, printed net that gets folded and glued into the 3D box you actually hold.",
   "angles": "A ship's navigator sighting a bearing, a carpenter checking a corner with a speed square, or a branch splitting away from a tree trunk — every one of them is just two rays and the angle swept between them.",
   "pythagorean-theorem": "A construction crew squaring a foundation with a 3-4-5 triangle of string, or a phone's screen size (measured corner to corner) computed from its width and height — the same theorem either way.",
   "right-triangle-trig": "Measuring a tree's height from its shadow and the sun's angle, or a pilot computing a plane's climb angle from ground speed and rate of ascent — both just read sin, cos, or tan off a right triangle.",

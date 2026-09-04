@@ -11,6 +11,24 @@ export type ComprehensionQuestion = {
 // concept rather than trivial recall — answerable by reasoning about
 // the math, and ideally by trying it in the scene first.
 export const COMPREHENSION_QUESTIONS: Partial<Record<QueryType, ComprehensionQuestion>> = {
+  "solids-3d": {
+    question: "You double a cube's side length. What happens to its volume?",
+    options: ["It doubles", "It quadruples (×4)", "It multiplies by 8"],
+    correctIndex: 2,
+    explanation: "Volume = side³, and cubing a doubled length gives 2³ = 8 times the volume — the same square-cube law that shows up throughout the Growth & Form chapters.",
+  },
+  "cross-sections": {
+    question: "Why does a hyperbola cross-section show up as two separate curves instead of one?",
+    options: ["It's a rendering glitch", "The cutting plane crosses both nappes of the double cone", "Hyperbolas are always drawn as two pieces by convention"],
+    correctIndex: 1,
+    explanation: "A double cone has two nappes meeting at the apex. A steep enough cutting plane slices through both of them, and each nappe contributes one disconnected branch of the hyperbola.",
+  },
+  "nets": {
+    question: "While the net is folding, what happens to the area of each individual square face?",
+    options: ["Each square's area stays exactly the same the whole time", "The squares shrink as they fold, then grow back", "Only the base square keeps its size"],
+    correctIndex: 0,
+    explanation: "Folding is a rigid rotation around each hinge — it changes a face's orientation and position, never its shape or area. That's exactly why a net can close into a solid with no stretching or gaps.",
+  },
   "angles": {
     question: "If ray B sweeps past 180° and keeps going, what happens to the angle?",
     options: ["It becomes negative", "It becomes a reflex angle (180°–360°)", "It resets back to 0°"],

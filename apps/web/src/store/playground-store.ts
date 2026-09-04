@@ -9,6 +9,7 @@ import type {
   CellPackingResponse,
   CircleMeasuresResponse,
   ClosestPointAABBResponse,
+  CrossSectionResponse,
   EggCurveResponse,
   GeodesicSphereResponse,
   HelicalShellResponse,
@@ -19,12 +20,15 @@ import type {
   LogSpiralResponse,
   MagnitudeScalingResponse,
   MilkCoronetResponse,
+  NetResponse,
   PhyllotaxisResponse,
   ProjectPointToPlaneResponse,
   PythagoreanResponse,
   QueryType,
   RegularPolygonResponse,
   RightTriangleTrigResponse,
+  SolidsResponse,
+  SolidType,
   TransformationsResponse,
   Vec3,
   SegmentSegmentResponse,
@@ -43,6 +47,7 @@ import {
   localCircleMeasures,
   localClosestPointAABB,
   localClosestPointSegment,
+  localCrossSection,
   localEggCurve,
   localGeodesicSphere,
   localHelicalShell,
@@ -52,12 +57,14 @@ import {
   localLogisticGrowth,
   localLogSpiral,
   localMilkCoronet,
+  localNet,
   localPhyllotaxis,
   localProjectPointToPlane,
   localPythagorean,
   localRegularPolygon,
   localRightTriangleTrig,
   localSegmentSegment,
+  localSolid,
   localSquareCubeLaw,
   localTransformations,
   localWhirlingSquares,
@@ -66,6 +73,7 @@ import {
   LOGISTIC_TIME_SPAN,
   BEE_CELL_OPTIMAL_RISE,
   BEE_CELL_MIN_RISE,
+  CROSS_SECTION_CONE_HALF_ANGLE,
 } from "@/lib/local-geometry";
 
 type SegmentResult = {
@@ -150,6 +158,13 @@ export type ScenarioSnapshot = {
   polygonRadius: Vec3;
   transformTranslation: Vec3;
   transformHandle: Vec3;
+  solidType: SolidType;
+  solidDimA: Vec3;
+  solidDimB: Vec3;
+  solidDimC: Vec3;
+  crossSectionTilt: Vec3;
+  crossSectionOffset: Vec3;
+  netFold: Vec3;
   stepMode: boolean;
   unit: "units" | "mm" | "cm" | "m";
   precision: number;
@@ -254,6 +269,19 @@ export type PlaygroundState = {
   transformTranslation: Vec3;
   transformHandle: Vec3;
 
+  // 3D solids: which solid, and up to 3 generic dimension inputs
+  solidType: SolidType;
+  solidDimA: Vec3;
+  solidDimB: Vec3;
+  solidDimC: Vec3;
+
+  // cross-sections: the cutting plane's tilt and offset
+  crossSectionTilt: Vec3;
+  crossSectionOffset: Vec3;
+
+  // nets: the fold-amount control point
+  netFold: Vec3;
+
   // results
   projectPointResult: ProjectPointToPlaneResponse | null;
   rayPlaneResult: IntersectRayPlaneResponse | null;
@@ -283,6 +311,9 @@ export type PlaygroundState = {
   circleMeasuresResult: CircleMeasuresResponse | null;
   regularPolygonResult: RegularPolygonResponse | null;
   transformationsResult: TransformationsResponse | null;
+  solidsResult: SolidsResponse | null;
+  crossSectionResult: CrossSectionResponse | null;
+  netResult: NetResponse | null;
 
   error: string | null;
   shouldAutoRun: boolean;
@@ -381,6 +412,10 @@ export type PlaygroundState = {
   setCircleMeasuresInputs: (payload: { radiusPoint: Vec3; anglePoint: Vec3 }) => void;
   setRegularPolygonInputs: (payload: { sidesPoint: Vec3; radiusPoint: Vec3 }) => void;
   setTransformationsInputs: (payload: { translationPoint: Vec3; handlePoint: Vec3 }) => void;
+  setSolidType: (solidType: SolidType) => void;
+  setSolidInputs: (payload: { dimA: Vec3; dimB: Vec3; dimC: Vec3 }) => void;
+  setCrossSectionInputs: (payload: { tiltPoint: Vec3; offsetPoint: Vec3 }) => void;
+  setNetInput: (foldPoint: Vec3) => void;
 
   setProjectPointResult: (result: ProjectPointToPlaneResponse | null) => void;
   setRayPlaneResult: (result: IntersectRayPlaneResponse | null) => void;
@@ -414,6 +449,9 @@ export type PlaygroundState = {
   setCircleMeasuresResult: (result: CircleMeasuresResponse | null) => void;
   setRegularPolygonResult: (result: RegularPolygonResponse | null) => void;
   setTransformationsResult: (result: TransformationsResponse | null) => void;
+  setSolidsResult: (result: SolidsResponse | null) => void;
+  setCrossSectionResult: (result: CrossSectionResponse | null) => void;
+  setNetResult: (result: NetResponse | null) => void;
 
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
@@ -467,6 +505,9 @@ const clearedResults = {
   circleMeasuresResult: null,
   regularPolygonResult: null,
   transformationsResult: null,
+  solidsResult: null,
+  crossSectionResult: null,
+  netResult: null,
 };
 
 function captureScenario(state: PlaygroundState): ScenarioSnapshot {
@@ -522,6 +563,13 @@ function captureScenario(state: PlaygroundState): ScenarioSnapshot {
     polygonRadius: state.polygonRadius,
     transformTranslation: state.transformTranslation,
     transformHandle: state.transformHandle,
+    solidType: state.solidType,
+    solidDimA: state.solidDimA,
+    solidDimB: state.solidDimB,
+    solidDimC: state.solidDimC,
+    crossSectionTilt: state.crossSectionTilt,
+    crossSectionOffset: state.crossSectionOffset,
+    netFold: state.netFold,
     stepMode: state.stepMode,
     unit: state.unit,
     precision: state.precision,
@@ -615,6 +663,16 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   transformTranslation: { x: 1.5, y: 0.8, z: 0 },
   transformHandle: { x: 2.078, y: 1.2, z: 0 },
 
+  solidType: "cube",
+  solidDimA: { x: 1.5, y: 0, z: 0 },
+  solidDimB: { x: 2, y: 0, z: 0 },
+  solidDimC: { x: 1, y: 0, z: 0 },
+
+  crossSectionTilt: { x: 1, y: 0, z: 0 },
+  crossSectionOffset: { x: 3, y: 0, z: 0 },
+
+  netFold: { x: 0, y: 0, z: 0 },
+
   // results
   ...clearedResults,
 
@@ -675,6 +733,12 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     polygonRadius: "R",
     transformTranslation: "T",
     transformHandle: "H",
+    solidDimA: "A",
+    solidDimB: "B",
+    solidDimC: "C",
+    crossSectionTilt: "T",
+    crossSectionOffset: "O",
+    netFold: "F",
   },
   past: [],
   future: [],
@@ -940,6 +1004,41 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       error: null,
     }),
 
+  setSolidType: (solidType) =>
+    set((state) => ({
+      solidType,
+      solidsResult: localSolid(solidType, state.solidDimA.x, state.solidDimB.x, state.solidDimC.x),
+      queryStatus: "success",
+      error: null,
+    })),
+
+  setSolidInputs: ({ dimA, dimB, dimC }) =>
+    set((state) => ({
+      solidDimA: dimA,
+      solidDimB: dimB,
+      solidDimC: dimC,
+      solidsResult: localSolid(state.solidType, dimA.x, dimB.x, dimC.x),
+      queryStatus: "success",
+      error: null,
+    })),
+
+  setCrossSectionInputs: ({ tiltPoint, offsetPoint }) =>
+    set({
+      crossSectionTilt: tiltPoint,
+      crossSectionOffset: offsetPoint,
+      crossSectionResult: localCrossSection(CROSS_SECTION_CONE_HALF_ANGLE, tiltPoint, offsetPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
+  setNetInput: (foldPoint) =>
+    set({
+      netFold: foldPoint,
+      netResult: localNet(foldPoint),
+      queryStatus: "success",
+      error: null,
+    }),
+
   setProjectPointResult: (result) =>
     set({ projectPointResult: result, error: null }),
 
@@ -1023,6 +1122,15 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setTransformationsResult: (result) =>
     set({ transformationsResult: result, error: null }),
+
+  setSolidsResult: (result) =>
+    set({ solidsResult: result, error: null }),
+
+  setCrossSectionResult: (result) =>
+    set({ crossSectionResult: result, error: null }),
+
+  setNetResult: (result) =>
+    set({ netResult: result, error: null }),
 
   setError: (error) =>
     set({
@@ -1406,6 +1514,18 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
     if (type === "transformations") {
       set({ queryType: type, transformTranslation: { x: 1.5, y: 0.8, z: 0 }, transformHandle: { x: 2.078, y: 1.2, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "solids-3d") {
+      set({ queryType: type, solidType: "cube", solidDimA: { x: 1.5, y: 0, z: 0 }, solidDimB: { x: 2, y: 0, z: 0 }, solidDimC: { x: 1, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "cross-sections") {
+      set({ queryType: type, crossSectionTilt: { x: 1, y: 0, z: 0 }, crossSectionOffset: { x: 3, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
+    }
+
+    if (type === "nets") {
+      set({ queryType: type, netFold: { x: 0, y: 0, z: 0 }, shouldAutoRun: true, error: null, queryStatus: "idle", ...clearedResults });
     }
 
     if (type === "ray-box-miss") {

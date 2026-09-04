@@ -13,6 +13,8 @@ import type {
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
   ClosestPointSegmentResponse,
+  ConicType,
+  CrossSectionResponse,
   EggCurveResponse,
   GeodesicSphereResponse,
   HelicoidResponse,
@@ -25,6 +27,7 @@ import type {
   LogSpiralResponse,
   MagnitudeScalingResponse,
   MilkCoronetResponse,
+  NetResponse,
   PhyllotaxisResponse,
   ProjectPointToPlaneRequest,
   ProjectPointToPlaneResponse,
@@ -33,6 +36,8 @@ import type {
   RightTriangleTrigResponse,
   SegmentSegmentRequest,
   SegmentSegmentResponse,
+  SolidsResponse,
+  SolidType,
   TransformationsResponse,
   Vec3,
   WhirlingSquaresResponse,
@@ -211,6 +216,250 @@ export function localTransformations(translationPoint: Vec3, handlePoint: Vec3):
     sampleAngleBeforeDeg: angleAtVertexDeg(base1, base0, base2),
     sampleAngleAfterDeg: angleAtVertexDeg(after1, after0, after2),
   };
+}
+
+// =======================
+// Foundations — 3D solids. Volume and surface area of the standard
+// set every intro curriculum covers: cube, rectangular prism (box),
+// cylinder, cone, sphere, and square pyramid. `dimA`/`dimB`/`dimC` are
+// generic; each solid interprets only as many of them as it needs.
+// =======================
+
+export const SOLID_MIN_DIM = 0.3;
+export const SOLID_MAX_DIM = 3;
+
+function clampDim(v: number): number {
+  return Math.max(SOLID_MIN_DIM, Math.min(SOLID_MAX_DIM, v));
+}
+
+export function localSolid(solidType: SolidType, dimA: number, dimB: number, dimC: number): SolidsResponse {
+  const a = clampDim(dimA);
+  const b = clampDim(dimB);
+  const c = clampDim(dimC);
+
+  switch (solidType) {
+    case "cube":
+      return { solidType, dimA: a, dimB: 0, dimC: 0, volume: a ** 3, surfaceArea: 6 * a * a, slantHeight: null };
+    case "box":
+      return {
+        solidType,
+        dimA: a,
+        dimB: b,
+        dimC: c,
+        volume: a * b * c,
+        surfaceArea: 2 * (a * b + a * c + b * c),
+        slantHeight: null,
+      };
+    case "cylinder":
+      return {
+        solidType,
+        dimA: a,
+        dimB: b,
+        dimC: 0,
+        volume: Math.PI * a * a * b,
+        surfaceArea: 2 * Math.PI * a * a + 2 * Math.PI * a * b,
+        slantHeight: null,
+      };
+    case "cone": {
+      const slantHeight = Math.hypot(a, b);
+      return {
+        solidType,
+        dimA: a,
+        dimB: b,
+        dimC: 0,
+        volume: (Math.PI * a * a * b) / 3,
+        surfaceArea: Math.PI * a * a + Math.PI * a * slantHeight,
+        slantHeight,
+      };
+    }
+    case "sphere":
+      return {
+        solidType,
+        dimA: a,
+        dimB: 0,
+        dimC: 0,
+        volume: (4 / 3) * Math.PI * a ** 3,
+        surfaceArea: 4 * Math.PI * a * a,
+        slantHeight: null,
+      };
+    case "pyramid": {
+      const slantHeight = Math.hypot(b, a / 2);
+      return {
+        solidType,
+        dimA: a,
+        dimB: b,
+        dimC: 0,
+        volume: (a * a * b) / 3,
+        surfaceArea: a * a + 2 * a * slantHeight,
+        slantHeight,
+      };
+    }
+  }
+}
+
+// =======================
+// Foundations — Cross-sections (the conic sections). A double cone
+// with apex at the origin and axis along +z, half-angle α, satisfies
+// x² + y² = (z·tanα)². Slicing it with a plane z = m·y + c (tilted by
+// β = atan(m) around the x-axis) and substituting gives
+// x² + (1 − tan²α·m²)y² − 2tan²α·m·c·y − tan²α·c² = 0 — a conic in x
+// and y whose type is set by the sign of its discriminant,
+// 4(tan²α·m² − 1): negative is an ellipse (a circle when m = 0),
+// zero is a parabola, positive is a hyperbola. That condition reduces
+// to comparing the plane's tilt β to the cone's own half-angle α.
+// =======================
+
+export const CROSS_SECTION_CONE_HALF_ANGLE = 30;
+
+export function classifyConic(coneHalfAngleDeg: number, planeTiltDeg: number): { conicType: ConicType; discriminant: number } {
+  const alpha = coneHalfAngleDeg * (Math.PI / 180);
+  const m = Math.tan(planeTiltDeg * (Math.PI / 180));
+  const discriminant = 4 * (Math.tan(alpha) * Math.tan(alpha) * m * m - 1);
+  const conicType: ConicType =
+    Math.abs(discriminant) < 1e-6 ? "parabola" : discriminant < 0 ? (Math.abs(planeTiltDeg) < 1e-6 ? "circle" : "ellipse") : "hyperbola";
+  return { conicType, discriminant };
+}
+
+export function localCrossSection(coneHalfAngleDeg: number, planeTiltPoint: Vec3, offsetPoint: Vec3): CrossSectionResponse {
+  const planeTiltDeg = Math.max(-89, Math.min(89, Math.atan2(planeTiltPoint.y, Math.max(planeTiltPoint.x, EPSILON)) * (180 / Math.PI)));
+  const planeOffset = Math.max(0.4, Math.hypot(offsetPoint.x, offsetPoint.y));
+  const { conicType, discriminant } = classifyConic(coneHalfAngleDeg, planeTiltDeg);
+  return { coneHalfAngleDeg, planeTiltDeg, planeOffset, conicType, discriminant };
+}
+
+// Samples the actual intersection curve of the plane z = m·y + c with
+// the cone x² + y² = (z·tanα)², by solving the substituted conic for x
+// at each sampled y. Returns 3D points (z computed from the same plane
+// equation used to derive them), split into one or two branches.
+export function crossSectionCurvePoints(
+  coneHalfAngleDeg: number,
+  planeTiltDeg: number,
+  planeOffset: number,
+  yRange = 6,
+  samples = 400,
+): Vec3[][] {
+  const alpha = coneHalfAngleDeg * (Math.PI / 180);
+  const m = Math.tan(planeTiltDeg * (Math.PI / 180));
+  const c = planeOffset;
+  const tan2 = Math.tan(alpha) * Math.tan(alpha);
+  const bCoef = 1 - tan2 * m * m;
+  // A double cone has two nappes (z > 0 and z < 0 both satisfy
+  // x²+y²=(z·tanα)²), and a steep-enough plane crosses into both —
+  // that's exactly what makes a hyperbola's two lobes disconnected.
+  // Truncating to z ≥ 0 would silently delete one lobe. Track +x and
+  // -x runs separately, and start a new polyline whenever a run of
+  // valid y values ends, so an ellipse comes back as one closed loop
+  // per side while a hyperbola comes back as two separate pieces.
+  const positiveXRuns: Vec3[][] = [[]];
+  const negativeXRuns: Vec3[][] = [[]];
+  for (let i = 0; i <= samples; i++) {
+    const y = -yRange + (2 * yRange * i) / samples;
+    // x^2 = tan2*(m*y+c)^2 - (1 - tan2*m^2)*y^2, from substituting the
+    // plane z = m*y+c directly into the cone's x^2+y^2=(z*tanα)^2.
+    const rhs = tan2 * (m * y + c) * (m * y + c) - bCoef * y * y;
+    if (rhs < 0) {
+      if (positiveXRuns.at(-1)!.length > 0) positiveXRuns.push([]);
+      if (negativeXRuns.at(-1)!.length > 0) negativeXRuns.push([]);
+      continue;
+    }
+    const x = Math.sqrt(rhs);
+    const z = m * y + c;
+    positiveXRuns.at(-1)!.push({ x, y, z });
+    negativeXRuns.at(-1)!.push({ x: -x, y, z });
+  }
+  return [...positiveXRuns, ...negativeXRuns].filter((run) => run.length > 1);
+}
+
+// =======================
+// Foundations — Nets. A cube's cross-shaped net (six squares hinged
+// together) folding continuously into the cube. Base face fixed;
+// North/South/East/West fold up around their shared edge with the
+// base; Top is hinged to North's outer edge, so its transform composes
+// North's own fold with its own — the general pattern any net beyond a
+// single hinge needs.
+// =======================
+
+export const NET_CUBE_SIDE = 1.4;
+
+export function localNet(foldPoint: Vec3): NetResponse {
+  const foldFraction = Math.max(0, Math.min(1, foldPoint.x));
+  return { side: NET_CUBE_SIDE, foldFraction, isFlat: foldFraction < 1e-6, isFolded: foldFraction > 1 - 1e-6 };
+}
+
+type NetFace = { id: string; vertices: [number, number][] };
+
+// Every face's flat-net outline, in the net's own (x, y) plane before
+// any folding — a plus/cross shape, base at the center.
+export function netCubeFaces(s: number): Record<"base" | "north" | "south" | "east" | "west" | "top", NetFace> {
+  const h = s / 2;
+  return {
+    base: { id: "base", vertices: [[-h, -h], [h, -h], [h, h], [-h, h]] },
+    north: { id: "north", vertices: [[-h, h], [h, h], [h, h + s], [-h, h + s]] },
+    south: { id: "south", vertices: [[-h, -h], [h, -h], [h, -h - s], [-h, -h - s]] },
+    east: { id: "east", vertices: [[h, -h], [h, h], [h + s, h], [h + s, -h]] },
+    west: { id: "west", vertices: [[-h, -h], [-h, h], [-h - s, h], [-h - s, -h]] },
+    top: { id: "top", vertices: [[-h, h + s], [h, h + s], [h, h + 2 * s], [-h, h + 2 * s]] },
+  };
+}
+
+function rotateLift(dLocal: number, phi: number): { d: number; z: number } {
+  return { d: dLocal * Math.cos(phi), z: dLocal * Math.sin(phi) };
+}
+
+// Folds every face of the cube net to 3D at fold fraction t in [0, 1];
+// t=0 reproduces the flat net (z=0 everywhere), t=1 is the closed cube.
+export function foldCubeNet(s: number, t: number): Record<"base" | "north" | "south" | "east" | "west" | "top", Vec3[]> {
+  const h = s / 2;
+  const phi = t * (Math.PI / 2);
+  const base: Vec3[] = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, y]) => ({ x, y, z: 0 }));
+
+  // North/South fold around the x-axis-parallel hinge at y = ±h; the
+  // "d" coordinate is the flat distance from that hinge (0..s).
+  const foldNS = (yFlat: number, sign: 1 | -1): { y: number; z: number } => {
+    const d = sign * (yFlat - sign * h);
+    const { d: dFolded, z } = rotateLift(d, phi);
+    return { y: sign * h + sign * dFolded, z };
+  };
+  const north: Vec3[] = [[-h, h], [h, h], [h, h + s], [-h, h + s]].map(([x, y]) => {
+    const { y: yF, z } = foldNS(y, 1);
+    return { x, y: yF, z };
+  });
+  const south: Vec3[] = [[-h, -h], [h, -h], [h, -h - s], [-h, -h - s]].map(([x, y]) => {
+    const { y: yF, z } = foldNS(y, -1);
+    return { x, y: yF, z };
+  });
+
+  // East/West fold around the y-axis-parallel hinge at x = ±h.
+  const foldEW = (xFlat: number, sign: 1 | -1): { x: number; z: number } => {
+    const d = sign * (xFlat - sign * h);
+    const { d: dFolded, z } = rotateLift(d, phi);
+    return { x: sign * h + sign * dFolded, z };
+  };
+  const east: Vec3[] = [[h, -h], [h, h], [h + s, h], [h + s, -h]].map(([x, y]) => {
+    const { x: xF, z } = foldEW(x, 1);
+    return { x: xF, y, z };
+  });
+  const west: Vec3[] = [[-h, -h], [-h, h], [-h - s, h], [-h - s, -h]].map(([x, y]) => {
+    const { x: xF, z } = foldEW(x, -1);
+    return { x: xF, y, z };
+  });
+
+  // Top is hinged to North's own outer edge (North's d = s). Compose
+  // North's rotation (its current d-direction and normal) with Top's
+  // own fold fraction around that already-rotated hinge.
+  const northOuter = rotateLift(s, phi); // North's outer-edge d,z
+  const northHingeY = h + northOuter.d;
+  const northHingeZ = northOuter.z;
+  const dDir = { y: Math.cos(phi), z: Math.sin(phi) }; // North's own extension direction
+  const normalDir = { y: -Math.sin(phi), z: Math.cos(phi) }; // perpendicular, the fold-toward direction
+  const top: Vec3[] = [[-h, h + s], [h, h + s], [h, h + 2 * s], [-h, h + 2 * s]].map(([x, yFlat]) => {
+    const e = yFlat - (h + s); // distance beyond North's outer edge, 0..s
+    const y = northHingeY + e * (Math.cos(phi) * dDir.y + Math.sin(phi) * normalDir.y);
+    const z = northHingeZ + e * (Math.cos(phi) * dDir.z + Math.sin(phi) * normalDir.z);
+    return { x, y, z };
+  });
+
+  return { base, north, south, east, west, top };
 }
 
 export function localProjectPointToPlane(input: ProjectPointToPlaneRequest): ProjectPointToPlaneResponse {

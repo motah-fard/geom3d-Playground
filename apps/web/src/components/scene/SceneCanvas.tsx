@@ -11,6 +11,9 @@ import { RightTriangleTrigScene } from "@/components/scene/queries/RightTriangle
 import { CircleMeasuresScene } from "@/components/scene/queries/CircleMeasuresScene";
 import { RegularPolygonScene } from "@/components/scene/queries/RegularPolygonScene";
 import { TransformationsScene } from "@/components/scene/queries/TransformationsScene";
+import { SolidsScene } from "@/components/scene/queries/SolidsScene";
+import { CrossSectionScene } from "@/components/scene/queries/CrossSectionScene";
+import { NetScene } from "@/components/scene/queries/NetScene";
 import { PointToPlaneScene } from "@/components/scene/queries/PointToPlaneScene";
 import { IntersectRayPlaneScene } from "@/components/scene/queries/IntersectRayPlaneScene";
 import { ClosestPointSegmentScene } from "@/components/scene/queries/ClosestPointSegmentScene";
@@ -91,7 +94,13 @@ export function SceneCanvas() {
                                                   ? [{ id: "polygonSides", role: "Side count", value: store.polygonSides }, { id: "polygonRadius", role: "Circumradius", value: store.polygonRadius }]
                                                   : queryType === "transformations"
                                                     ? [{ id: "transformTranslation", role: "Translation", value: store.transformTranslation }, { id: "transformHandle", role: "Rotate + scale handle", value: store.transformHandle }]
-                                                    : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
+                                                    : queryType === "solids-3d"
+                                                      ? [{ id: "solidDimA", role: "Dimension A", value: store.solidDimA }, { id: "solidDimB", role: "Dimension B", value: store.solidDimB }, { id: "solidDimC", role: "Dimension C", value: store.solidDimC }]
+                                                      : queryType === "cross-sections"
+                                                        ? [{ id: "crossSectionTilt", role: "Plane tilt", value: store.crossSectionTilt }, { id: "crossSectionOffset", role: "Plane offset", value: store.crossSectionOffset }]
+                                                        : queryType === "nets"
+                                                          ? [{ id: "netFold", role: "Fold amount", value: store.netFold }]
+                                                          : [{ id: "segmentA1", role: "Segment A start", value: store.segmentA1 }, { id: "segmentA2", role: "Segment A end", value: store.segmentA2 }, { id: "segmentB1", role: "Segment B start", value: store.segmentB1 }, { id: "segmentB2", role: "Segment B end", value: store.segmentB2 }];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#09131c] shadow-2xl shadow-black/20">
@@ -134,6 +143,9 @@ export function SceneCanvas() {
             {queryType === "circle-measures" && <CircleMeasuresScene />}
             {queryType === "regular-polygon" && <RegularPolygonScene />}
             {queryType === "transformations" && <TransformationsScene />}
+            {queryType === "solids-3d" && <SolidsScene />}
+            {queryType === "cross-sections" && <CrossSectionScene />}
+            {queryType === "nets" && <NetScene />}
             {queryType === "project-point-to-plane" && <PointToPlaneScene />}
             {queryType === "intersect-ray-plane" && <IntersectRayPlaneScene />}
             {queryType === "closest-point-segment" && <ClosestPointSegmentScene />}
