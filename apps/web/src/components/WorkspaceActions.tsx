@@ -101,7 +101,14 @@ export function WorkspaceActions() {
     // the store's own default (Angles) stands.
     try {
       const savedQuery = localStorage.getItem(LAST_QUERY_STORAGE_KEY);
-      if (savedQuery && savedQuery in QUERY_META) {
+      // Only a genuine restore to a *different* chapter should exit Learn/
+      // Explore's home screen (setQueryType resets showHome to false). In
+      // dev, React's Strict Mode double-invokes this effect; by the second
+      // pass the other mount effect has already written the still-default
+      // query back to localStorage, so without this check that dev-only
+      // double-invoke would look like "restoring" to the same chapter and
+      // needlessly skip past Home.
+      if (savedQuery && savedQuery in QUERY_META && savedQuery !== usePlaygroundStore.getState().queryType) {
         usePlaygroundStore.getState().setQueryType(savedQuery as QueryType);
       }
     } catch {
@@ -179,6 +186,12 @@ export function WorkspaceActions() {
   };
 
   const actionClass = "shrink-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35";
+  // This component's hooks above own hydration (theme, progress,
+  // last-visited chapter, shared-scenario URLs) regardless of mode, so they
+  // always run — only the visible toolbar itself is Build-only, since
+  // Undo/Redo/Save/Load/Export are exactly the power-user chrome Learn and
+  // Explore are meant to hide.
+  if (store.appMode !== "build") return null;
   return (
     // The button strip scrolls horizontally on narrow screens instead of
     // wrapping into several rows, which used to push all page content below

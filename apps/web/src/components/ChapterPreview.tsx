@@ -6,11 +6,44 @@ import * as THREE from "three";
 import type { QueryType } from "@/types/geometry";
 
 // A small, stylized stand-in shape per chapter — not the real computed
-// geometry (that would mean maintaining 16 miniature copies of each scene),
-// just enough visual variety that the grid doesn't read as sixteen identical
-// spinning blobs.
+// geometry (that would mean maintaining 31 miniature copies of each scene),
+// just enough visual variety that a gallery grid doesn't read as identical
+// spinning blobs. Some overlap between conceptually similar chapters
+// (rays, segments, boxes) is expected and fine — the label under each
+// thumbnail carries the rest.
 function PreviewGeometry({ query }: { query: QueryType }) {
   switch (query) {
+    // Geometry Foundations
+    case "angles":
+      return <torusGeometry args={[0.8, 0.12, 16, 48, Math.PI * 0.6]} />;
+    case "pythagorean-theorem":
+      return <boxGeometry args={[1.4, 1.4, 0.15]} />;
+    case "right-triangle-trig":
+      return <coneGeometry args={[0.8, 1.4, 3]} />;
+    case "circle-measures":
+      return <torusGeometry args={[0.8, 0.28, 16, 48]} />;
+    case "regular-polygon":
+      return <cylinderGeometry args={[0.9, 0.9, 0.3, 6]} />;
+    case "transformations":
+      return <tetrahedronGeometry args={[1, 0]} />;
+    // 3D Geometry
+    case "solids-3d":
+      return <boxGeometry args={[1.3, 1.3, 1.3]} />;
+    case "cross-sections":
+      return <coneGeometry args={[0.9, 1.5, 32]} />;
+    case "nets":
+      return <boxGeometry args={[1.2, 1.2, 1.2]} />;
+    // Computational Geometry
+    case "project-point-to-plane":
+    case "intersect-ray-plane":
+      return <boxGeometry args={[1.6, 1.6, 0.1]} />;
+    case "closest-point-segment":
+    case "segment-segment":
+      return <cylinderGeometry args={[0.05, 0.05, 1.8, 12]} />;
+    case "intersect-ray-aabb":
+    case "closest-point-aabb":
+      return <boxGeometry args={[1.1, 1.1, 1.1]} />;
+    // Growth & Form
     case "cartesian-transform":
       return <boxGeometry args={[1.3, 1.3, 1.3]} />;
     case "log-spiral-growth":
@@ -66,7 +99,7 @@ function SpinningPreview({ query, color, spinning }: { query: QueryType; color: 
   );
 }
 
-export function GrowthFormGalleryPreview({ query, color, hovered }: { query: QueryType; color: string; hovered: boolean }) {
+export function ChapterPreview({ query, color, hovered }: { query: QueryType; color: string; hovered: boolean }) {
   return (
     <Canvas
       frameloop={hovered ? "always" : "demand"}

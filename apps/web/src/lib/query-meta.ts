@@ -323,6 +323,61 @@ export const QUERY_GROUPS = (["Foundations", "Project", "Intersect", "Measure", 
   }),
 );
 
+export type LearningCollectionId = "geometry-foundations" | "3d-geometry" | "computational-geometry" | "growth-form";
+
+const projectIntersectMeasure = QUERY_GROUPS.filter((g) => g.category === "Project" || g.category === "Intersect" || g.category === "Measure").flatMap((g) => g.queries);
+const growthFormQueries = QUERY_GROUPS.find((g) => g.category === "Growth & Form")!.queries;
+
+// A presentational grouping on top of `category`, used only by the Learn
+// and Explore home screens' "collections" grid — it doesn't touch accent
+// colors, the "Seen in nature" vs "Why it matters" split, or anything else
+// keyed off `category` itself. Splits the existing "Foundations" category
+// into a 2D and a 3D collection (a cleaner cut for browsing than one mixed
+// bucket), and folds Project/Intersect/Measure into one "Computational
+// Geometry" collection, since each of those three is only 1-3 chapters on
+// its own.
+export const LEARNING_COLLECTIONS: {
+  id: LearningCollectionId;
+  title: string;
+  tagline: string;
+  accent: string;
+  emoji: string;
+  queries: QueryType[];
+}[] = [
+  {
+    id: "geometry-foundations",
+    title: "Geometry Foundations",
+    tagline: "Angles, triangles, circles, polygons, and the transformations that move them — the 2D groundwork everything else builds on.",
+    accent: "#5B6EF5",
+    emoji: "📐",
+    queries: ["angles", "pythagorean-theorem", "right-triangle-trig", "circle-measures", "regular-polygon", "transformations"],
+  },
+  {
+    id: "3d-geometry",
+    title: "3D Geometry",
+    tagline: "Solids, the cuts through them, and the flat nets that fold back up into them.",
+    accent: "#5B6EF5",
+    emoji: "📦",
+    queries: ["solids-3d", "cross-sections", "nets"],
+  },
+  {
+    id: "computational-geometry",
+    title: "Computational Geometry",
+    tagline: "The spatial queries a 3D engine runs constantly: project a point, intersect a ray, find the closest point.",
+    accent: "#38BDF8",
+    emoji: "🧭",
+    queries: projectIntersectMeasure,
+  },
+  {
+    id: "growth-form",
+    title: "Growth & Form",
+    tagline: "D’Arcy Thompson’s case that a living thing’s shape owes as much to mathematics as to natural selection.",
+    accent: "#F3B95F",
+    emoji: "🌿",
+    queries: growthFormQueries,
+  },
+];
+
 // The suggested learning order across every category, from first
 // principles to the most advanced Growth & Form chapters — used by the
 // guided learning path (as opposed to QUERY_GROUPS, which is grouped

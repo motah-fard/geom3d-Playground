@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { LearningCollectionId } from "@/lib/query-meta";
 import type {
   AllometricGrowthResponse,
   AngleResponse,
@@ -341,13 +342,21 @@ export type PlaygroundState = {
   // support one, at 15% opacity alongside the full-opacity current shape.
   showComparison: boolean;
 
-  // Replaces the main chapter view with a visual card grid of every Growth
-  // & Form chapter; picking a card (or any other navigation) exits it.
-  showGrowthFormGallery: boolean;
+  // Replaces the main chapter view with a visual card grid of the given
+  // learning collection; picking a card (or any other navigation) exits it.
+  activeCollectionId: LearningCollectionId | null;
 
   // Which of the three chapter views is showing: the live 3D scene, a
   // dedicated derivation view, or the actual source code that scene calls.
   contentMode: "visual" | "math" | "code";
+
+  // The app's top-level mode. "learn" and "explore" both default to a home
+  // screen (showHome) rather than dropping straight into a chapter, and
+  // hide the power-user workspace chrome (Undo/Redo, Save/Load, Export,
+  // workspace settings) that "build" exposes in full — the same chapter
+  // view underlies all three modes once a chapter is open.
+  appMode: "learn" | "explore" | "build";
+  showHome: boolean;
 
   // The formula term currently hovered in the results panel, if any.
   // `targetId` matches a draggable point's `id` so it can glow in the
@@ -491,8 +500,10 @@ export type PlaygroundState = {
   setIsDragging: (isDragging: boolean) => void;
   setSceneViewMode: (mode: PlaygroundState["sceneViewMode"]) => void;
   setShowComparison: (show: boolean) => void;
-  setShowGrowthFormGallery: (show: boolean) => void;
+  setActiveCollection: (id: LearningCollectionId | null) => void;
   setContentMode: (mode: PlaygroundState["contentMode"]) => void;
+  setAppMode: (mode: PlaygroundState["appMode"]) => void;
+  setShowHome: (show: boolean) => void;
   setHoveredTerm: (term: PlaygroundState["hoveredTerm"]) => void;
   setSelectedObject: (id: string | null) => void;
   setUnit: (unit: ScenarioSnapshot["unit"]) => void;
@@ -721,8 +732,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   selectedObject: null,
   sceneViewMode: "explore",
   showComparison: false,
-  showGrowthFormGallery: false,
+  activeCollectionId: null,
   contentMode: "visual",
+  appMode: "learn",
+  showHome: true,
   hoveredTerm: null,
   visitedQueries: [],
   points: 0,
@@ -796,8 +809,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       queryStatus: "idle",
       sceneViewMode: "explore",
       showComparison: false,
-      showGrowthFormGallery: false,
+      activeCollectionId: null,
       contentMode: "visual",
+      showHome: false,
     }),
 
   setInputs: ({ point, planePoint, planeNormal }) =>
@@ -1191,8 +1205,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setIsDragging: (isDragging) => set({ isDragging }),
   setSceneViewMode: (sceneViewMode) => set({ sceneViewMode }),
   setShowComparison: (showComparison) => set({ showComparison }),
-  setShowGrowthFormGallery: (showGrowthFormGallery) => set({ showGrowthFormGallery }),
+  setActiveCollection: (activeCollectionId) => set({ activeCollectionId }),
   setContentMode: (contentMode) => set({ contentMode }),
+  setAppMode: (appMode) => set({ appMode, showHome: appMode !== "build", activeCollectionId: null }),
+  setShowHome: (showHome) => set({ showHome }),
   setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
   markVisited: (query) =>
     set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),

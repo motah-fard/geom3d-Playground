@@ -8,7 +8,7 @@ import { trackInteraction } from "@/lib/analytics";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 
 export function QuerySelector() {
-  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, correctAnswerQueries, points, streak, setShowGrowthFormGallery } = usePlaygroundStore();
+  const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, correctAnswerQueries, points, streak, setActiveCollection } = usePlaygroundStore();
   const [mode, setMode] = useState<"path" | "browse">("path");
   const [search, setSearch] = useState("");
   const selectQuery = (query: QueryType) => {
@@ -93,7 +93,7 @@ export function QuerySelector() {
           <>
             <button
               type="button"
-              onClick={() => setShowGrowthFormGallery(true)}
+              onClick={() => setActiveCollection("growth-form")}
               className="mb-3 flex w-full items-center justify-between rounded-xl border border-amber-300/20 bg-amber-300/[0.06] px-3 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             >
               <span>🌿 Growth &amp; Form gallery</span>
@@ -173,7 +173,7 @@ export function QuerySelector() {
                   {category === "Growth & Form" ? (
                     <button
                       type="button"
-                      onClick={() => setShowGrowthFormGallery(true)}
+                      onClick={() => setActiveCollection("growth-form")}
                       className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 underline decoration-slate-700 underline-offset-2 transition hover:text-amber-300 hover:decoration-amber-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                     >
                       🌿 {category} — gallery view
