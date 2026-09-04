@@ -1,0 +1,8 @@
+services:
+  api:
+    build:
+      context: ./services/api
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081

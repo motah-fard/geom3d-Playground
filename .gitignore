@@ -47,3 +47,6 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# Local Claude Code config (dev-server launch config, etc.)
+.claude/
