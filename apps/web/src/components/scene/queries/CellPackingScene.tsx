@@ -1,29 +1,83 @@
 "use client";
 
-import { useMemo } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
-import { Line, Sphere } from "@react-three/drei";
+import { Html, Line, Sphere } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
-import { toTuple } from "@/types/geometry";
+import { toTuple, type Vec3 } from "@/types/geometry";
 import { CELL_RING_SITES, voronoiCell } from "@/lib/local-geometry";
 
+type Bubble = { id: number; position: Vec3 };
+
+// A small rotating palette so added bubbles read as distinct cells rather
+// than one repeated color — a soft cyan/violet iridescence, as opposed to
+// the site's own fixed amber-gold.
+const BUBBLE_HUES = ["#29C7E8", "#B58CFF", "#4DD4A8", "#7C83FF"];
+
+function cellPolygonGeometry(cell: Vec3[]) {
+  if (cell.length < 3) return null;
+  const shape = new THREE.Shape();
+  shape.moveTo(cell[0].x, cell[0].y);
+  for (const point of cell.slice(1)) shape.lineTo(point.x, point.y);
+  shape.closePath();
+  return new THREE.ShapeGeometry(shape);
+}
+
 export function CellPackingScene() {
-  const { cellCenter, setCellCenterInput, setShouldAutoRun, objectLabels } = usePlaygroundStore();
+  const { cellCenter, setCellCenterInput, setShouldAutoRun, objectLabels, selectedObject } = usePlaygroundStore();
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const nextBubbleId = useRef(0);
 
-  const cell = useMemo(() => voronoiCell(cellCenter, CELL_RING_SITES), [cellCenter]);
+  // The main, store-tracked site (drives the results panel via the API
+  // layer, unchanged) plus any exploratory bubbles the visitor has added —
+  // every site's cell is recomputed against every other site live.
+  const sites = [{ id: "cellCenter", position: cellCenter }, ...bubbles.map((b) => ({ id: `bubble-${b.id}`, position: b.position }))];
+  const canDeleteSelected = bubbles.some((b) => `bubble-${b.id}` === selectedObject);
 
-  const cellGeometry = useMemo(() => {
-    if (cell.length < 3) return null;
-    const shape = new THREE.Shape();
-    shape.moveTo(cell[0].x, cell[0].y);
-    for (const point of cell.slice(1)) shape.lineTo(point.x, point.y);
-    shape.closePath();
-    return new THREE.ShapeGeometry(shape);
-  }, [cell]);
+  const addBubble = (point: Vec3) => {
+    const id = nextBubbleId.current++;
+    setBubbles((prev) => [...prev, { id, position: { x: point.x, y: point.y, z: 0 } }]);
+  };
+
+  const removeSelectedBubble = () => {
+    setBubbles((prev) => prev.filter((b) => `bubble-${b.id}` !== selectedObject));
+  };
 
   return (
     <>
+      <Html fullscreen style={{ pointerEvents: "none" }}>
+        <div className="pointer-events-auto absolute left-3 top-3 flex flex-col gap-2">
+          <div className="rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300 backdrop-blur">
+            Click empty space to add a bubble
+          </div>
+          {canDeleteSelected && (
+            <button
+              type="button"
+              onClick={removeSelectedBubble}
+              className="rounded-lg border border-rose-400/30 bg-slate-950/80 px-2.5 py-1.5 text-left text-[10px] font-semibold text-rose-200 backdrop-blur transition hover:bg-rose-400/10"
+            >
+              ✕ Remove selected bubble
+            </button>
+          )}
+        </div>
+      </Html>
+
+      {/* click-catcher: adds a bubble wherever empty space is clicked, sitting
+          just behind the cells and points so clicks on them take priority.
+          onPointerDown, not onClick — matches DraggablePoint's own handler,
+          which is the event type actually reaching meshes in this app. */}
+      <mesh
+        position={[0, 0, -0.02]}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          addBubble(e.point);
+        }}
+      >
+        <planeGeometry args={[10, 10]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+
       {/* fixed neighboring growth centers */}
       {CELL_RING_SITES.map((site, i) => (
         <Sphere key={i} args={[0.12, 16, 16]} position={toTuple(site)}>
@@ -31,15 +85,25 @@ export function CellPackingScene() {
         </Sphere>
       ))}
 
-      {/* the growth center's Voronoi cell */}
-      {cellGeometry && (
-        <mesh geometry={cellGeometry}>
-          <meshBasicMaterial color="orange" transparent opacity={0.18} side={THREE.DoubleSide} />
-        </mesh>
-      )}
-      {cell.length >= 3 && (
-        <Line points={[...cell.map((p) => toTuple(p)), toTuple(cell[0])]} color="orange" lineWidth={2.5} />
-      )}
+      {sites.map((site, i) => {
+        const neighbors = [...CELL_RING_SITES, ...sites.filter((_, j) => j !== i).map((s) => s.position)];
+        const cell = voronoiCell(site.position, neighbors);
+        const geometry = cellPolygonGeometry(cell);
+        const isMain = site.id === "cellCenter";
+        const color = isMain ? "#FFD166" : BUBBLE_HUES[i % BUBBLE_HUES.length];
+        return (
+          <group key={site.id}>
+            {geometry && (
+              <mesh geometry={geometry}>
+                <meshBasicMaterial color={color} transparent opacity={0.16} side={THREE.DoubleSide} depthWrite={false} />
+              </mesh>
+            )}
+            {cell.length >= 3 && (
+              <Line points={[...cell.map((p) => toTuple(p)), toTuple(cell[0])]} color={color} lineWidth={2} />
+            )}
+          </group>
+        );
+      })}
 
       <DraggablePoint
         position={cellCenter}
@@ -51,6 +115,18 @@ export function CellPackingScene() {
           setShouldAutoRun(true);
         }}
       />
+      {bubbles.map((bubble, index) => (
+        <DraggablePoint
+          key={bubble.id}
+          position={bubble.position}
+          color={BUBBLE_HUES[(index + 1) % BUBBLE_HUES.length]}
+          id={`bubble-${bubble.id}`}
+          label="+"
+          onChange={(p) => {
+            setBubbles((prev) => prev.map((b) => (b.id === bubble.id ? { ...b, position: { x: p.x, y: p.y, z: 0 } } : b)));
+          }}
+        />
+      ))}
     </>
   );
 }
