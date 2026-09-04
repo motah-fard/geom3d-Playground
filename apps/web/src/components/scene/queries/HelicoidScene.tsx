@@ -1,14 +1,19 @@
 "use client";
 
 import * as THREE from "three";
-import { Line } from "@react-three/drei";
+import { Html, Line } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { BuildControls } from "../primitives/BuildControls";
+import { useBuildAnimation } from "@/hooks/useBuildAnimation";
 import type { Vec3 } from "@/types/geometry";
 import { HELICOID_TURNS, helicoidPoint, localHelicoid } from "@/lib/local-geometry";
 
 const U_STEPS = 36;
 const V_STEPS = 140;
+const TWIST_DURATION_S = 1.2;
+const CENTER_COLOR = new THREE.Color("#F3B95F");
+const EDGE_COLOR = new THREE.Color("#29C7E8");
 
 function onAxis(p: Vec3): Vec3 {
   return { x: Math.max(Math.hypot(p.x, p.y), 1e-6), y: 0, z: 0 };
@@ -23,13 +28,17 @@ function pitchAxis(p: Vec3, radius: number): Vec3 {
 function buildHelicoidGeometry(radius: number, c: number): THREE.BufferGeometry {
   const totalAngle = HELICOID_TURNS * 2 * Math.PI;
   const positions: number[] = [];
+  const colors: number[] = [];
+  const tint = new THREE.Color();
   const stride = V_STEPS + 1;
   for (let i = 0; i <= U_STEPS; i++) {
     const u = (i / U_STEPS) * radius;
+    tint.copy(CENTER_COLOR).lerp(EDGE_COLOR, i / U_STEPS);
     for (let j = 0; j <= V_STEPS; j++) {
       const v = (j / V_STEPS) * totalAngle;
       const p = helicoidPoint(u, v, c);
       positions.push(p.x, p.y, p.z);
+      colors.push(tint.r, tint.g, tint.b);
     }
   }
   const indices: number[] = [];
@@ -44,6 +53,7 @@ function buildHelicoidGeometry(radius: number, c: number): THREE.BufferGeometry 
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
@@ -62,23 +72,45 @@ function outerEdgeCurve(radius: number, c: number): [number, number, number][] {
 
 export function HelicoidScene() {
   const { helicoidRadius, helicoidPitch, setHelicoidInputs, setShouldAutoRun, objectLabels } = usePlaygroundStore();
+  const { progress: twistProgress, setProgress: setTwistProgress, playing: twisting, play, pause, reset, speed, setSpeed } = useBuildAnimation(TWIST_DURATION_S);
 
   const radiusPoint = onAxis(helicoidRadius);
   const { radius, c } = localHelicoid(radiusPoint, helicoidPitch);
   const pitchPoint = pitchAxis(helicoidPitch, radius);
 
-  const geometry = buildHelicoidGeometry(radius, c);
+  // Eased so the ribbon winds up quickly and settles into its final pitch,
+  // rather than twisting at a constant rate — c = 0 is exactly a flat disk,
+  // giving a natural "untwisted sheet becomes a screw thread" starting point.
+  const ease = Math.sin((twistProgress * Math.PI) / 2);
+  const animatedC = c * ease;
+
+  const geometry = buildHelicoidGeometry(radius, animatedC);
 
   return (
     <>
+      <Html fullscreen style={{ pointerEvents: "none" }}>
+        <div className="pointer-events-auto absolute left-3 top-3">
+          <BuildControls
+            label="Twist"
+            playing={twisting}
+            progress={twistProgress}
+            onPlayPause={() => (twisting ? pause() : play())}
+            onReset={reset}
+            onScrub={setTwistProgress}
+            speed={speed}
+            onSpeedChange={setSpeed}
+          />
+        </div>
+      </Html>
+
       <mesh geometry={geometry}>
-        <meshStandardMaterial color="#a5f3fc" transparent opacity={0.55} side={THREE.DoubleSide} depthTest depthWrite={false} />
+        <meshStandardMaterial vertexColors transparent opacity={0.72} side={THREE.DoubleSide} depthTest depthWrite={false} roughness={0.3} metalness={0.1} />
       </mesh>
       <mesh geometry={geometry}>
-        <meshStandardMaterial color="#a5f3fc" wireframe transparent opacity={0.3} />
+        <meshBasicMaterial vertexColors wireframe transparent opacity={0.25} />
       </mesh>
 
-      <Line points={outerEdgeCurve(radius, c)} color="#64748b" lineWidth={1.5} />
+      <Line points={outerEdgeCurve(radius, animatedC)} color="#64748b" lineWidth={1.5} />
       <Line points={[[radiusPoint.x, 0, 0], [0, 0, 0]]} color="#475569" lineWidth={1} dashed dashSize={0.1} gapSize={0.08} />
       <Line points={[[pitchPoint.x, 0, 0], pitchPoint.z >= 0 ? [pitchPoint.x, 0, pitchPoint.z] : [pitchPoint.x, 0, 0]]} color="#475569" lineWidth={1} dashed dashSize={0.1} gapSize={0.08} />
 
