@@ -6,6 +6,7 @@ import { useThree } from "@react-three/fiber";
 import { useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { usePlaygroundStore } from "@/store/playground-store";
+import { QUERY_META } from "@/lib/query-meta";
 
 export function DraggablePoint({
   position,
@@ -21,9 +22,15 @@ export function DraggablePoint({
   id: string;
 }) {
   const [dragging, setDragging] = useState(false);
+  const [pointerHovered, setPointerHovered] = useState(false);
   const { camera } = useThree();
-  const { setIsDragging, selectedObject, setSelectedObject, saveCheckpoint, snap, hoveredTerm } = usePlaygroundStore();
+  const { setIsDragging, selectedObject, setSelectedObject, saveCheckpoint, snap, hoveredTerm, queryType, sceneViewMode } = usePlaygroundStore();
   const isHovered = hoveredTerm?.targetId === id;
+  // Growth & Form's "explore" view keeps the form clean of labels by
+  // default — a label still surfaces the moment you touch the point, so
+  // it's never truly hidden, just not permanently on screen.
+  const isGrowthForm = QUERY_META[queryType].category === "Growth & Form";
+  const showLabelChip = !isGrowthForm || sceneViewMode === "analyze" || pointerHovered || isHovered || selectedObject === id;
   const dragPlane = useRef(new THREE.Plane());
   const meshRef = useRef<THREE.Mesh>(null);
   const hit = useRef(new THREE.Vector3());
@@ -88,9 +95,13 @@ export function DraggablePoint({
         if (!next || !Number.isFinite(next.x + next.y + next.z)) return;
         onChange({ x: next.x, y: next.y, z: next.z });
       }}
-      onPointerOver={() => (document.body.style.cursor = "grab")}
+      onPointerOver={() => {
+        document.body.style.cursor = "grab";
+        setPointerHovered(true);
+      }}
       onPointerOut={() => {
         if (!dragging) document.body.style.cursor = "default";
+        setPointerHovered(false);
       }}
     >
       <sphereGeometry args={[0.28, 24, 24]} />
@@ -129,8 +140,8 @@ export function DraggablePoint({
               if (!event.repeat) saveCheckpoint();
               onChange({ x: position.x + delta.x, y: position.y + delta.y, z: position.z + delta.z });
             }}
-            className={`rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-lg outline-none ${selectedObject === id ? "border-cyan-300 bg-cyan-900/90 ring-2 ring-cyan-300/30" : "border-white/15 bg-slate-950/85"}`}
-          >{label}</button>
+            className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[9px] font-bold text-white shadow-md outline-none transition-opacity focus:opacity-100 focus-visible:opacity-100 ${showLabelChip ? "opacity-100" : "opacity-0"} ${selectedObject === id ? "border-primary/60 bg-primary/25 ring-2 ring-primary-glow/40" : "border-white/10 bg-slate-950/70"}`}
+          ><span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />{label}</button>
         </Html>
       )}
     </mesh>

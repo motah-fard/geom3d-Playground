@@ -43,7 +43,7 @@ const BeeCellScene = dynamic(() => import("@/components/scene/queries/BeeCellSce
 
 export function SceneCanvas() {
   const store = usePlaygroundStore();
-  const { queryType, stepMode, setStepMode, queryStatus, isDragging, setSelectedObject } = store;
+  const { queryType, stepMode, setStepMode, queryStatus, isDragging, setSelectedObject, sceneViewMode, setSceneViewMode } = store;
   const [view, setView] = useState<"perspective" | "top" | "front" | "side">("perspective");
   const [showTable, setShowTable] = useState(false);
   const meta = QUERY_META[queryType];
@@ -53,6 +53,10 @@ export function SceneCanvas() {
   const isGrowthForm = meta.category === "Growth & Form";
   const canvasBackground = isGrowthForm ? "#12140f" : "#09131c";
   const gridLineColor = isGrowthForm ? "#3a3520" : "#28465a";
+  // Only Growth & Form chapters get the Explore/Analyze split — everywhere
+  // else (Ray → Plane, closest-point queries, etc.) the grid and axes are
+  // load-bearing for reading off coordinates, so they always show.
+  const showStructure = !isGrowthForm || sceneViewMode === "analyze";
   const cameraPosition: [number, number, number] = view === "top" ? [0, 10, 0.001] : view === "front" ? [0, 0, 10] : view === "side" ? [10, 0, 0] : [6, 5, 6];
   const sceneObjects = queryType === "project-point-to-plane" || queryType === "closest-point-aabb"
     ? [{ id: "point", role: "Point", value: store.point }]
@@ -123,6 +127,12 @@ export function SceneCanvas() {
           <span>{queryStatus === "running" ? "Updating geometry…" : meta.instruction}</span>
         </div>
         <div className="flex items-center gap-1" aria-label="Viewport controls">
+          {isGrowthForm && (
+            <div className="mr-2 flex rounded-lg border border-slate-800 bg-slate-950/60 p-0.5 text-xs font-semibold" role="tablist" aria-label="Viewport detail">
+              <button type="button" role="tab" aria-selected={sceneViewMode === "explore"} onClick={() => setSceneViewMode("explore")} className={`rounded-md px-2.5 py-1 transition ${sceneViewMode === "explore" ? "bg-primary/20 text-white" : "text-slate-500 hover:text-slate-300"}`}>Explore</button>
+              <button type="button" role="tab" aria-selected={sceneViewMode === "analyze"} onClick={() => setSceneViewMode("analyze")} className={`rounded-md px-2.5 py-1 transition ${sceneViewMode === "analyze" ? "bg-primary/20 text-white" : "text-slate-500 hover:text-slate-300"}`}>Analyze</button>
+            </div>
+          )}
           {queryType === "project-point-to-plane" && (
             <label className="mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:bg-slate-800">
               <input type="checkbox" checked={stepMode} onChange={(event) => setStepMode(event.target.checked)} className="accent-cyan-300" />
@@ -141,11 +151,16 @@ export function SceneCanvas() {
         <Canvas key={`${queryType}-${view}`} orthographic={view !== "perspective"} camera={view === "perspective" ? { position: cameraPosition, fov: 48 } : { position: cameraPosition, zoom: 58, near: 0.1, far: 1000 }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }} onPointerMissed={() => setSelectedObject(null)}>
           <color attach="background" args={[canvasBackground]} />
           <fog attach="fog" args={[canvasBackground, 14, 32]} />
-          <ambientLight intensity={0.8} />
-          <directionalLight position={[5, 8, 5]} intensity={1.4} />
+          {/* Cinematic rig: soft ambient fill, a warm key light, a cool rim
+              light from behind to separate the form from the background,
+              and a weak fill from below so undersides aren't pure black. */}
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[5, 8, 5]} intensity={1.3} color="#fff4e0" />
+          <directionalLight position={[-6, 3, -7]} intensity={0.6} color="#7dd3fc" />
+          <directionalLight position={[0, -4, 2]} intensity={0.2} color="#8891A3" />
           <OrbitControls makeDefault enabled={!isDragging} enableDamping dampingFactor={0.08} minDistance={3} maxDistance={24} />
-          <gridHelper args={[40, 40, gridLineColor, "#202A3A"]} />
-          <axesHelper args={[4]} ref={(instance) => instance?.setColors("#FF6B7A", "#4DD4A8", "#5B8CFF")} />
+          {showStructure && <gridHelper args={[40, 40, gridLineColor, "#202A3A"]} />}
+          {showStructure && <axesHelper args={[4]} ref={(instance) => instance?.setColors("#FF6B7A", "#4DD4A8", "#5B8CFF")} />}
           <Bounds fit clip margin={1.35}>
             {queryType === "angles" && <AnglesScene />}
             {queryType === "pythagorean-theorem" && <PythagoreanScene />}

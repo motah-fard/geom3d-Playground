@@ -321,6 +321,13 @@ export type PlaygroundState = {
   queryStatus: "idle" | "running" | "success" | "error";
   isDragging: boolean;
   selectedObject: string | null;
+
+  // Growth & Form chapters default to a clean "explore" viewport (no grid,
+  // axes, or point labels) so the form itself is the hero; "analyze" reveals
+  // the mathematical scaffolding. Read from shared primitives like
+  // DraggablePoint (which have no other way to know the active category) as
+  // well as SceneCanvas itself.
+  sceneViewMode: "explore" | "analyze";
   unit: ScenarioSnapshot["unit"];
   precision: number;
   snap: number;
@@ -469,6 +476,7 @@ export type PlaygroundState = {
   setError: (error: string | null) => void;
   setQueryStatus: (status: PlaygroundState["queryStatus"]) => void;
   setIsDragging: (isDragging: boolean) => void;
+  setSceneViewMode: (mode: PlaygroundState["sceneViewMode"]) => void;
   setHoveredTerm: (term: PlaygroundState["hoveredTerm"]) => void;
   setSelectedObject: (id: string | null) => void;
   setUnit: (unit: ScenarioSnapshot["unit"]) => void;
@@ -695,6 +703,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   queryStatus: "idle",
   isDragging: false,
   selectedObject: null,
+  sceneViewMode: "explore",
   hoveredTerm: null,
   visitedQueries: [],
   points: 0,
@@ -766,6 +775,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       ...clearedResults,
       error: null,
       queryStatus: "idle",
+      sceneViewMode: "explore",
     }),
 
   setInputs: ({ point, planePoint, planeNormal }) =>
@@ -1157,6 +1167,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
 
   setQueryStatus: (queryStatus) => set({ queryStatus }),
   setIsDragging: (isDragging) => set({ isDragging }),
+  setSceneViewMode: (sceneViewMode) => set({ sceneViewMode }),
   setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
   markVisited: (query) =>
     set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),
