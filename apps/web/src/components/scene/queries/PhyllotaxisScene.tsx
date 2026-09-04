@@ -7,12 +7,19 @@ import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
 import { toTuple } from "@/types/geometry";
 import {
+  GOLDEN_ANGLE_RAD,
   PHYLLOTAXIS_DIAL_RADIUS,
   PHYLLOTAXIS_SCALE,
   PHYLLOTAXIS_SEED_COUNT,
   localPhyllotaxis,
   phyllotaxisPoint,
 } from "@/lib/local-geometry";
+
+const ANGLE_PRESETS: { label: string; deg: number }[] = [
+  { label: "90°", deg: 90 },
+  { label: "120°", deg: 120 },
+  { label: "Golden 137.5°", deg: GOLDEN_ANGLE_RAD * (180 / Math.PI) },
+];
 
 const DIAL_SAMPLES = 64;
 const SEEDS_PER_SECOND = 45;
@@ -46,6 +53,12 @@ export function PhyllotaxisScene() {
     setGrowing(true);
   };
 
+  const setDivergenceDeg = (deg: number) => {
+    const rad = deg * (Math.PI / 180);
+    setPhyllotaxisInput({ x: PHYLLOTAXIS_DIAL_RADIUS * Math.cos(rad), y: PHYLLOTAXIS_DIAL_RADIUS * Math.sin(rad), z: 0 });
+    setShouldAutoRun(true);
+  };
+
   const positions = useMemo(() => {
     const array = new Float32Array(Math.max(seedCount, 1) * 3);
     for (let i = 1; i <= seedCount; i++) {
@@ -66,6 +79,25 @@ export function PhyllotaxisScene() {
   return (
     <>
       <Html fullscreen style={{ pointerEvents: "none" }}>
+        <div className="pointer-events-auto absolute left-3 top-3 flex flex-wrap gap-1.5">
+          {ANGLE_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => setDivergenceDeg(preset.deg)}
+              className="rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300 backdrop-blur transition hover:text-white"
+            >
+              {preset.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setDivergenceDeg(Math.random() * 360)}
+            className="rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300 backdrop-blur transition hover:text-white"
+          >
+            🎲 Random
+          </button>
+        </div>
         <div className="pointer-events-auto absolute bottom-14 left-3 right-3 flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-2 text-[10px] font-semibold text-slate-300 backdrop-blur">
           <button
             type="button"
