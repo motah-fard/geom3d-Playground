@@ -183,6 +183,26 @@ export function ChapterView({ showSidebarResults, onBack }: { showSidebarResults
       <TryItChallenge chapterKey={queryType} />
       <ComprehensionCheck question={COMPREHENSION_QUESTIONS[queryType]} chapterKey={queryType} />
 
+      {meta.related && meta.related.length > 0 && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/55 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Related</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {meta.related.map((related) => (
+              <button
+                key={related}
+                type="button"
+                onClick={() => goTo(related)}
+                className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+              >
+                {QUERY_META[related].emoji && <span aria-hidden="true">{QUERY_META[related].emoji}</span>}
+                {QUERY_META[related].shortTitle}
+                <span aria-hidden="true" className="text-slate-600">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {(previousQuery || nextQuery) && (
         <nav className="flex items-center justify-between gap-3" aria-label="Guided path navigation">
           {previousQuery ? (

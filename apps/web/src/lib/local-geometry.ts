@@ -1017,6 +1017,32 @@ export function localCatenoid(aPoint: Vec3): CatenoidResponse {
 }
 
 // =======================
+// The catenoid and the helicoid are a classic "Bonnet pair": isometric
+// minimal surfaces belonging to the same one-parameter "associate family"
+//   X(u,v,θ) = cos(θ)·Helicoid(u,v) + sin(θ)·Catenoid(u,v),
+// built from the same (u,v) patch. Every θ in between is itself an exact
+// minimal surface — not an interpolation between two unrelated shapes,
+// but the same intrinsic geometry (every length and angle on the surface)
+// held fixed while its embedding in space bends from a screw into a neck.
+// θ = 0 is the pure helicoid, θ = π/2 the pure catenoid.
+// =======================
+
+export const MORPH_HALF_HEIGHT = 1.2;
+export const MORPH_TURNS = 1.5;
+
+export function catenoidHelicoidMorphPoint(u: number, v: number, theta: number): Vec3 {
+  const helicoid = { x: Math.sinh(v) * Math.sin(u), y: -Math.sinh(v) * Math.cos(u), z: u };
+  const catenoid = { x: Math.cosh(v) * Math.cos(u), y: Math.cosh(v) * Math.sin(u), z: v };
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  return {
+    x: c * helicoid.x + s * catenoid.x,
+    y: c * helicoid.y + s * catenoid.y,
+    z: c * helicoid.z + s * catenoid.z,
+  };
+}
+
+// =======================
 // The milk-drop coronet — Worthington and Edgerton's splash-crown
 // photography. The crown breaks into N roughly equal points around its
 // rim; treating those points as vertices of a regular N-gon inscribed in

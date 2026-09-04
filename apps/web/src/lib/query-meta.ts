@@ -15,6 +15,12 @@ export type QueryMeta = {
   // first" hint when opening this chapter before those are done. Only
   // the Advanced-difficulty chapters have these; the rest stand alone.
   prerequisites?: QueryType[];
+  // Lateral connections surfaced as a "Related" strip at the bottom of the
+  // chapter — a curated, deliberately small set of genuinely illuminating
+  // pairings (the same curve rotated into a surface, the same shape's 2D
+  // and 3D forms, a shared underlying law), not an attempt to link every
+  // chapter to every other one.
+  related?: QueryType[];
 };
 
 export const QUERY_META: Record<QueryType, QueryMeta> = {
@@ -27,6 +33,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     accent: "#5B6EF5",
     difficulty: "Beginner",
     emoji: "📐",
+    related: ["regular-polygon", "pythagorean-theorem"],
   },
   "pythagorean-theorem": {
     category: "Foundations",
@@ -87,6 +94,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     accent: "#5B6EF5",
     difficulty: "Beginner",
     emoji: "📦",
+    related: ["cross-sections", "nets"],
   },
   "cross-sections": {
     category: "Foundations",
@@ -179,6 +187,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag S along its radius to resize, or T to change the whorl growth ratio.",
     accent: "#F3B95F",
     difficulty: "Intermediate",
+    related: ["helical-shell-growth"],
   },
   "cell-packing": {
     category: "Growth & Form",
@@ -188,6 +197,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag the center point; its cell is the region closer to it than to any neighbor.",
     accent: "#F3B95F",
     difficulty: "Intermediate",
+    related: ["bee-cell"],
   },
   "helical-shell-growth": {
     category: "Growth & Form",
@@ -198,6 +208,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     accent: "#F3B95F",
     difficulty: "Advanced",
     prerequisites: ["log-spiral-growth"],
+    related: ["log-spiral-growth"],
   },
   "square-cube-law": {
     category: "Growth & Form",
@@ -207,6 +218,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag R to resize the sphere and watch its surface-to-volume ratio fall as it grows.",
     accent: "#F3B95F",
     difficulty: "Beginner",
+    related: ["allometric-growth"],
   },
   "catenary-arch": {
     category: "Growth & Form",
@@ -216,6 +228,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag A to make the hanging curve tauter or slacker over a fixed span.",
     accent: "#F3B95F",
     difficulty: "Intermediate",
+    related: ["catenoid"],
   },
   "allometric-growth": {
     category: "Growth & Form",
@@ -225,6 +238,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     instruction: "Drag X to change body size, or K to change how disproportionately the part grows with it.",
     accent: "#F3B95F",
     difficulty: "Beginner",
+    related: ["square-cube-law"],
   },
   "phyllotaxis": {
     category: "Growth & Form",
@@ -272,6 +286,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     accent: "#F3B95F",
     difficulty: "Advanced",
     prerequisites: ["catenary-arch"],
+    related: ["catenary-arch", "helicoid", "cell-packing"],
   },
   "milk-coronet": {
     category: "Growth & Form",
@@ -301,6 +316,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     accent: "#F3B95F",
     difficulty: "Advanced",
     prerequisites: ["catenoid"],
+    related: ["catenoid"],
   },
   "bee-cell": {
     category: "Growth & Form",
@@ -311,6 +327,7 @@ export const QUERY_META: Record<QueryType, QueryMeta> = {
     accent: "#F3B95F",
     difficulty: "Advanced",
     prerequisites: ["cell-packing"],
+    related: ["cell-packing"],
   },
 };
 

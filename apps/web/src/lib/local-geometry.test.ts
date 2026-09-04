@@ -9,6 +9,7 @@ import {
   localCellPacking,
   buildWhirlingSquares,
   catenaryAFromSag,
+  catenoidHelicoidMorphPoint,
   catenoidRadius,
   BEE_CELL_MAX_RISE,
   BEE_CELL_MIN_RISE,
@@ -315,6 +316,50 @@ test("catenoid area matches numerical integration of the surface-of-revolution f
       numericalArea += 2 * Math.PI * r * Math.sqrt(1 + rPrime * rPrime) * dz;
     }
     assert.ok(Math.abs(numericalArea - result.surfaceArea) / result.surfaceArea < 1e-4, `a=${a}: numerical=${numericalArea} closed-form=${result.surfaceArea}`);
+  }
+});
+
+test("catenoidHelicoidMorphPoint reduces to a real catenoid at theta=pi/2 and a real helicoid at theta=0", () => {
+  for (const u of [0.3, 1.7, 4.0]) {
+    for (const v of [-0.9, 0, 1.1]) {
+      const catenoidExtreme = catenoidHelicoidMorphPoint(u, v, Math.PI / 2);
+      // Unit-scale catenoid: radius at height v is cosh(v) = catenoidRadius(v, 1); z is v itself.
+      assert.ok(Math.abs(Math.hypot(catenoidExtreme.x, catenoidExtreme.y) - catenoidRadius(v, 1)) < 1e-9);
+      assert.ok(Math.abs(catenoidExtreme.z - v) < 1e-9);
+
+      const helicoidExtreme = catenoidHelicoidMorphPoint(u, v, 0);
+      // Helicoid: distance from the axis is |sinh(v)|, and height equals the sweep angle u — the screw property.
+      assert.ok(Math.abs(Math.hypot(helicoidExtreme.x, helicoidExtreme.y) - Math.abs(Math.sinh(v))) < 1e-9);
+      assert.ok(Math.abs(helicoidExtreme.z - u) < 1e-9);
+    }
+  }
+});
+
+test("the catenoid-helicoid associate family preserves its first fundamental form across theta — a genuine isometric bend, not a stretch", () => {
+  // E, F, G (the metric coefficients from the surface's partial derivatives)
+  // are what "intrinsic geometry" means precisely: if they're the same at
+  // every theta for the same (u, v), every length and angle measured *on*
+  // the surface is unchanged as it bends from a helicoid into a catenoid.
+  const h = 1e-5;
+  const fundamentalForm = (u: number, v: number, theta: number) => {
+    const p = catenoidHelicoidMorphPoint(u, v, theta);
+    const pu = catenoidHelicoidMorphPoint(u + h, v, theta);
+    const pv = catenoidHelicoidMorphPoint(u, v + h, theta);
+    const Xu = { x: (pu.x - p.x) / h, y: (pu.y - p.y) / h, z: (pu.z - p.z) / h };
+    const Xv = { x: (pv.x - p.x) / h, y: (pv.y - p.y) / h, z: (pv.z - p.z) / h };
+    const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
+    return { E: dot(Xu, Xu), F: dot(Xu, Xv), G: dot(Xv, Xv) };
+  };
+  for (const u of [0.4, 2.1]) {
+    for (const v of [-0.7, 0.5]) {
+      const reference = fundamentalForm(u, v, 0);
+      for (const theta of [0.3, Math.PI / 4, 1.1, Math.PI / 2]) {
+        const form = fundamentalForm(u, v, theta);
+        assert.ok(Math.abs(form.E - reference.E) < 1e-3, `E mismatch at theta=${theta}`);
+        assert.ok(Math.abs(form.F - reference.F) < 1e-3, `F mismatch at theta=${theta}`);
+        assert.ok(Math.abs(form.G - reference.G) < 1e-3, `G mismatch at theta=${theta}`);
+      }
+    }
   }
 });
 
