@@ -6,6 +6,7 @@ import { trackInteraction } from "@/lib/analytics";
 import { UsageInsights } from "@/components/UsageInsights";
 
 const STORAGE_KEY = "geom3d-playground-scenario-v1";
+const VISITED_STORAGE_KEY = "geom3d-visited-queries-v1";
 
 function encodeScenario(snapshot: ScenarioSnapshot) {
   const bytes = new TextEncoder().encode(JSON.stringify(snapshot));
@@ -66,6 +67,12 @@ export function WorkspaceActions() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("geom3d-theme");
     if (savedTheme === "light" || savedTheme === "dark") usePlaygroundStore.getState().setTheme(savedTheme);
+    try {
+      const savedVisited = localStorage.getItem(VISITED_STORAGE_KEY);
+      if (savedVisited) usePlaygroundStore.getState().hydrateVisited(JSON.parse(savedVisited));
+    } catch {
+      // ignore malformed local storage
+    }
     const encoded = new URL(window.location.href).searchParams.get("scenario");
     if (!encoded) return;
     try {
@@ -74,6 +81,14 @@ export function WorkspaceActions() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  useEffect(() => {
+    usePlaygroundStore.getState().markVisited(store.queryType);
+  }, [store.queryType]);
+
+  useEffect(() => {
+    localStorage.setItem(VISITED_STORAGE_KEY, JSON.stringify(store.visitedQueries));
+  }, [store.visitedQueries]);
 
   const showNotice = (message: string) => {
     setNotice(message);

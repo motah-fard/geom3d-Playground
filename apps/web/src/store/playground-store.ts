@@ -304,6 +304,13 @@ export type PlaygroundState = {
   // shown in the floating badge regardless of whether a target exists.
   hoveredTerm: { targetId?: string; symbol: string; meaning: string; value: string } | null;
 
+  // Chapters the visitor has opened this browser, for the guided
+  // learning path's progress indicator. Local to the browser (not part
+  // of a saved/shared scenario) and persisted to localStorage.
+  visitedQueries: QueryType[];
+  markVisited: (query: QueryType) => void;
+  hydrateVisited: (queries: QueryType[]) => void;
+
   // setters
   setQueryType: (queryType: QueryType) => void;
 
@@ -618,6 +625,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   isDragging: false,
   selectedObject: null,
   hoveredTerm: null,
+  visitedQueries: [],
   unit: "units",
   precision: 3,
   snap: 0.1,
@@ -1025,6 +1033,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setQueryStatus: (queryStatus) => set({ queryStatus }),
   setIsDragging: (isDragging) => set({ isDragging }),
   setHoveredTerm: (hoveredTerm) => set({ hoveredTerm }),
+  markVisited: (query) =>
+    set((state) => (state.visitedQueries.includes(query) ? state : { visitedQueries: [...state.visitedQueries, query] })),
+  hydrateVisited: (queries) => set({ visitedQueries: queries }),
   setSelectedObject: (selectedObject) => set({ selectedObject }),
   setUnit: (unit) => set({ unit }),
   setPrecision: (precision) => set({ precision: Math.max(0, Math.min(8, precision)) }),

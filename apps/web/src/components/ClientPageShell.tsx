@@ -34,15 +34,24 @@ import { QuerySelector } from "@/components/QuerySelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { SceneCanvas } from "@/components/scene/SceneCanvas";
 import { usePlaygroundStore } from "@/store/playground-store";
-import { QUERY_META } from "@/lib/query-meta";
+import { LEARNING_PATH, QUERY_META } from "@/lib/query-meta";
 import { WorkspaceActions } from "@/components/WorkspaceActions";
 import { ScenarioGallery } from "@/components/ScenarioGallery";
 import { IntroSection } from "@/components/IntroSection";
 import { NATURE_EXAMPLES } from "@/lib/nature-examples";
+import { DifficultyBadge } from "@/components/DifficultyBadge";
 
 export function ClientPageShell() {
-  const { queryType, loadExample, queryStatus } = usePlaygroundStore();
+  const { queryType, loadExample, queryStatus, setQueryType, setShouldAutoRun, saveCheckpoint } = usePlaygroundStore();
   const meta = QUERY_META[queryType];
+  const pathIndex = LEARNING_PATH.indexOf(queryType);
+  const previousQuery = pathIndex > 0 ? LEARNING_PATH[pathIndex - 1] : null;
+  const nextQuery = pathIndex >= 0 && pathIndex < LEARNING_PATH.length - 1 ? LEARNING_PATH[pathIndex + 1] : null;
+  const goTo = (query: typeof queryType) => {
+    saveCheckpoint();
+    setQueryType(query);
+    setShouldAutoRun(true);
+  };
 
   const form = (
     <>
@@ -113,7 +122,10 @@ export function ClientPageShell() {
           <div className="px-1">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/80">{meta.category}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300/80">{meta.category}</p>
+                  <DifficultyBadge difficulty={meta.difficulty} />
+                </div>
                 <h2 id="query-title" className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{meta.title}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{meta.description}</p>
                 {NATURE_EXAMPLES[queryType] && (
@@ -142,6 +154,23 @@ export function ClientPageShell() {
             </summary>
             <div className="border-t border-slate-800 p-4">{form}</div>
           </details>
+
+          {(previousQuery || nextQuery) && (
+            <nav className="flex items-center justify-between gap-3" aria-label="Guided path navigation">
+              {previousQuery ? (
+                <button type="button" onClick={() => goTo(previousQuery)} className="min-w-0 flex-1 truncate rounded-xl border border-slate-800 bg-slate-950/55 px-4 py-3 text-left text-sm text-slate-300 transition hover:border-slate-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-600">← Previous</span>
+                  <span className="font-semibold">{QUERY_META[previousQuery].shortTitle}</span>
+                </button>
+              ) : <span />}
+              {nextQuery ? (
+                <button type="button" onClick={() => goTo(nextQuery)} className="min-w-0 flex-1 truncate rounded-xl border border-cyan-400/20 bg-cyan-400/[0.06] px-4 py-3 text-right text-sm text-slate-300 transition hover:border-cyan-400/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-cyan-300/70">Next →</span>
+                  <span className="font-semibold">{QUERY_META[nextQuery].shortTitle}</span>
+                </button>
+              ) : <span />}
+            </nav>
+          )}
         </section>
 
         <aside className="hidden xl:block" aria-label="Query results">
