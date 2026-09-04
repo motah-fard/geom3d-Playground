@@ -1,12 +1,16 @@
 "use client";
 
-import { Line } from "@react-three/drei";
+import { Html, Line } from "@react-three/drei";
 import { usePlaygroundStore } from "@/store/playground-store";
 import { DraggablePoint } from "../primitives/DraggablePoint";
+import { BuildControls } from "../primitives/BuildControls";
+import { useBuildAnimation } from "@/hooks/useBuildAnimation";
 import { buildWhirlingSquares, localWhirlingSquares, type WhirlingSquare } from "@/lib/local-geometry";
 import type { Vec3 } from "@/types/geometry";
 
 const ARC_SAMPLES = 16;
+const STEP_DURATION_S = 1.4;
+const ARC_COLOR = "#F3B95F";
 
 // N is rendered off to the side (negative z) so it never collides with
 // the squares; only its distance from the origin is meaningful.
@@ -49,9 +53,16 @@ function arcPoints(square: WhirlingSquare): [number, number, number][] {
 
 export function WhirlingSquaresScene() {
   const { whirlingCount, setWhirlingInput, setShouldAutoRun, objectLabels } = usePlaygroundStore();
+  const { progress: stepProgress, setProgress: setStepProgress, playing: stepping, play, pause, reset, speed, setSpeed } = useBuildAnimation(STEP_DURATION_S);
   const countPoint = countAxis(whirlingCount);
   const { count } = localWhirlingSquares(countPoint);
-  const squares = buildWhirlingSquares(count);
+  const allSquares = buildWhirlingSquares(count);
+
+  // Steps through the construction one square at a time — each square's
+  // own shape never depends on how many more come after it, so this is
+  // exactly the same recursion, just paused partway through.
+  const visibleCount = Math.max(1, Math.min(count, Math.round(stepProgress * count)));
+  const squares = allSquares.slice(0, visibleCount);
 
   // center the whole construction near the origin
   const offsetX = -1.6;
@@ -59,6 +70,21 @@ export function WhirlingSquaresScene() {
 
   return (
     <>
+      <Html fullscreen style={{ pointerEvents: "none" }}>
+        <div className="pointer-events-auto absolute left-3 top-3">
+          <BuildControls
+            label="Step through"
+            playing={stepping}
+            progress={stepProgress}
+            onPlayPause={() => (stepping ? pause() : play())}
+            onReset={reset}
+            onScrub={setStepProgress}
+            speed={speed}
+            onSpeedChange={setSpeed}
+          />
+        </div>
+      </Html>
+
       {squares.map((square, i) => (
         <Line
           key={`sq-${i}`}
@@ -77,7 +103,7 @@ export function WhirlingSquaresScene() {
         <Line
           key={`arc-${i}`}
           points={arcPoints(square).map(([x, y, z]) => [x + offsetX, y + offsetY, z])}
-          color="orange"
+          color={ARC_COLOR}
           lineWidth={2.5}
         />
       ))}
