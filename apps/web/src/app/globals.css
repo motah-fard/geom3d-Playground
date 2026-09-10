@@ -27,7 +27,11 @@
   --color-slate-800: #131A27;
   --color-slate-700: #202A3A;
   --color-slate-600: #3A4658;
-  --color-slate-500: #687386;
+  /* Lightened from #687386 — the original failed WCAG AA (4.5:1) for
+     body text against slate-950 at ~4.09:1; this measures ~5.05:1. Kept
+     in the same hue family and roughly midway to slate-400 so it stays
+     visibly more muted than slate-400 wherever both appear together. */
+  --color-slate-500: #788294;
   --color-slate-400: #8891A3;
   --color-slate-300: #A5B0C2;
   --color-slate-200: #C7CFDC;

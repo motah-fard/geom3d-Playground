@@ -109,7 +109,7 @@ export function ResultsPanel() {
   const formula = plainFormulaText(state);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading" aria-live="polite" aria-busy={state.queryStatus === "running"}>
+    <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl shadow-black/10" aria-labelledby="results-heading">
       <header className="flex items-center justify-between border-b border-slate-800 px-4 py-3.5">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Output</p>
@@ -137,7 +137,7 @@ export function ResultsPanel() {
         )}
 
         {!friendlyError && activeResult && (
-          <div className="space-y-3">
+          <div className="space-y-3" aria-live="polite" aria-busy={state.queryStatus === "running"}>
             {state.queryType === "project-point-to-plane" && state.projectPointResult && (
               <><Metric label="Perpendicular distance" value={state.projectPointResult.distance} /><Coordinate label="Projected point P′" value={state.projectPointResult.projectedPoint} /><p className="text-xs leading-5 text-slate-500">P′ lies on the plane along its normal from P.</p></>
             )}

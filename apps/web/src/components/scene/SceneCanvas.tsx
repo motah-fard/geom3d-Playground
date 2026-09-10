@@ -217,8 +217,12 @@ export function SceneCanvas() {
           <span className="flex items-center gap-1.5"><i className="h-0.5 w-3" style={{ backgroundColor: "#29C7E8" }} /> geometry</span>
           <span className="flex items-center gap-1.5"><i className="h-0.5 w-3" style={{ backgroundColor: "#FF7AC8" }} /> measured path</span>
         </div>
-        <p className="sr-only">Coordinates are also available in the geometry inputs. The numeric result below is the accessible alternative to this scene.</p>
       </div>
+      {/* Deliberately outside the role="application" region above: some
+          screen readers switch to a mode there that suppresses normal
+          document reading, which could make this hint unreachable if it
+          were nested inside instead. */}
+      <p className="sr-only">Coordinates are also available in the geometry inputs. The numeric result below is the accessible alternative to this scene.</p>
 
       <div className="flex flex-wrap items-center gap-1 border-t border-slate-800 bg-slate-950/70 px-3 py-2" aria-label="Viewport controls">
         <button

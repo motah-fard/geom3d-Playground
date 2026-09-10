@@ -53,13 +53,16 @@ function Quiz({ q, chapterKey }: { q: ComprehensionQuestion; chapterKey: QueryTy
               className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition disabled:cursor-default ${stateClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300`}
             >
               <span aria-hidden="true">{showState ? (isCorrect ? "✓" : isPicked ? "✗" : "○") : "○"}</span>
+              {showState && (
+                <span className="sr-only">{isCorrect ? "Correct answer. " : isPicked ? "Your answer, incorrect. " : ""}</span>
+              )}
               <span>{option}</span>
             </button>
           );
         })}
       </div>
       {picked !== null && (
-        <p className="mt-3 text-xs leading-5 text-slate-400">
+        <p className="mt-3 text-xs leading-5 text-slate-400" role="status">
           <span className={`font-bold ${justCorrect ? "text-emerald-300" : "text-rose-300"}`}>
             {justCorrect ? (wasFirstTimeCorrect ? `Correct! +15 points${streak > 1 ? ` · 🔥 ${streak} in a row` : ""} — ` : "Correct — ") : "Not quite — "}
           </span>
