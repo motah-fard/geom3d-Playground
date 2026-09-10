@@ -292,7 +292,7 @@ Response:
 
 ## Point-segment distance
 
-`POST /api/v1/queries/distance-point-segment`
+`POST /api/v1/queries/closest-point-segment`
 
 Request:
 
@@ -310,8 +310,88 @@ Response:
 
 ```json
 {
-  "closestPoint": { "x": 1, "y": 0, "z": 0 },
+  "point": { "x": 1, "y": 0, "z": 0 },
   "distance": 1
+}
+```
+
+## Segment-segment distance
+
+`POST /api/v1/queries/segment-segment`
+
+Request:
+
+```json
+{
+  "a1": { "x": 0, "y": 0, "z": 0 },
+  "a2": { "x": 2, "y": 0, "z": 0 },
+  "b1": { "x": 1, "y": 1, "z": 1 },
+  "b2": { "x": 1, "y": -1, "z": 1 }
+}
+```
+
+Response (verified against the real service):
+
+```json
+{
+  "pointA": { "x": 1, "y": 0, "z": 0 },
+  "pointB": { "x": 1, "y": 0, "z": 1 },
+  "distance": 1
+}
+```
+
+## Ray-box (AABB) intersection
+
+`POST /api/v1/queries/intersect-ray-aabb`
+
+Request:
+
+```json
+{
+  "ray": {
+    "origin": { "x": -1, "y": 1, "z": 1 },
+    "dir": { "x": 1, "y": 0, "z": 0 }
+  },
+  "aabb": {
+    "min": { "x": 0, "y": 0, "z": 0 },
+    "max": { "x": 2, "y": 2, "z": 2 }
+  }
+}
+```
+
+Response (verified against the real service):
+
+```json
+{
+  "hit": true,
+  "tMin": 1,
+  "tMax": 3,
+  "point": { "x": 0, "y": 1, "z": 1 }
+}
+```
+
+## Closest point on box (AABB)
+
+`POST /api/v1/queries/closest-point-aabb`
+
+Request:
+
+```json
+{
+  "point": { "x": 3, "y": -1, "z": 1 },
+  "aabb": {
+    "min": { "x": 0, "y": 0, "z": 0 },
+    "max": { "x": 2, "y": 2, "z": 2 }
+  }
+}
+```
+
+Response (verified against the real service):
+
+```json
+{
+  "point": { "x": 2, "y": 0, "z": 1 },
+  "distance": 1.4142135623730951
 }
 ```
 
@@ -571,13 +651,17 @@ func (h *Handler) ProjectPointToPlane(w http.ResponseWriter, r *http.Request) {
 * add result highlights
 * sync panel state with scene
 
-## Phase 4: polish
+## Phase 4: polish (done)
 
 * URL-based scenario serialization
 * example presets
 * copy result JSON
 * dark mode
 * error states and inline validation
+
+All five shipped, plus a great deal that wasn't originally scoped here
+(31 chapters, Learn/Explore/Playground modes, badges/progress, the
+concurrency demo) — see "Current status" at the top of this file.
 
 ---
 
