@@ -43,6 +43,11 @@ import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { ComprehensionCheck } from "@/components/ComprehensionCheck";
 import { TryItChallenge } from "@/components/TryItChallenge";
 import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
+import { useRovingTabs } from "@/hooks/useRovingTabs";
+
+const CONTENT_MODES = ["visual", "math", "code"] as const;
+const contentModeTabId = (mode: string) => `chapter-tab-${mode}`;
+const CONTENT_MODE_PANEL_ID = "chapter-tabpanel";
 
 // The 3D scene, formula/code views, geometry inputs, and progress UI for
 // whichever chapter is active — shared by the Build workspace's 3-column
@@ -51,6 +56,7 @@ import { COMPREHENSION_QUESTIONS } from "@/lib/comprehension-questions";
 // its own inline results and a way back to that mode's home screen).
 export function ChapterView({ showSidebarResults, onBack }: { showSidebarResults: boolean; onBack?: () => void }) {
   const { queryType, loadExample, setQueryType, setShouldAutoRun, saveCheckpoint, correctAnswerQueries, contentMode, setContentMode } = usePlaygroundStore();
+  const { getTabProps } = useRovingTabs(CONTENT_MODES, contentMode, setContentMode);
   const meta = QUERY_META[queryType];
   const pathIndex = LEARNING_PATH.indexOf(queryType);
   const previousQuery = pathIndex > 0 ? LEARNING_PATH[pathIndex - 1] : null;
@@ -149,36 +155,41 @@ export function ChapterView({ showSidebarResults, onBack }: { showSidebarResults
       </div>
 
       <div className="flex overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Chapter view">
-        {(["visual", "math", "code"] as const).map((mode) => (
+        {CONTENT_MODES.map((mode) => (
           <button
             key={mode}
+            id={contentModeTabId(mode)}
             type="button"
             role="tab"
             aria-selected={contentMode === mode}
+            aria-controls={CONTENT_MODE_PANEL_ID}
             onClick={() => setContentMode(mode)}
             className={`flex-1 rounded-lg px-3 py-1.5 capitalize transition ${contentMode === mode ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}
+            {...getTabProps(mode)}
           >
             {mode}
           </button>
         ))}
       </div>
 
-      {contentMode === "visual" && (
-        <>
-          <SceneCanvas />
-          <div className={showSidebarResults ? "xl:hidden" : ""}><ResultsPanel /></div>
+      <div role="tabpanel" id={CONTENT_MODE_PANEL_ID} aria-labelledby={contentModeTabId(contentMode)}>
+        {contentMode === "visual" && (
+          <>
+            <SceneCanvas />
+            <div className={showSidebarResults ? "xl:hidden" : ""}><ResultsPanel /></div>
 
-          <details open className="group rounded-2xl border border-slate-800 bg-slate-950/55">
-            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300">
-              <span>Geometry inputs</span>
-              <span className="text-slate-500 transition group-open:rotate-180" aria-hidden="true">⌄</span>
-            </summary>
-            <div className="border-t border-slate-800 p-4">{form}</div>
-          </details>
-        </>
-      )}
-      {contentMode === "math" && <ChapterMathView />}
-      {contentMode === "code" && <ChapterCodeView />}
+            <details open className="group rounded-2xl border border-slate-800 bg-slate-950/55">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300">
+                <span>Geometry inputs</span>
+                <span className="text-slate-500 transition group-open:rotate-180" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="border-t border-slate-800 p-4">{form}</div>
+            </details>
+          </>
+        )}
+        {contentMode === "math" && <ChapterMathView />}
+        {contentMode === "code" && <ChapterCodeView />}
+      </div>
 
       <TryItChallenge chapterKey={queryType} />
       <ComprehensionCheck question={COMPREHENSION_QUESTIONS[queryType]} chapterKey={queryType} />

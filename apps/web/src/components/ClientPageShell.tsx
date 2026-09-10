@@ -1,6 +1,6 @@
 "use client";
 
-import { TopNav } from "@/components/TopNav";
+import { APP_MODE_TABPANEL_ID, appModeTabId, TopNav } from "@/components/TopNav";
 import { WorkspaceActions } from "@/components/WorkspaceActions";
 import { BuildWorkspace } from "@/components/BuildWorkspace";
 import { CollectionGallery } from "@/components/CollectionGallery";
@@ -21,19 +21,21 @@ export function ClientPageShell() {
           renders its own visible toolbar only in Build mode. */}
       <WorkspaceActions />
 
-      {appMode === "build" ? (
-        <BuildWorkspace />
-      ) : activeCollectionId ? (
-        <div className="mx-auto max-w-[1600px] p-4 sm:p-6">
-          <CollectionGallery collectionId={activeCollectionId} onBack={() => setActiveCollection(null)} />
-        </div>
-      ) : showHome ? (
-        appMode === "learn" ? <LearnHome /> : <ExploreHome />
-      ) : (
-        <div id="workspace" className="mx-auto max-w-[900px] p-4 sm:p-6">
-          <ChapterView showSidebarResults={false} onBack={() => setShowHome(true)} />
-        </div>
-      )}
+      <div role="tabpanel" id={APP_MODE_TABPANEL_ID} aria-labelledby={appModeTabId(appMode)}>
+        {appMode === "build" ? (
+          <BuildWorkspace />
+        ) : activeCollectionId ? (
+          <div className="mx-auto max-w-[1600px] p-4 sm:p-6">
+            <CollectionGallery collectionId={activeCollectionId} onBack={() => setActiveCollection(null)} />
+          </div>
+        ) : showHome ? (
+          appMode === "learn" ? <LearnHome /> : <ExploreHome />
+        ) : (
+          <div id="workspace" className="mx-auto max-w-[900px] p-4 sm:p-6">
+            <ChapterView showSidebarResults={false} onBack={() => setShowHome(true)} />
+          </div>
+        )}
+      </div>
 
       <footer className="border-t border-white/5 bg-slate-950/45 px-4 py-6 sm:px-6">
         <div className="mx-auto max-w-[1600px] text-xs leading-5 text-slate-500">

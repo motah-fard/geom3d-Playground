@@ -6,10 +6,16 @@ import { usePlaygroundStore } from "@/store/playground-store";
 import type { QueryType } from "@/types/geometry";
 import { trackInteraction } from "@/lib/analytics";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
+import { useRovingTabs } from "@/hooks/useRovingTabs";
+
+const NAV_MODES = ["path", "browse"] as const;
+const navModeTabId = (mode: string) => `nav-mode-tab-${mode}`;
+const NAV_MODE_PANEL_ID = "nav-mode-tabpanel";
 
 export function QuerySelector() {
   const { queryType, setQueryType, setShouldAutoRun, saveCheckpoint, visitedQueries, correctAnswerQueries, points, streak, setActiveCollection } = usePlaygroundStore();
   const [mode, setMode] = useState<"path" | "browse">("path");
+  const { getTabProps } = useRovingTabs(NAV_MODES, mode, setMode);
   const [search, setSearch] = useState("");
   const selectQuery = (query: QueryType) => {
     saveCheckpoint();
@@ -101,10 +107,11 @@ export function QuerySelector() {
             </button>
 
             <div className="mb-3 flex rounded-xl border border-slate-800 bg-slate-950/60 p-1 text-xs font-semibold" role="tablist" aria-label="Navigation mode">
-              <button type="button" role="tab" aria-selected={mode === "path"} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}>Guided path</button>
-              <button type="button" role="tab" aria-selected={mode === "browse"} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}>Browse by category</button>
+              <button id={navModeTabId("path")} type="button" role="tab" aria-selected={mode === "path"} aria-controls={NAV_MODE_PANEL_ID} onClick={() => setMode("path")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "path" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`} {...getTabProps("path")}>Guided path</button>
+              <button id={navModeTabId("browse")} type="button" role="tab" aria-selected={mode === "browse"} aria-controls={NAV_MODE_PANEL_ID} onClick={() => setMode("browse")} className={`flex-1 rounded-lg px-2 py-1.5 transition ${mode === "browse" ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`} {...getTabProps("browse")}>Browse by category</button>
             </div>
 
+      <div role="tabpanel" id={NAV_MODE_PANEL_ID} aria-labelledby={navModeTabId(mode)}>
         {mode === "path" && (
           <>
             <div className="mb-3 px-2">
@@ -215,6 +222,7 @@ export function QuerySelector() {
             })}
           </nav>
         )}
+      </div>
           </>
         )}
       </div>

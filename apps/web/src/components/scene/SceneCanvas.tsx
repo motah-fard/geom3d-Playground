@@ -6,6 +6,11 @@ import { usePlaygroundStore } from "@/store/playground-store";
 import { QUERY_META } from "@/lib/query-meta";
 import { useEffect, useRef, useState, type ElementRef } from "react";
 import dynamic from "next/dynamic";
+import { useRovingTabs } from "@/hooks/useRovingTabs";
+
+const VIEWS = ["top", "front", "side", "perspective"] as const;
+const viewTabId = (view: string) => `scene-view-tab-${view}`;
+const SCENE_VIEW_PANEL_ID = "scene-view-tabpanel";
 
 // Bounds fits its camera exactly once, synchronously on mount. If the
 // canvas's container is still settling its layout at that exact instant
@@ -79,6 +84,7 @@ export function SceneCanvas() {
   const store = usePlaygroundStore();
   const { queryType, stepMode, setStepMode, queryStatus, isDragging, setSelectedObject, sceneViewMode, setSceneViewMode } = store;
   const [view, setView] = useState<"perspective" | "top" | "front" | "side">("perspective");
+  const { getTabProps } = useRovingTabs(VIEWS, view, setView);
   const [showTable, setShowTable] = useState(false);
   const resetViewRef = useRef<(() => void) | null>(null);
   const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
@@ -162,7 +168,8 @@ export function SceneCanvas() {
         <span className="truncate">{queryStatus === "running" ? "Updating geometry…" : meta.instruction}</span>
       </div>
 
-      <div className="relative h-[560px] w-full sm:h-[720px]" role="application" aria-label={`Interactive 3D viewport for ${meta.title}. ${meta.instruction}`}>
+      <div role="tabpanel" id={SCENE_VIEW_PANEL_ID} aria-labelledby={viewTabId(view)} className="relative h-[560px] w-full sm:h-[720px]">
+        <div className="absolute inset-0" role="application" aria-label={`Interactive 3D viewport for ${meta.title}. ${meta.instruction}`}>
         <Canvas key={`${queryType}-${view}`} orthographic={view !== "perspective"} camera={view === "perspective" ? { position: cameraPosition, fov: 48 } : { position: cameraPosition, zoom: 58, near: 0.1, far: 1000 }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }} onPointerMissed={() => setSelectedObject(null)}>
           <color attach="background" args={[canvasBackground]} />
           <fog attach="fog" args={[canvasBackground, 14, 32]} />
@@ -212,6 +219,7 @@ export function SceneCanvas() {
             {queryType === "bee-cell" && <BeeCellScene />}
           </Bounds>
         </Canvas>
+        </div>
         <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-lg border border-white/10 bg-slate-950/80 px-2.5 py-2 text-[10px] text-slate-300 backdrop-blur">
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full" style={{ backgroundColor: "#FFD166" }} /> draggable input</span>
           <span className="flex items-center gap-1.5"><i className="h-0.5 w-3" style={{ backgroundColor: "#29C7E8" }} /> geometry</span>
@@ -236,10 +244,12 @@ export function SceneCanvas() {
           className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         >⌂ Reset</button>
         <span className="mx-1 h-5 w-px shrink-0 bg-slate-800" aria-hidden="true" />
-        <button type="button" aria-pressed={view === "top"} onClick={() => setView("top")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Top</button>
-        <button type="button" aria-pressed={view === "front"} onClick={() => setView("front")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Front</button>
-        <button type="button" aria-pressed={view === "side"} onClick={() => setView("side")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block">Side</button>
-        <button type="button" aria-pressed={view === "perspective"} onClick={() => setView("perspective")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Perspective</button>
+        <div role="tablist" aria-label="Camera view" className="flex flex-wrap items-center gap-1">
+          <button id={viewTabId("top")} type="button" role="tab" aria-selected={view === "top"} aria-controls={SCENE_VIEW_PANEL_ID} onClick={() => setView("top")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-selected:bg-slate-700 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" {...getTabProps("top")}>Top</button>
+          <button id={viewTabId("front")} type="button" role="tab" aria-selected={view === "front"} aria-controls={SCENE_VIEW_PANEL_ID} onClick={() => setView("front")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-selected:bg-slate-700 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block" {...getTabProps("front")}>Front</button>
+          <button id={viewTabId("side")} type="button" role="tab" aria-selected={view === "side"} aria-controls={SCENE_VIEW_PANEL_ID} onClick={() => setView("side")} className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-selected:bg-slate-700 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:block" {...getTabProps("side")}>Side</button>
+          <button id={viewTabId("perspective")} type="button" role="tab" aria-selected={view === "perspective"} aria-controls={SCENE_VIEW_PANEL_ID} onClick={() => setView("perspective")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-selected:bg-slate-700 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" {...getTabProps("perspective")}>Perspective</button>
+        </div>
         <button type="button" aria-pressed={showTable} onClick={() => setShowTable((value) => !value)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white aria-pressed:bg-slate-700 aria-pressed:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Table</button>
 
         {queryType === "project-point-to-plane" && (

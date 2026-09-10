@@ -2,15 +2,22 @@
 
 import Image from "next/image";
 import { usePlaygroundStore } from "@/store/playground-store";
+import { useRovingTabs } from "@/hooks/useRovingTabs";
 
 const MODES = [
   { id: "learn", label: "Learn" },
   { id: "explore", label: "Explore" },
   { id: "build", label: "Playground" },
 ] as const;
+const MODE_IDS = MODES.map((mode) => mode.id);
+
+// Shared with ClientPageShell, which renders the panel this tablist controls.
+export const APP_MODE_TABPANEL_ID = "app-mode-tabpanel";
+export const appModeTabId = (mode: string) => `app-mode-tab-${mode}`;
 
 export function TopNav() {
   const { appMode, setAppMode, queryStatus } = usePlaygroundStore();
+  const { getTabProps } = useRovingTabs(MODE_IDS, appMode, setAppMode);
 
   return (
     <header className="border-b border-white/5 bg-slate-950/45 backdrop-blur-xl">
@@ -27,11 +34,14 @@ export function TopNav() {
           {MODES.map((mode) => (
             <button
               key={mode.id}
+              id={appModeTabId(mode.id)}
               type="button"
               role="tab"
               aria-selected={appMode === mode.id}
+              aria-controls={APP_MODE_TABPANEL_ID}
               onClick={() => setAppMode(mode.id)}
               className={`rounded-lg px-4 py-1.5 transition ${appMode === mode.id ? "bg-primary/15 text-white" : "text-slate-500 hover:text-slate-300"}`}
+              {...getTabProps(mode.id)}
             >
               {mode.label}
             </button>
