@@ -90,3 +90,25 @@ type ClosestPointAABBResponse struct {
 	Point    Vec3DTO `json:"point"`
 	Distance float64 `json:"distance"`
 }
+
+// BatchClosestPointSegmentsRequest asks for the single closest segment (of
+// potentially many thousands) to Point. It exists to demonstrate Go
+// concurrency on a genuinely parallelizable workload, not because any of
+// the app's other chapters need it — see QueryService.BatchClosestPointSegments.
+type BatchClosestPointSegmentsRequest struct {
+	Point    Vec3DTO      `json:"point"`
+	Segments []SegmentDTO `json:"segments"`
+}
+
+type BatchClosestPointSegmentsResponse struct {
+	ClosestPoint Vec3DTO `json:"closestPoint"`
+	Distance     float64 `json:"distance"`
+	SegmentIndex int     `json:"segmentIndex"`
+	NumSegments  int     `json:"numSegments"`
+	NumWorkers   int     `json:"numWorkers"`
+	// Both computed server-side on the exact same input, back to back, so
+	// the comparison is apples-to-apples rather than two separate requests
+	// with independent network/scheduling noise.
+	SequentialMicros float64 `json:"sequentialMicros"`
+	ParallelMicros   float64 `json:"parallelMicros"`
+}

@@ -5,6 +5,7 @@ import { ResultsPanel } from "@/components/ResultsPanel";
 import { ScenarioGallery } from "@/components/ScenarioGallery";
 import { GlossaryPanel } from "@/components/GlossaryPanel";
 import { BadgesPanel } from "@/components/BadgesPanel";
+import { ConcurrencyDemo } from "@/components/ConcurrencyDemo";
 import { ChapterView } from "@/components/ChapterView";
 import { CollectionGallery } from "@/components/CollectionGallery";
 import { usePlaygroundStore } from "@/store/playground-store";
@@ -27,6 +28,7 @@ export function BuildWorkspace() {
         <ScenarioGallery />
         <GlossaryPanel />
         <BadgesPanel />
+        <ConcurrencyDemo />
       </aside>
 
       {activeCollectionId ? (

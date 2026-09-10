@@ -230,6 +230,21 @@ export type ClosestPointAABBResponse = {
   distance: number;
 };
 
+export type BatchClosestPointSegmentsRequest = {
+  point: Vec3;
+  segments: Segment[];
+};
+
+export type BatchClosestPointSegmentsResponse = {
+  closestPoint: Vec3;
+  distance: number;
+  segmentIndex: number;
+  numSegments: number;
+  numWorkers: number;
+  sequentialMicros: number;
+  parallelMicros: number;
+};
+
 // =======================
 // Cartesian transformation (On Growth and Form, Ch. XVII)
 // =======================

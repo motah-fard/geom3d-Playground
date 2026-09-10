@@ -2,11 +2,21 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"math"
+	"runtime"
+	"sync"
+	"time"
 
 	"github.com/motah-fard/geom3d"
 	"github.com/motah-fard/geom3d-playground-api/internal/domain"
 )
+
+// maxBatchSegments bounds BatchClosestPointSegments's request size. It's
+// generous enough to make the sequential/parallel timing gap visible on a
+// live demo, while keeping the JSON payload (browser -> API) and the
+// worst-case memory for a single request bounded.
+const maxBatchSegments = 20_000
 
 type QueryService struct{}
 
@@ -190,5 +200,124 @@ func (s *QueryService) ClosestPointAABB(
 	return domain.ClosestPointAABBResponse{
 		Point:    fromVec3(closest),
 		Distance: distance,
+	}, nil
+}
+
+// closestSegmentResult is the winner from scanning a slice (or sub-slice) of
+// segments: which one, and how far. index is -1 for an empty slice.
+type closestSegmentResult struct {
+	index    int
+	distance float64
+}
+
+func closestSegmentSequential(point geom3d.Vec3, segments []geom3d.Segment3) closestSegmentResult {
+	best := closestSegmentResult{index: -1, distance: math.Inf(1)}
+	for i, seg := range segments {
+		if d := geom3d.DistancePointToSegment(point, seg); d < best.distance {
+			best = closestSegmentResult{index: i, distance: d}
+		}
+	}
+	return best
+}
+
+// closestSegmentParallel does the same scan as closestSegmentSequential, but
+// fanned out across GOMAXPROCS goroutines: each goroutine scans its own
+// contiguous chunk and writes only to its own slot of partials (indexed by
+// worker number), so no mutex is needed for the fan-out — only the final
+// fan-in reduction over the small partials slice is sequential.
+// closestSegmentParallel returns the winning result plus the worker count it
+// actually used (which may be clamped below GOMAXPROCS for a small input) —
+// the caller reports that count rather than recomputing the same clamp
+// itself, so the two can't independently drift out of sync.
+func closestSegmentParallel(point geom3d.Vec3, segments []geom3d.Segment3) (closestSegmentResult, int) {
+	// GOMAXPROCS(0) (read-only: passing 0 doesn't change it) rather than
+	// NumCPU() — NumCPU always reports the host's full core count, which is
+	// wrong once this runs in a container with a CPU quota below the host's
+	// core count (e.g. a small Fly.io machine on a bigger physical host).
+	// GOMAXPROCS reflects what the process can actually schedule onto.
+	numWorkers := runtime.GOMAXPROCS(0)
+	if numWorkers > len(segments) {
+		numWorkers = len(segments)
+	}
+	chunkSize := (len(segments) + numWorkers - 1) / numWorkers
+
+	partials := make([]closestSegmentResult, numWorkers)
+	var wg sync.WaitGroup
+	for w := 0; w < numWorkers; w++ {
+		start := w * chunkSize
+		if start >= len(segments) {
+			// chunkSize is rounded up, so when len(segments) doesn't divide
+			// evenly by numWorkers, the last worker(s) can start past the
+			// end of the slice — they simply have no work.
+			partials[w] = closestSegmentResult{index: -1, distance: math.Inf(1)}
+			continue
+		}
+		end := min(start+chunkSize, len(segments))
+
+		wg.Add(1)
+		go func(worker, start, end int) {
+			defer wg.Done()
+			partials[worker] = closestSegmentSequential(point, segments[start:end])
+			if partials[worker].index >= 0 {
+				partials[worker].index += start
+			}
+		}(w, start, end)
+	}
+	wg.Wait()
+
+	best := closestSegmentResult{index: -1, distance: math.Inf(1)}
+	for _, p := range partials {
+		if p.distance < best.distance {
+			best = p
+		}
+	}
+	return best, numWorkers
+}
+
+// BatchClosestPointSegments finds the single closest segment to Point among
+// potentially thousands, computing the same result both sequentially and
+// fanned out across goroutines (closestSegmentParallel) so the two can be
+// timed head-to-head on identical input in one request. It exists to make
+// Go's concurrency model tangible in the playground, on a workload that's
+// actually large enough for it to matter — unlike this API's other queries,
+// which are all O(1).
+func (s *QueryService) BatchClosestPointSegments(
+	req domain.BatchClosestPointSegmentsRequest,
+) (domain.BatchClosestPointSegmentsResponse, error) {
+	if len(req.Segments) == 0 {
+		return domain.BatchClosestPointSegmentsResponse{}, errors.New("segments must not be empty")
+	}
+	if len(req.Segments) > maxBatchSegments {
+		return domain.BatchClosestPointSegmentsResponse{}, fmt.Errorf("segments must not exceed %d", maxBatchSegments)
+	}
+
+	point := toVec3(req.Point)
+	segments := make([]geom3d.Segment3, len(req.Segments))
+	for i, dto := range req.Segments {
+		seg := geom3d.Segment3{A: toVec3(dto.A), B: toVec3(dto.B)}
+		if seg.IsDegenerate() {
+			return domain.BatchClosestPointSegmentsResponse{}, fmt.Errorf("segment %d: endpoints must not coincide", i)
+		}
+		segments[i] = seg
+	}
+
+	seqStart := time.Now()
+	closestSegmentSequential(point, segments)
+	seqElapsed := time.Since(seqStart)
+
+	parStart := time.Now()
+	best, numWorkers := closestSegmentParallel(point, segments)
+	parElapsed := time.Since(parStart)
+
+	closest := geom3d.ClosestPointOnSegment(point, segments[best.index])
+
+	return domain.BatchClosestPointSegmentsResponse{
+		ClosestPoint:     fromVec3(closest),
+		Distance:         best.distance,
+		SegmentIndex:     best.index,
+		NumSegments:      len(segments),
+		NumWorkers:       numWorkers,
+		SequentialMicros: float64(seqElapsed.Microseconds()),
+		ParallelMicros:   float64(parElapsed.Microseconds()),
 	}, nil
 }

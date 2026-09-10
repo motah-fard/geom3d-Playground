@@ -23,6 +23,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("POST /api/v1/queries/segment-segment", handler.SegmentSegmentDistance)
 	mux.HandleFunc("POST /api/v1/queries/intersect-ray-aabb", handler.IntersectRayAABB)
 	mux.HandleFunc("POST /api/v1/queries/closest-point-aabb", handler.ClosestPointAABB)
+	mux.HandleFunc("POST /api/v1/queries/batch-closest-point-segments", handler.BatchClosestPointSegments)
 
 	return withCORS(mux)
 }

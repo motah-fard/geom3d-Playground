@@ -1,4 +1,6 @@
 import type {
+  BatchClosestPointSegmentsRequest,
+  BatchClosestPointSegmentsResponse,
   ClosestPointAABBRequest,
   ClosestPointAABBResponse,
   ClosestPointSegmentRequest,
@@ -121,4 +123,27 @@ export function closestPointAABB(payload: ClosestPointAABBRequest) {
     "/api/v1/queries/closest-point-aabb",
     payload
   );
+}
+
+// Deliberately bypasses postQuery: that helper aborts any in-flight request
+// and publishes to the single shared ApiInspector trace, both of which are
+// wrong here — this is a one-shot, occasionally-large (thousands of
+// segments) benchmark run, not a live-updating per-chapter query, and its
+// huge payload has no business appearing in every other chapter's shared
+// "Developer details" trace viewer.
+export async function batchClosestPointSegments(
+  payload: BatchClosestPointSegmentsRequest
+): Promise<BatchClosestPointSegmentsResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/queries/batch-closest-point-segments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const maybeJson = await res.json().catch(() => null);
+    throw new Error(maybeJson?.error ?? "Request failed");
+  }
+
+  return res.json() as Promise<BatchClosestPointSegmentsResponse>;
 }

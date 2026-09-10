@@ -118,6 +118,31 @@ func (h *Handler) ClosestPointAABB(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// maxBatchRequestBytes bounds the request body for BatchClosestPointSegments
+// specifically — it's the only endpoint whose payload size scales with
+// caller-supplied input (an array of segments) rather than a handful of
+// fixed fields, so it's the only one that needs a body-size guard against a
+// request built to exhaust memory before the segment-count check ever runs.
+const maxBatchRequestBytes = 8 << 20 // 8 MiB
+
+func (h *Handler) BatchClosestPointSegments(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBatchRequestBytes)
+
+	var req domain.BatchClosestPointSegmentsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json body, or body exceeds size limit")
+		return
+	}
+
+	resp, err := h.queries.BatchClosestPointSegments(req)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]any{
 		"error": message,

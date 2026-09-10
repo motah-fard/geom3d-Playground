@@ -1,8 +1,11 @@
 package service
 
 import (
+	"math"
+	"math/rand"
 	"testing"
 
+	"github.com/motah-fard/geom3d"
 	"github.com/motah-fard/geom3d-playground-api/internal/domain"
 )
 
@@ -303,5 +306,149 @@ func TestClosestPointAABBInvalidBox(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for invalid AABB")
+	}
+}
+
+func TestBatchClosestPointSegmentsMatchesBruteForce(t *testing.T) {
+	svc := NewQueryService()
+
+	rng := rand.New(rand.NewSource(7))
+	const n = 5000
+	segments := make([]domain.SegmentDTO, n)
+	for i := range segments {
+		segments[i] = domain.SegmentDTO{
+			A: domain.Vec3DTO{X: rng.Float64() * 100, Y: rng.Float64() * 100, Z: rng.Float64() * 100},
+			B: domain.Vec3DTO{X: rng.Float64() * 100, Y: rng.Float64() * 100, Z: rng.Float64() * 100},
+		}
+	}
+	point := domain.Vec3DTO{X: 50, Y: 50, Z: 50}
+
+	resp, err := svc.BatchClosestPointSegments(domain.BatchClosestPointSegmentsRequest{
+		Point:    point,
+		Segments: segments,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Brute-force the same input directly against the geom3d library (not
+	// the parallel fan-out under test) to verify the goroutine scan found
+	// the actual global minimum, not just a plausible-looking one.
+	wantIndex, wantDist := -1, math.Inf(1)
+	p := toVec3(point)
+	for i, dto := range segments {
+		seg := geom3d.Segment3{A: toVec3(dto.A), B: toVec3(dto.B)}
+		if d := geom3d.DistancePointToSegment(p, seg); d < wantDist {
+			wantIndex, wantDist = i, d
+		}
+	}
+
+	if resp.SegmentIndex != wantIndex {
+		t.Fatalf("segment index: got %d want %d", resp.SegmentIndex, wantIndex)
+	}
+	if math.Abs(resp.Distance-wantDist) > 1e-9 {
+		t.Fatalf("distance: got %v want %v", resp.Distance, wantDist)
+	}
+	if resp.NumSegments != n {
+		t.Fatalf("numSegments: got %d want %d", resp.NumSegments, n)
+	}
+	if resp.NumWorkers < 1 {
+		t.Fatalf("numWorkers: got %d, want >= 1", resp.NumWorkers)
+	}
+	if resp.SequentialMicros < 0 || resp.ParallelMicros < 0 {
+		t.Fatalf("timings must be non-negative: sequential=%v parallel=%v", resp.SequentialMicros, resp.ParallelMicros)
+	}
+}
+
+// TestBatchClosestPointSegmentsChunkBoundaries exercises segment counts that
+// don't divide evenly across runtime.NumCPU() workers — the case that
+// originally panicked with a slice-bounds error when the last worker's
+// chunk start landed past the end of the slice.
+func TestBatchClosestPointSegmentsChunkBoundaries(t *testing.T) {
+	svc := NewQueryService()
+	rng := rand.New(rand.NewSource(42))
+
+	for n := 1; n <= 200; n++ {
+		segments := make([]domain.SegmentDTO, n)
+		for i := range segments {
+			segments[i] = domain.SegmentDTO{
+				A: domain.Vec3DTO{X: rng.Float64() * 10, Y: rng.Float64() * 10, Z: rng.Float64() * 10},
+				B: domain.Vec3DTO{X: rng.Float64() * 10, Y: rng.Float64() * 10, Z: rng.Float64() * 10},
+			}
+		}
+
+		resp, err := svc.BatchClosestPointSegments(domain.BatchClosestPointSegmentsRequest{
+			Point:    domain.Vec3DTO{X: 5, Y: 5, Z: 5},
+			Segments: segments,
+		})
+		if err != nil {
+			t.Fatalf("n=%d: unexpected error: %v", n, err)
+		}
+		if resp.SegmentIndex < 0 || resp.SegmentIndex >= n {
+			t.Fatalf("n=%d: segmentIndex %d out of range", n, resp.SegmentIndex)
+		}
+	}
+}
+
+func TestBatchClosestPointSegmentsEmpty(t *testing.T) {
+	svc := NewQueryService()
+
+	_, err := svc.BatchClosestPointSegments(domain.BatchClosestPointSegmentsRequest{
+		Point:    domain.Vec3DTO{},
+		Segments: nil,
+	})
+	if err == nil {
+		t.Fatal("expected error for empty segments")
+	}
+}
+
+func TestBatchClosestPointSegmentsOverLimit(t *testing.T) {
+	svc := NewQueryService()
+
+	segments := make([]domain.SegmentDTO, maxBatchSegments+1)
+	for i := range segments {
+		segments[i] = domain.SegmentDTO{A: domain.Vec3DTO{X: float64(i)}, B: domain.Vec3DTO{X: float64(i) + 1}}
+	}
+
+	_, err := svc.BatchClosestPointSegments(domain.BatchClosestPointSegmentsRequest{
+		Point:    domain.Vec3DTO{},
+		Segments: segments,
+	})
+	if err == nil {
+		t.Fatal("expected error when segments exceed the limit")
+	}
+}
+
+func TestBatchClosestPointSegmentsDegenerateSegment(t *testing.T) {
+	svc := NewQueryService()
+
+	_, err := svc.BatchClosestPointSegments(domain.BatchClosestPointSegmentsRequest{
+		Point: domain.Vec3DTO{},
+		Segments: []domain.SegmentDTO{
+			{A: domain.Vec3DTO{X: 1, Y: 1, Z: 1}, B: domain.Vec3DTO{X: 1, Y: 1, Z: 1}},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for a degenerate segment (coincident endpoints)")
+	}
+}
+
+func TestBatchClosestPointSegmentsSingleSegment(t *testing.T) {
+	svc := NewQueryService()
+
+	resp, err := svc.BatchClosestPointSegments(domain.BatchClosestPointSegmentsRequest{
+		Point: domain.Vec3DTO{X: 0, Y: 5, Z: 0},
+		Segments: []domain.SegmentDTO{
+			{A: domain.Vec3DTO{X: 0, Y: 0, Z: 0}, B: domain.Vec3DTO{X: 10, Y: 0, Z: 0}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.SegmentIndex != 0 {
+		t.Fatalf("segmentIndex: got %d want 0", resp.SegmentIndex)
+	}
+	if math.Abs(resp.Distance-5) > 1e-9 {
+		t.Fatalf("distance: got %v want 5", resp.Distance)
 	}
 }
