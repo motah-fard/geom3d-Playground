@@ -18,9 +18,20 @@ Phases 1-3 of the roadmap below are implemented and running end-to-end
 * Closest point → box (AABB)
 
 Each has a numeric form, a live 3D viewport (drag points to re-run the
-query), and a results panel. `Triangle` objects/queries and Phase 4 polish
-(scenario persistence, dark mode, etc.) are not yet implemented — see the
-roadmap sections below for what's next.
+query), and a results panel.
+
+The API also exposes one query that isn't a geometry chapter: **closest
+point among many segments**, computed both sequentially and fanned out
+across goroutines so the two can be timed head-to-head — live in the
+"Concurrency demo" panel in the app's Playground/Build sidebar, and
+documented below in
+[Batch closest-point-among-segments](#batch-closest-point-among-segments).
+
+Note: this section (and the phase roadmap further down) describes the
+project's original MVP scope and predates the site's later growth into a
+31-chapter Learn/Explore/Playground app — treat it as a historical
+snapshot of the backend's API surface, not a current description of the
+frontend.
 
 To run locally: `go run ./services/api/cmd/server` (backend, port 8081)
 and `pnpm --dir apps/web dev` (frontend, port 3000). The frontend falls
@@ -303,6 +314,69 @@ Response:
   "distance": 1
 }
 ```
+
+## Batch closest-point-among-segments
+
+`POST /api/v1/queries/batch-closest-point-segments`
+
+The only query in this API that isn't O(1) — finds the single closest
+segment to a point among up to 20,000, computing the answer twice on the
+identical input: once sequentially, once fanned out across
+`runtime.GOMAXPROCS(0)` goroutines (each confined to its own chunk of the
+slice, no mutex needed). Both durations come back in the response, so a
+caller can see the real, honest tradeoff — at a few thousand segments,
+goroutine setup costs more than the sequential scan saves; the crossover
+on typical hardware is somewhere in the low tens of thousands. See the
+"Concurrency demo" panel in the Playground/Build sidebar for a live
+version of this, and `go test -bench=BenchmarkClosestSegment -benchmem
+./internal/service` for reproducible numbers.
+
+Request:
+
+```json
+{
+  "point": { "x": 50, "y": 50, "z": 50 },
+  "segments": [
+    { "a": { "x": 0, "y": 0, "z": 0 }, "b": { "x": 10, "y": 0, "z": 0 } },
+    { "a": { "x": 20, "y": 20, "z": 20 }, "b": { "x": 30, "y": 20, "z": 20 } }
+  ]
+}
+```
+
+Response (verified against the real service — with only 2 segments, both
+run in a fraction of a microsecond and `numWorkers` clamps down to 2
+since there's no point spinning up more goroutines than there is work):
+
+```json
+{
+  "closestPoint": { "x": 30, "y": 20, "z": 20 },
+  "distance": 46.9041575982343,
+  "segmentIndex": 1,
+  "numSegments": 2,
+  "numWorkers": 2,
+  "sequentialMicros": 0,
+  "parallelMicros": 54
+}
+```
+
+### Benchmark: where the crossover actually is
+
+Measured 2026-09-10, Go 1.26.6, darwin/arm64, Apple M4 Pro, via
+`go test -bench=BenchmarkClosestSegment -benchmem ./internal/service`:
+
+| Segments | Sequential | Parallel | Parallel allocs |
+|---:|---:|---:|---:|
+| 100 | 564 ns/op | 4,395 ns/op | 28 allocs, 2,112 B |
+| 1,000 | 6,586 ns/op | 8,669 ns/op | 30 allocs, 2,256 B |
+| 5,000 | 36,198 ns/op | 25,040 ns/op | 30 allocs, 2,256 B |
+| 20,000 | 148,859 ns/op | 55,695 ns/op | 30 allocs, 2,256 B |
+
+Sequential has zero allocations at every size; parallel always pays for
+its `sync.WaitGroup` and the goroutines' own stacks, regardless of `n` —
+that fixed cost is exactly why it loses below ~2,000-3,000 segments and
+wins above it. This is the same lesson the "Concurrency demo" panel
+teaches live over HTTP, just measured without network/JSON overhead in
+the way.
 
 ---
 
