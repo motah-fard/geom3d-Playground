@@ -104,11 +104,11 @@ export function DraggablePoint({
         setPointerHovered(false);
       }}
     >
-      <sphereGeometry args={[0.28, 24, 24]} />
+      <sphereGeometry args={[0.2, 24, 24]} />
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={dragging || selectedObject === id ? 0.45 : isHovered ? 0.9 : 0.12} depthTest depthWrite />
       {isHovered && (
         <mesh scale={1.7}>
-          <sphereGeometry args={[0.28, 24, 24]} />
+          <sphereGeometry args={[0.2, 24, 24]} />
           <meshBasicMaterial color="#fde047" transparent opacity={0.28} depthWrite={false} />
         </mesh>
       )}
