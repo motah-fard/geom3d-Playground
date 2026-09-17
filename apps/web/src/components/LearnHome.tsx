@@ -26,7 +26,7 @@ export function LearnHome() {
           Every visualization here is computed live from the mathematics underneath — not an animation standing in for it.
           Drag anything, and the numbers, the shape, and the code all move together.
         </p>
-        <p className="pt-1 text-sm italic text-violet-300/80">For Nilgoon.</p>
+        <p className="pt-2 text-xl italic text-violet-300 sm:text-2xl">For Nilgoon, for her big heart and kindness.</p>
       </div>
 
       {nextToLearn && (
