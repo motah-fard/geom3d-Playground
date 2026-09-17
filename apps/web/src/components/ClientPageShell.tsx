@@ -49,6 +49,7 @@ export function ClientPageShell() {
             <a href="https://github.com/motah-fard/geom3d" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-700 underline-offset-2 hover:text-slate-300 hover:decoration-slate-500">geom3d</a>
             {" "}Go library.
           </p>
+          <p className="mt-2 italic text-violet-300/70">For Nilgoon, for her big heart and kindness.</p>
         </div>
       </footer>
     </main>
