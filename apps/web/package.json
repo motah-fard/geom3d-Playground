@@ -40,7 +40,9 @@
   "pnpm": {
     "overrides": {
       "browserslist": ">=4.28.7",
-      "@babel/core": ">=7.29.6"
+      "@babel/core": ">=7.29.6",
+      "fflate": ">=0.8.3",
+      "baseline-browser-mapping": ">=2.11.0"
     }
   }
 }
