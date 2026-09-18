@@ -16,13 +16,14 @@ func NewRouter() http.Handler {
 	// Health
 	mux.HandleFunc("GET /api/v1/health", handler.Health)
 
-	// Queries
-	mux.HandleFunc("POST /api/v1/queries/project-point-to-plane", handler.ProjectPointToPlane)
-	mux.HandleFunc("POST /api/v1/queries/intersect-ray-plane", handler.IntersectRayPlane)
-	mux.HandleFunc("POST /api/v1/queries/closest-point-segment", handler.ClosestPointSegment)
-	mux.HandleFunc("POST /api/v1/queries/segment-segment", handler.SegmentSegmentDistance)
-	mux.HandleFunc("POST /api/v1/queries/intersect-ray-aabb", handler.IntersectRayAABB)
-	mux.HandleFunc("POST /api/v1/queries/closest-point-aabb", handler.ClosestPointAABB)
+	// Queries — each capped at maxSmallRequestBytes; none of these take
+	// anything larger than a handful of nested floats.
+	mux.HandleFunc("POST /api/v1/queries/project-point-to-plane", limitBody(maxSmallRequestBytes, handler.ProjectPointToPlane))
+	mux.HandleFunc("POST /api/v1/queries/intersect-ray-plane", limitBody(maxSmallRequestBytes, handler.IntersectRayPlane))
+	mux.HandleFunc("POST /api/v1/queries/closest-point-segment", limitBody(maxSmallRequestBytes, handler.ClosestPointSegment))
+	mux.HandleFunc("POST /api/v1/queries/segment-segment", limitBody(maxSmallRequestBytes, handler.SegmentSegmentDistance))
+	mux.HandleFunc("POST /api/v1/queries/intersect-ray-aabb", limitBody(maxSmallRequestBytes, handler.IntersectRayAABB))
+	mux.HandleFunc("POST /api/v1/queries/closest-point-aabb", limitBody(maxSmallRequestBytes, handler.ClosestPointAABB))
 	// Burst of 5, refilling at 1 every 3s (~20/min sustained) per client IP
 	// — generous enough for someone clicking through the segment-count
 	// presets in the "Concurrency demo" panel, restrictive enough to stop
